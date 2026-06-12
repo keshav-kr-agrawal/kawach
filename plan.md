@@ -118,11 +118,11 @@ Our platform is designed with the operational reality of the Karnataka State Pol
 
 | Sub-team | Members | Core Responsibilities |
 |---|---|---|
-| **Backend & Database** | 💻 Srujan & Vignesh | Spin up Spring Boot services, design Hibernate entity-relationships for the SCRB data, optimize APIs for <50ms response times. |
-| **AI/ML & NLP Engine** | 🧠 Ishaan & Anurag | Build PyTorch predictive models, construct GNNs for syndicate link analysis, implement Python RAG flow (English + Kannada). |
-| **UI & Antigravity Motion** | 🎨 Keshav & Mohak | Build the React components, design the slate/obsidian UI, write fluid GSAP & Framer Motion transitions. |
-| **3D & Spatial Maps** | 🌐 Harshiya & Anshul | Render 3D network topologies using Three.js, implement WebGL map overlays and binning. |
-| **LaTeX & Documentation** | 📄 Saket | Write the automated PDF briefing script, draft the academic-grade whitepaper for submissions. |
+| **Backend & Database** |  | Spin up Spring Boot services, design Hibernate entity-relationships for the SCRB data, optimize APIs for <50ms response times. |
+| **AI/ML & NLP Engine** | | Build PyTorch predictive models, construct GNNs for syndicate link analysis, implement Python RAG flow (English + Kannada). |
+| **UI & Antigravity Motion** | | Build the React components, design the slate/obsidian UI, write fluid GSAP & Framer Motion transitions. |
+| **3D & Spatial Maps** || Render 3D network topologies using Three.js, implement WebGL map overlays and binning. |
+| **LaTeX & Documentation** |  | Write the automated PDF briefing script, draft the academic-grade whitepaper for submissions. |
 
 ---
 
