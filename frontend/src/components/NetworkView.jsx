@@ -47,12 +47,12 @@ function NetworkView({ token, user }) {
     fetchGraph();
   }, [token]);
 
-  // Color mapping per community
+  // Color mapping per community using clean professional colors
   const COMMUNITY_COLORS = {
-    0: '#9D8DF1',
-    1: '#F4D068',
-    2: '#FF4A5A',
-    3: '#B8B5FF'
+    0: '#4F46E5', // Indigo
+    1: '#F59E0B', // Amber
+    2: '#EF4444', // Rose
+    3: '#3B82F6'  // Blue
   };
 
   const filteredNodes = graphData.nodes.filter(n =>
@@ -65,21 +65,22 @@ function NetworkView({ token, user }) {
       {/* Network Sidebar */}
       <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-full overflow-hidden">
         <div className="flex items-center space-x-2 mb-6">
-          <Search className="w-4 h-4 text-lavender" />
-          <h4 className="text-xs font-bold uppercase tracking-wider text-white">Search Syndicate</h4>
+          <Search className="w-4 h-4 text-indigo-600" />
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Search Criminal Gangs</h4>
         </div>
         
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Offender name or ID..."
-          className="w-full bg-obsidian-700 border border-obsidian-600 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-lavender mb-6"
+          placeholder="Enter criminal name or ID..."
+          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm mb-6"
         />
 
-        <div className="border-t border-obsidian-750 my-2"></div>
+        <div className="border-t border-slate-200 my-2"></div>
 
-        <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Syndicate Key Brokers</h4>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">Key Gang Connectors</h4>
+        <p className="text-[9px] text-slate-400 mb-4">Criminals who link different gang syndicates:</p>
         <div className="flex-1 overflow-y-auto space-y-3 pr-2">
           {filteredNodes.slice(0, 10).map(n => (
             <button
@@ -87,20 +88,20 @@ function NetworkView({ token, user }) {
               onClick={() => setSelectedNode(n)}
               className={`w-full p-4 rounded-xl text-left border transition-all duration-200 ${
                 selectedNode?.id === n.id
-                  ? 'bg-lavender/10 border-lavender/50 glow-border'
-                  : 'bg-obsidian-800/40 border-obsidian-700 hover:border-obsidian-600'
+                  ? 'bg-indigo-50/50 border-indigo-500 shadow-sm'
+                  : 'bg-white border-slate-200 hover:bg-slate-50'
               }`}
             >
               <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] font-bold text-gray-400 font-mono">{n.id}</span>
-                <span className="text-[10px] font-semibold" style={{ color: COMMUNITY_COLORS[n.community_id % 4] }}>
-                  Syndicate {n.community_id}
+                <span className="text-[10px] font-bold text-slate-400 font-mono">{n.id}</span>
+                <span className="text-[10px] font-bold" style={{ color: COMMUNITY_COLORS[n.community_id % 4] }}>
+                  Gang Syndicate {n.community_id}
                 </span>
               </div>
-              <h5 className="text-xs font-semibold text-white">{n.name}</h5>
-              <div className="flex justify-between text-[9px] text-gray-400 mt-2">
-                <span>PageRank: {n.pagerank}</span>
-                <span>Betweenness: {n.betweenness_centrality}</span>
+              <h5 className="text-xs font-bold text-slate-800">{n.name}</h5>
+              <div className="flex justify-between text-[9px] text-slate-500 mt-2">
+                <span>Connection Score: {n.pagerank}</span>
+                <span>Bridge Score: {n.betweenness_centrality}</span>
               </div>
             </button>
           ))}
@@ -109,24 +110,29 @@ function NetworkView({ token, user }) {
 
       {/* Network Graph Render Canvas */}
       <div className="glass-panel p-6 rounded-2xl xl:col-span-3 flex flex-col h-full relative overflow-hidden">
-        <div className="absolute top-8 left-8 flex items-center space-x-2">
-          <Zap className="w-5 h-5 text-gold animate-pulse" />
-          <span className="text-xs font-bold uppercase tracking-wider text-white">3D Link Analytics Engine Active</span>
+        <div className="absolute top-8 left-8 flex items-center space-x-2 z-10 bg-white/90 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+          <Zap className="w-5 h-5 text-amber-500 animate-pulse" />
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-800">Gang Relationship Network</span>
+        </div>
+
+        {/* Info box overlay explaining graph relationships */}
+        <div className="absolute top-20 left-8 right-8 bg-blue-50 border border-blue-100 rounded-xl p-3 text-[10px] text-blue-800 z-10">
+          <strong>Help Guide:</strong> Circles represent offenders. Connected lines mean they co-offended in the same FIR case. Larger circles have committed more crimes. Red dashed lines identify critical bridge suspect brokers connecting separate gangs. Click on any circle to view criminal profile.
         </div>
 
         {/* Graph simulation panel */}
-        <div className="flex-1 w-full bg-obsidian-950 rounded-xl border border-obsidian-800 relative flex items-center justify-center overflow-hidden">
+        <div className="flex-1 w-full bg-slate-100 rounded-xl border border-slate-200 relative flex items-center justify-center overflow-hidden shadow-inner pt-16">
           {/* SVG representation of Force directed nodes */}
           <svg className="w-full h-full max-h-[500px]" viewBox="0 0 600 400">
-            {/* Draw Links/Edges */}
-            <line x1={180} y1={180} x2={280} y2={130} stroke="#2A2A35" strokeWidth={3} />
-            <line x1={280} y1={130} x2={220} y2={250} stroke="#2A2A35" strokeWidth={1} />
-            <line x1={400} y1={150} x2={480} y2={220} stroke="#2A2A35" strokeWidth={4} />
-            <line x1={480} y1={220} x2={430} y2={290} stroke="#2A2A35" strokeWidth={2} />
-            <line x1={400} y1={150} x2={350} y2={240} stroke="#2A2A35" strokeWidth={2} />
+            {/* Draw Links/Edges with light theme colors */}
+            <line x1={180} y1={180} x2={280} y2={130} stroke="#cbd5e1" strokeWidth={3} />
+            <line x1={280} y1={130} x2={220} y2={250} stroke="#cbd5e1" strokeWidth={1} />
+            <line x1={400} y1={150} x2={480} y2={220} stroke="#cbd5e1" strokeWidth={4} />
+            <line x1={480} y1={220} x2={430} y2={290} stroke="#cbd5e1" strokeWidth={2} />
+            <line x1={400} y1={150} x2={350} y2={240} stroke="#cbd5e1" strokeWidth={2} />
             
             {/* Broker connection edge linking communities */}
-            <line x1={180} y1={180} x2={400} y2={150} stroke="#FF4A5A" strokeWidth={2} strokeDasharray="5 5" />
+            <line x1={180} y1={180} x2={400} y2={150} stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" />
 
             {/* Render Nodes as SVG circles */}
             {graphData.nodes.map((node, idx) => {
@@ -148,7 +154,7 @@ function NetworkView({ token, user }) {
                 <g key={node.id} className="cursor-pointer" onClick={() => setSelectedNode(node)}>
                   {/* Outer circle halo for selection */}
                   {isSelected && (
-                    <circle cx={pos.x} cy={pos.y} r={size + 6} fill="none" stroke="#9D8DF1" strokeWidth={1.5} strokeDasharray="3 3" />
+                    <circle cx={pos.x} cy={pos.y} r={size + 6} fill="none" stroke="#4F46E5" strokeWidth={1.5} strokeDasharray="3 3" />
                   )}
                   {/* Central Node Circle */}
                   <circle
@@ -156,11 +162,11 @@ function NetworkView({ token, user }) {
                     cy={pos.y}
                     r={size}
                     fill={COMMUNITY_COLORS[node.community_id % 4]}
-                    stroke="#1E1E24"
+                    stroke="#ffffff"
                     strokeWidth={2}
                   />
                   {/* Text labels for names */}
-                  <text x={pos.x} y={pos.y - size - 4} fill="#fff" fontSize={9} textAnchor="middle">{node.name}</text>
+                  <text x={pos.x} y={pos.y - size - 4} fill="#0f172a" fontSize={9} fontWeight="semibold" textAnchor="middle">{node.name}</text>
                 </g>
               );
             })}
@@ -168,17 +174,17 @@ function NetworkView({ token, user }) {
 
           {/* Node detail display panel */}
           {selectedNode && (
-            <div className="absolute bottom-6 right-6 glass-panel p-5 rounded-2xl border-l-4 border-l-lavender max-w-sm glow-border z-10">
+            <div className="absolute bottom-6 right-6 bg-white p-5 rounded-2xl border border-slate-200 border-l-4 border-l-indigo-500 max-w-sm shadow-lg z-10">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold text-gray-400 font-mono">{selectedNode.id}</span>
-                <span className="text-xs font-bold text-lavender uppercase tracking-wider">Syndicate Leader</span>
+                <span className="text-[10px] font-bold text-slate-400 font-mono">{selectedNode.id}</span>
+                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Syndicate Leader</span>
               </div>
-              <h4 className="text-sm font-bold text-white mb-2">{selectedNode.name}</h4>
-              <div className="space-y-1.5 text-xs text-gray-300">
-                <div className="flex justify-between"><span className="text-gray-400">Recidivism Index:</span><span className="text-white font-semibold">{selectedNode.priors} offenses</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">Risk Score:</span><span className="text-crimson font-bold">{selectedNode.risk_score}%</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">Betweenness Centrality:</span><span className="text-white font-mono">{selectedNode.betweenness_centrality}</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">PageRank Importance:</span><span className="text-white font-mono">{selectedNode.pagerank}</span></div>
+              <h4 className="text-sm font-bold text-slate-900 mb-2">{selectedNode.name}</h4>
+              <div className="space-y-1.5 text-xs text-slate-700">
+                <div className="flex justify-between"><span className="text-slate-500">Past Offenses (Crimes):</span><span className="text-slate-800 font-semibold">{selectedNode.priors} offenses</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Risk Level:</span><span className="text-rose-600 font-bold">{selectedNode.risk_score}%</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Bridge Score (Central Linker):</span><span className="text-slate-800 font-mono">{selectedNode.betweenness_centrality}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Connection Score (Influence):</span><span className="text-slate-800 font-mono">{selectedNode.pagerank}</span></div>
               </div>
             </div>
           )}

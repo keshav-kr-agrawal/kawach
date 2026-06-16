@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Sparkles, AlertTriangle, ShieldCheck, ChevronRight } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 function PredictiveView({ token, user }) {
   const [predictions, setPredictions] = useState([]);
@@ -89,21 +89,29 @@ function PredictiveView({ token, user }) {
     fetchPredictions();
   }, [token]);
 
-  // SHAP feature importance data mapping for Selected District
+  // SHAP feature importance data mapping for Selected District with simplified names and clean colors
   const shapData = selectedDistrict ? [
-    { name: 'youth_unemployment', weight: selectedDistrict.risk_score * 0.4, fill: '#FF4A5A' },
-    { name: 'poverty_rate_lag', weight: selectedDistrict.risk_score * 0.25, fill: '#F4D068' },
-    { name: 'police_density_deficit', weight: selectedDistrict.risk_score * 0.2, fill: '#9D8DF1' },
-    { name: 'seasonal_spike_index', weight: selectedDistrict.risk_score * 0.15, fill: '#B8B5FF' }
+    { name: 'Youth Unemployment', weight: selectedDistrict.risk_score * 0.4, fill: '#EF4444' },
+    { name: 'Poverty Rate', weight: selectedDistrict.risk_score * 0.25, fill: '#F59E0B' },
+    { name: 'Lack of Police Presence', weight: selectedDistrict.risk_score * 0.2, fill: '#4F46E5' },
+    { name: 'Seasonal Spill / Events', weight: selectedDistrict.risk_score * 0.15, fill: '#3B82F6' }
   ] : [];
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
       {/* Districts risk ranking list */}
       <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-full overflow-hidden">
         <div className="flex items-center space-x-2 mb-6">
-          <Sparkles className="w-5 h-5 text-lavender" />
-          <h4 className="text-sm font-bold uppercase tracking-wider text-white font-sans">Crime Risk Scoring (XGBoost)</h4>
+          <Sparkles className="w-5 h-5 text-indigo-600" />
+          <h4 className="text-sm font-bold uppercase tracking-wider text-slate-800">Future Crime Risk Estimation</h4>
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-3 pr-2">
@@ -113,21 +121,25 @@ function PredictiveView({ token, user }) {
               onClick={() => setSelectedDistrict(p)}
               className={`w-full p-4 rounded-xl text-left border transition-all duration-200 ${
                 selectedDistrict?.district_id === p.district_id
-                  ? 'bg-lavender/10 border-lavender/50 glow-border'
-                  : 'bg-obsidian-800/40 border-obsidian-700 hover:border-obsidian-600'
+                  ? 'bg-indigo-50/50 border-indigo-500 shadow-sm'
+                  : 'bg-white border-slate-200 hover:bg-slate-50'
               }`}
             >
               <div className="flex justify-between items-center mb-1.5">
-                <h5 className="text-xs font-bold text-white uppercase tracking-wider">{p.district_name}</h5>
-                <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
-                  p.risk_tier === 'High' ? 'bg-crimson/15 text-crimson' : p.risk_tier === 'Medium' ? 'bg-gold/15 text-gold' : 'bg-emerald-400/15 text-emerald-400'
+                <h5 className="text-xs font-bold text-slate-800 uppercase tracking-wider">{p.district_name}</h5>
+                <span className={`text-[10px] px-2 py-0.5 rounded border font-bold ${
+                  p.risk_tier === 'High' 
+                    ? 'bg-rose-50 text-rose-600 border-rose-100' 
+                    : p.risk_tier === 'Medium' 
+                      ? 'bg-amber-50 text-amber-600 border-amber-100' 
+                      : 'bg-emerald-50 text-emerald-600 border-emerald-100'
                 }`}>
                   {p.risk_tier} Risk
                 </span>
               </div>
               <div className="flex justify-between items-center mt-2.5">
-                <span className="text-[10px] text-gray-400">Risk Coefficient:</span>
-                <span className="text-sm font-extrabold text-white">{p.risk_score}/100</span>
+                <span className="text-[10px] text-slate-500">Risk Score:</span>
+                <span className="text-sm font-extrabold text-slate-800">{p.risk_score}/100</span>
               </div>
             </button>
           ))}
@@ -138,44 +150,45 @@ function PredictiveView({ token, user }) {
       <div className="glass-panel p-6 rounded-2xl xl:col-span-2 flex flex-col h-full overflow-y-auto">
         {selectedDistrict ? (
           <div className="space-y-6">
-            <div className="border-b border-obsidian-750 pb-4">
-              <h3 className="text-base font-bold text-white uppercase tracking-wider">{selectedDistrict.district_name} Risk Breakdown</h3>
-              <p className="text-xs text-gray-400 mt-1">
-                Model confidence index: 84.6% accuracy. SHAP value charts denote feature weights contributing to the risk score.
+            <div className="border-b border-slate-200 pb-4">
+              <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider">{selectedDistrict.district_name} Risk Factor Details</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                System estimation accuracy: 84.6%. The chart below shows the main reasons contributing to this area's risk score.
               </p>
             </div>
 
             {/* Contributing factors text list */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              <div className="p-3 bg-obsidian-850/50 rounded-xl">
-                <span className="text-gray-400 text-[10px] block">Unemployment Vector</span>
-                <span className="text-white font-semibold mt-1 block">{selectedDistrict.contributing_factors.unemployment}</span>
+              <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                <span className="text-slate-500 text-[10px] block font-semibold">Unemployment Factor</span>
+                <span className="text-slate-800 font-bold mt-1 block">{selectedDistrict.contributing_factors.unemployment}</span>
               </div>
-              <div className="p-3 bg-obsidian-850/50 rounded-xl">
-                <span className="text-gray-400 text-[10px] block">Poverty Vector</span>
-                <span className="text-white font-semibold mt-1 block">{selectedDistrict.contributing_factors.poverty}</span>
+              <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                <span className="text-slate-500 text-[10px] block font-semibold">Poverty Factor</span>
+                <span className="text-slate-800 font-bold mt-1 block">{selectedDistrict.contributing_factors.poverty}</span>
               </div>
-              <div className="p-3 bg-obsidian-850/50 rounded-xl">
-                <span className="text-gray-400 text-[10px] block">Police density index</span>
-                <span className="text-white font-semibold mt-1 block">{selectedDistrict.contributing_factors.police_density}</span>
+              <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                <span className="text-slate-500 text-[10px] block font-semibold">Police Presence Factor</span>
+                <span className="text-slate-800 font-bold mt-1 block">{selectedDistrict.contributing_factors.police_density}</span>
               </div>
             </div>
 
             {/* SHAP Chart */}
             <div>
-              <h5 className="text-[10px] font-bold text-white uppercase tracking-wider mb-4">SHAP Feature Influence Weights</h5>
+              <h5 className="text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-4">Why is this area high risk? (Reasons behind the risk score)</h5>
               <div className="h-56 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={shapData} layout="vertical" margin={{ top: 5, right: 10, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#2A2A35" horizontal={false} />
-                    <XAxis type="number" stroke="#9ca3af" fontSize={11} tickLine={false} />
-                    <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={11} tickLine={false} width={120} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                    <XAxis type="number" stroke="#64748b" fontSize={11} tickLine={false} />
+                    <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={11} tickLine={false} width={130} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: '#1E1E24', borderColor: '#2A2A35', borderRadius: '12px' }}
+                      contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      itemStyle={{ color: '#334155' }}
                     />
                     <Bar dataKey="weight" radius={[0, 8, 8, 0]} barSize={15}>
                       {shapData.map((entry, index) => (
-                        <cell key={`cell-${index}`} fill={entry.fill} />
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -184,8 +197,8 @@ function PredictiveView({ token, user }) {
             </div>
           </div>
         ) : (
-          <div className="flex h-full items-center justify-center text-gray-400 text-xs">
-            Select a district to view model explanation.
+          <div className="flex h-full items-center justify-center text-slate-500 text-xs">
+            Select a district to view risk explanation.
           </div>
         )}
       </div>

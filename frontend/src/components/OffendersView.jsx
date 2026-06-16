@@ -63,6 +63,14 @@ function OffendersView({ token, user }) {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
   const filteredList = offenders.filter(o => 
     o.name.toLowerCase().includes(search.toLowerCase()) || 
     o.id.toLowerCase().includes(search.toLowerCase())
@@ -72,54 +80,57 @@ function OffendersView({ token, user }) {
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
       {/* Offenders Table/List */}
       <div className="glass-panel p-6 rounded-2xl xl:col-span-2 flex flex-col h-full overflow-hidden">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-between justify-between mb-6 flex-wrap gap-4">
           <div className="flex items-center space-x-2">
-            <Users className="w-5 h-5 text-lavender" />
-            <h4 className="text-sm font-bold uppercase tracking-wider text-white">Repeat Offender Registry</h4>
+            <Users className="w-5 h-5 text-indigo-600" />
+            <h4 className="text-sm font-bold uppercase tracking-wider text-slate-800">Repeat Offender Registry</h4>
           </div>
           
           <div className="flex items-center space-x-3 max-w-xs w-full">
-            <Search className="w-4 h-4 text-gray-400 shrink-0" />
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search registry..."
-              className="w-full bg-obsidian-700 border border-obsidian-600 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-lavender"
+              placeholder="Search by name or ID..."
+              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
             />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto border border-obsidian-750 rounded-xl pr-1">
+        <div className="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-white shadow-sm">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-obsidian-800 text-gray-400 border-b border-obsidian-700 uppercase font-semibold text-[10px] tracking-wider">
+              <tr className="bg-slate-50 text-slate-500 border-b border-slate-200 uppercase font-bold text-[10px] tracking-wider">
                 <th className="p-4">Offender ID</th>
                 <th className="p-4">Name</th>
-                <th className="p-4 text-center">Prior Offenses</th>
-                <th className="p-4 text-center">Risk Index</th>
+                <th className="p-4 text-center">Past Crimes</th>
+                <th className="p-4 text-center">Risk Level</th>
                 <th className="p-4 text-center">Associates</th>
                 <th className="p-4 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-obsidian-750">
+            <tbody className="divide-y divide-slate-100">
               {filteredList.map(o => (
-                <tr key={o.id} className="hover:bg-obsidian-850 transition-colors">
-                  <td className="p-4 font-mono font-bold text-lavender">{o.id}</td>
-                  <td className="p-4 text-white font-medium">{o.name}</td>
-                  <td className="p-4 text-center text-white">{o.num_prior_offenses}</td>
+                <tr key={o.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="p-4 font-mono font-bold text-indigo-600">{o.id}</td>
+                  <td className="p-4 text-slate-900 font-semibold">{o.name}</td>
+                  <td className="p-4 text-center text-slate-700 font-medium">{o.num_prior_offenses}</td>
                   <td className="p-4 text-center">
-                    <span className={`px-2.5 py-0.5 rounded font-bold ${
-                      o.risk_score >= 85 ? 'bg-crimson/15 text-crimson' : 'bg-gold/15 text-gold'
+                    <span className={`px-2.5 py-0.5 rounded font-bold border ${
+                      o.risk_score >= 85 
+                        ? 'bg-rose-50 text-rose-600 border-rose-100' 
+                        : 'bg-amber-50 text-amber-600 border-amber-100'
                     }`}>
                       {o.risk_score}%
                     </span>
                   </td>
-                  <td className="p-4 text-center text-gray-400">{o.associates_count} linked</td>
+                  <td className="p-4 text-center text-slate-500">{o.associates_count} linked</td>
                   <td className="p-4 text-right">
                     <button
                       onClick={() => handleSelectOffender(o.id)}
-                      className="p-1.5 hover:bg-lavender/10 rounded-lg text-lavender transition-colors"
+                      className="p-1.5 hover:bg-indigo-50 rounded-lg text-indigo-600 transition-colors"
+                      title="View Profile Details"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
@@ -135,37 +146,37 @@ function OffendersView({ token, user }) {
       <div className="glass-panel p-6 rounded-2xl xl:col-span-1 flex flex-col h-full overflow-y-auto">
         {selectedOffender ? (
           <div className="space-y-6">
-            <div className="flex items-center space-x-3 border-b border-obsidian-750 pb-4">
-              <div className="p-3 bg-crimson/10 text-crimson rounded-xl">
+            <div className="flex items-center space-x-3 border-b border-slate-200 pb-4">
+              <div className="p-3 bg-rose-50 text-rose-600 rounded-xl">
                 <ShieldAlert className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-[10px] font-mono text-gray-400 font-bold">{selectedOffender.id}</span>
-                <h4 className="text-sm font-bold text-white uppercase tracking-wider">{selectedOffender.name}</h4>
+                <span className="text-[10px] font-mono text-slate-400 font-bold">{selectedOffender.id}</span>
+                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">{selectedOffender.name}</h4>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="p-3 bg-obsidian-850/50 rounded-xl">
-                <span className="text-gray-400 text-[10px] block">Age / Gender</span>
-                <span className="text-white font-semibold mt-0.5 block">{selectedOffender.age} yrs • {selectedOffender.gender}</span>
+              <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                <span className="text-slate-500 text-[10px] block font-semibold">Age / Gender</span>
+                <span className="text-slate-800 font-bold mt-0.5 block">{selectedOffender.age} yrs • {selectedOffender.gender}</span>
               </div>
-              <div className="p-3 bg-obsidian-850/50 rounded-xl">
-                <span className="text-gray-400 text-[10px] block">Last Known Ward</span>
-                <span className="text-white font-semibold mt-0.5 block truncate">{selectedOffender.address}</span>
+              <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                <span className="text-slate-500 text-[10px] block font-semibold">Last Known Area</span>
+                <span className="text-slate-800 font-bold mt-0.5 block truncate" title={selectedOffender.address}>{selectedOffender.address}</span>
               </div>
             </div>
 
             {/* Linked FIRs */}
             <div>
-              <h5 className="text-[10px] font-bold text-white uppercase tracking-wider mb-3">Linked Incidents Timeline</h5>
-              <div className="space-y-3.5 pl-3 border-l border-obsidian-700">
+              <h5 className="text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-3">Linked Incidents Timeline</h5>
+              <div className="space-y-3.5 pl-3 border-l-2 border-slate-200">
                 {selectedOffender.firs.map(f => (
                   <div key={f.id} className="relative">
-                    <div className="absolute -left-[17px] top-1 w-2.5 h-2.5 rounded-full bg-lavender border-2 border-obsidian-900"></div>
-                    <div className="text-xs font-semibold text-white">{f.crime_type}</div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">{f.ipc_section} • {f.date_filed}</div>
-                    <span className="text-[9px] px-2 py-0.5 bg-obsidian-700 rounded text-gray-300 font-medium mt-1 inline-block">{f.status}</span>
+                    <div className="absolute -left-[18px] top-1.5 w-2.5 h-2.5 rounded-full bg-indigo-600 border-2 border-white"></div>
+                    <div className="text-xs font-bold text-slate-800">{f.crime_type}</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">{f.ipc_section} • {f.date_filed}</div>
+                    <span className="text-[9px] px-2 py-0.5 bg-slate-100 rounded text-slate-600 font-bold mt-1.5 inline-block">{f.status}</span>
                   </div>
                 ))}
               </div>
@@ -173,25 +184,25 @@ function OffendersView({ token, user }) {
 
             {/* Network Associates */}
             <div>
-              <h5 className="text-[10px] font-bold text-white uppercase tracking-wider mb-3">Primary Graph Associates</h5>
+              <h5 className="text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-3">Known Associates (Co-Accused)</h5>
               <div className="space-y-2">
                 {selectedOffender.associates.map(a => (
-                  <div key={a.id} className="p-2.5 bg-obsidian-800/40 border border-obsidian-700 rounded-xl flex items-center justify-between">
+                  <div key={a.id} className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-semibold text-white">{a.name}</div>
-                      <div className="text-[9px] font-mono text-gray-400">{a.id}</div>
+                      <div className="text-xs font-bold text-slate-800">{a.name}</div>
+                      <div className="text-[9px] font-mono text-slate-500">{a.id}</div>
                     </div>
-                    <span className="text-[10px] font-bold text-crimson">{a.risk_score}% Risk</span>
+                    <span className="text-[10px] font-bold text-rose-600">{a.risk_score}% Risk</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6 text-gray-400">
-            <AlertCircle className="w-10 h-10 text-gray-500 mb-3" />
-            <h5 className="text-xs font-bold text-white uppercase tracking-wider">No Offender Selected</h5>
-            <p className="text-xs mt-1 max-w-[200px]">Click the eye action button on any record row to inspect prior criminal history and associate networks.</p>
+          <div className="flex flex-col items-center justify-center h-full text-center p-6 text-slate-500">
+            <AlertCircle className="w-10 h-10 text-slate-400 mb-3" />
+            <h5 className="text-xs font-bold text-slate-800 uppercase tracking-wider">No Offender Selected</h5>
+            <p className="text-xs mt-1.5 leading-relaxed max-w-[220px]">Select a criminal from the list by clicking the eye icon on the right to view their profile, past crimes, and known associates.</p>
           </div>
         )}
       </div>

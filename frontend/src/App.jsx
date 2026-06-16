@@ -90,29 +90,29 @@ function App() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-obsidian-900 flex items-center justify-center p-4">
-        <div className="w-full max-w-md glass-panel p-8 rounded-2xl glow-border">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md glass-panel p-8 rounded-2xl border border-slate-200 shadow-lg">
           <div className="flex flex-col items-center mb-8">
-            <div className="p-4 bg-lavender/10 rounded-full mb-4">
-              <Shield className="w-12 h-12 text-lavender" />
+            <div className="p-4 bg-indigo-50 rounded-full mb-4">
+              <Shield className="w-12 h-12 text-indigo-600" />
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-lavender-light to-lavender bg-clip-text text-transparent">
+            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-700 to-indigo-500 bg-clip-text text-transparent">
               KAWACH
             </h1>
-            <p className="text-gray-400 mt-2 text-sm text-center">
+            <p className="text-slate-500 mt-2 text-sm text-center">
               AI-Driven Crime Analytics & Command Platform
             </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
             {loginError && (
-              <div className="p-3 bg-crimson/10 border border-crimson/30 rounded-lg text-crimson text-sm text-center">
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-600 text-sm text-center">
                 {loginError}
               </div>
             )}
             
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Username</label>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Username</label>
               <select
                 value={username}
                 onChange={(e) => {
@@ -129,7 +129,7 @@ function App() {
                     setRole('Field Officer');
                   }
                 }}
-                className="w-full bg-obsidian-700 border border-obsidian-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-lavender transition-colors"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm transition-colors"
               >
                 <option value="admin">admin (State Admin)</option>
                 <option value="district">district (District Head)</option>
@@ -138,23 +138,23 @@ function App() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Password</label>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-obsidian-700 border border-obsidian-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-lavender transition-colors"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm transition-colors"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Demo Role Assignment</label>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Demo Role Assignment</label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="w-full bg-obsidian-700 border border-obsidian-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-lavender transition-colors"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm transition-colors"
               >
                 <option value="State Admin">State Admin (Full Access)</option>
                 <option value="District Head">District Head (District Scope)</option>
@@ -165,7 +165,7 @@ function App() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-lavender to-lavender-dark text-obsidian-900 font-bold py-3.5 px-4 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-lavender/20"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 shadow-md shadow-indigo-100"
             >
               {loading ? 'Authenticating...' : 'Access Command Center'}
             </button>
@@ -176,12 +176,12 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen bg-obsidian-900 text-gray-300 font-sans overflow-hidden">
+    <div className="flex h-screen bg-slate-50 text-slate-600 font-sans overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 bg-obsidian-800 border-r border-obsidian-700 flex flex-col z-20">
-        <div className="p-6 flex items-center space-x-3 border-b border-obsidian-700">
-          <Shield className="w-8 h-8 text-lavender" />
-          <span className="text-xl font-extrabold tracking-tight text-white glow-text-lavender">KAWACH</span>
+      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col z-20 shadow-sm">
+        <div className="p-6 flex items-center space-x-3 border-b border-slate-100">
+          <Shield className="w-8 h-8 text-indigo-600" />
+          <span className="text-xl font-extrabold tracking-tight text-indigo-600">KAWACH</span>
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
@@ -194,11 +194,11 @@ function App() {
                 onClick={() => setActiveTab(item.id)}
                 className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all duration-200 group text-left ${
                   isActive
-                    ? 'bg-lavender text-obsidian-900 font-semibold shadow-md shadow-lavender/10'
-                    : 'text-gray-400 hover:bg-obsidian-700/50 hover:text-white'
+                    ? 'bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-200'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
-                <Icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-obsidian-900' : 'text-gray-400 group-hover:text-lavender'}`} />
+                <Icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-indigo-600'}`} />
                 <span>{item.label}</span>
               </button>
             );
@@ -206,19 +206,19 @@ function App() {
         </nav>
 
         {/* Profile Card & Logout */}
-        <div className="p-4 border-t border-obsidian-700 bg-obsidian-850/50">
+        <div className="p-4 border-t border-slate-200 bg-slate-50/50">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="p-2 bg-obsidian-700 rounded-lg">
-              <User className="w-5 h-5 text-lavender" />
+            <div className="p-2 bg-indigo-50 rounded-lg">
+              <User className="w-5 h-5 text-indigo-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <h4 className="text-xs font-semibold text-white truncate uppercase tracking-wider">{user?.username}</h4>
-              <p className="text-[10px] text-gray-400 truncate">{user?.role}</p>
+              <h4 className="text-xs font-semibold text-slate-800 truncate uppercase tracking-wider">{user?.username}</h4>
+              <p className="text-[10px] text-slate-500 truncate">{user?.role}</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-obsidian-700 hover:bg-crimson/10 hover:text-crimson border border-obsidian-600 hover:border-crimson/30 rounded-xl transition-colors text-xs font-semibold text-gray-300"
+            className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-white hover:bg-rose-50 hover:text-rose-600 border border-slate-200 hover:border-rose-200 rounded-xl transition-colors text-xs font-semibold text-slate-700"
           >
             <LogOut className="w-4 h-4" />
             <span>Sign Out</span>
@@ -229,9 +229,9 @@ function App() {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Top Header */}
-        <header className="h-16 border-b border-obsidian-700 flex items-center justify-between px-8 bg-obsidian-900/50 backdrop-blur-md z-10">
+        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md z-10">
           <div className="flex items-center space-x-4">
-            <h2 className="text-lg font-bold text-white uppercase tracking-wider">
+            <h2 className="text-lg font-bold text-slate-800 uppercase tracking-wider">
               {navItems.find(item => item.id === activeTab)?.label}
             </h2>
           </div>
@@ -240,22 +240,22 @@ function App() {
             {/* Notification badge */}
             <button 
               onClick={() => setActiveTab('alerts')}
-              className="p-2 hover:bg-obsidian-800 rounded-xl text-gray-400 hover:text-lavender transition-all relative"
+              className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-indigo-600 transition-all relative"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-crimson rounded-full animate-ping"></span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
             </button>
             
-            <div className="h-8 w-px bg-obsidian-700"></div>
+            <div className="h-8 w-px bg-slate-200"></div>
             
-            <div className="px-3.5 py-1.5 bg-lavender/10 border border-lavender/25 rounded-full text-xs font-semibold text-lavender tracking-wide uppercase">
+            <div className="px-3.5 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-xs font-semibold text-indigo-700 tracking-wide uppercase">
               {user?.role} Scope
             </div>
           </div>
         </header>
 
         {/* View Content */}
-        <div className="flex-1 overflow-y-auto p-8 bg-obsidian-900/80">
+        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
           <ActiveComponent token={token} user={user} />
         </div>
       </main>

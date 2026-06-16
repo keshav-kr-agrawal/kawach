@@ -39,22 +39,31 @@ function GeoMapView({ token, user }) {
     fetchGeoData();
   }, [token]);
 
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 h-[calc(100vh-12rem)]">
       {/* Left panel: Filters & Hotspot List */}
       <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-full overflow-hidden">
         <div className="flex items-center space-x-2 mb-6">
-          <Filter className="w-4 h-4 text-lavender" />
-          <h4 className="text-xs font-bold uppercase tracking-wider text-white">Interactive Filters</h4>
+          <Filter className="w-4 h-4 text-indigo-600" />
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Search Filters</h4>
         </div>
 
         <div className="space-y-4 mb-6">
           <div>
-            <label className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Crime Category</label>
+            <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Select Crime Type</label>
+            <p className="text-[9px] text-slate-400 mb-2">Show only specific crimes on the map:</p>
             <select 
               value={selectedCrime}
               onChange={(e) => setSelectedCrime(e.target.value)}
-              className="w-full bg-obsidian-700 border border-obsidian-600 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-lavender"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
             >
               <option value="All">All Crime Types</option>
               <option value="Cybercrime / Phishing">Cybercrime</option>
@@ -65,9 +74,10 @@ function GeoMapView({ token, user }) {
           </div>
         </div>
 
-        <div className="border-t border-obsidian-750 my-4"></div>
+        <div className="border-t border-slate-200 my-4"></div>
 
-        <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Detected Hotspots (DBSCAN)</h4>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">High Crime Areas (Hotspots)</h4>
+        <p className="text-[9px] text-slate-400 mb-3">Click on an area below to zoom in on the map:</p>
         <div className="flex-1 overflow-y-auto space-y-3 pr-2">
           {hotspots.map(h => (
             <button
@@ -75,16 +85,16 @@ function GeoMapView({ token, user }) {
               onClick={() => setSelectedHotspot(h)}
               className={`w-full p-4 rounded-xl text-left border transition-all duration-200 ${
                 selectedHotspot?.cluster_id === h.cluster_id
-                  ? 'bg-lavender/10 border-lavender/50 glow-border'
-                  : 'bg-obsidian-800/40 border-obsidian-700 hover:border-obsidian-600'
+                  ? 'bg-indigo-50/50 border-indigo-500 shadow-sm'
+                  : 'bg-white border-slate-200 hover:bg-slate-50'
               }`}
             >
               <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] font-bold text-lavender uppercase tracking-wider">ZONE {h.cluster_id}</span>
-                <span className="text-[10px] px-2 py-0.5 bg-crimson/10 text-crimson border border-crimson/20 rounded font-semibold">{h.heat_score}% Heat</span>
+                <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">ZONE {h.cluster_id}</span>
+                <span className="text-[10px] px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-100 rounded font-semibold">{h.heat_score}% Heat</span>
               </div>
-              <h5 className="text-xs font-semibold text-white">{h.dominant_crime}</h5>
-              <div className="flex items-center space-x-3 text-[10px] text-gray-400 mt-2">
+              <h5 className="text-xs font-bold text-slate-800">{h.dominant_crime}</h5>
+              <div className="flex items-center space-x-3 text-[10px] text-slate-500 mt-2">
                 <span>{h.fir_count} FIRs</span>
                 <span>•</span>
                 <span>{h.radius_km} km radius</span>
@@ -97,24 +107,24 @@ function GeoMapView({ token, user }) {
       {/* Right panel: Geospatial Map Canvas Simulation */}
       <div className="glass-panel p-6 rounded-2xl xl:col-span-3 flex flex-col h-full relative overflow-hidden">
         {/* Interactive Controls Overlay */}
-        <div className="absolute top-8 left-8 bg-obsidian-900/90 border border-obsidian-700 p-2 rounded-xl flex space-x-1 shadow-2xl z-10">
-          <button className="p-2 hover:bg-obsidian-700 rounded-lg text-gray-400 hover:text-white transition-colors">
+        <div className="absolute top-8 left-8 bg-white/95 border border-slate-200 p-2 rounded-xl flex space-x-1 shadow-md z-10">
+          <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-900 transition-colors">
             <ZoomIn className="w-4 h-4" />
           </button>
-          <button className="p-2 hover:bg-obsidian-700 rounded-lg text-gray-400 hover:text-white transition-colors">
+          <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-900 transition-colors">
             <ZoomOut className="w-4 h-4" />
           </button>
-          <button className="p-2 hover:bg-obsidian-700 rounded-lg text-gray-400 hover:text-white transition-colors">
+          <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-900 transition-colors">
             <Layers className="w-4 h-4" />
           </button>
         </div>
 
         {/* Map Canvas Background (Simulating rich Deck.gl visual map) */}
-        <div className="flex-1 w-full bg-obsidian-950 rounded-xl border border-obsidian-800 relative flex items-center justify-center overflow-hidden">
+        <div className="flex-1 w-full bg-blue-50/20 rounded-xl border border-slate-200 relative flex items-center justify-center overflow-hidden shadow-inner">
           {/* Custom SVG Drawing Karnataka District Heatmap blobs */}
           <svg className="w-full h-full max-h-[500px]" viewBox="0 0 800 500">
-            {/* Karnataka Coast & boundaries simulated */}
-            <path d="M 280 80 Q 250 120 230 180 T 220 280 T 260 380 Q 290 420 330 450 L 380 430 L 400 370 Q 420 310 440 250 T 420 120 Z" fill="#16161A" stroke="#2A2A35" strokeWidth={1.5} />
+            {/* Karnataka Coast & boundaries simulated with light landmass fill */}
+            <path d="M 280 80 Q 250 120 230 180 T 220 280 T 260 380 Q 290 420 330 450 L 380 430 L 400 370 Q 420 310 440 250 T 420 120 Z" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth={1.5} />
             
             {/* Pulsating Hotspot Centroid Blobs */}
             {hotspots.map((h, i) => {
@@ -133,7 +143,7 @@ function GeoMapView({ token, user }) {
                     cx={cx} 
                     cy={cy} 
                     r={isSelected ? 35 : 20} 
-                    fill="#FF4A5A" 
+                    fill="#ef4444" 
                     fillOpacity={0.15} 
                     className="animate-ping" 
                     style={{ animationDuration: `${2 + i}s` }}
@@ -143,17 +153,17 @@ function GeoMapView({ token, user }) {
                     cx={cx} 
                     cy={cy} 
                     r={isSelected ? 10 : 6} 
-                    fill={isSelected ? '#FF4A5A' : '#F4D068'} 
-                    stroke="#1E1E24" 
+                    fill={isSelected ? '#ef4444' : '#f59e0b'} 
+                    stroke="#ffffff" 
                     strokeWidth={2}
                   />
                   
                   {/* Hotspot centroid text label */}
                   {isSelected && (
                     <g>
-                      <rect x={cx + 15} y={cy - 20} width={130} height={40} rx={6} fill="#1E1E24" stroke="#FF4A5A" strokeWidth={1} />
-                      <text x={cx + 25} y={cy - 5} fill="#fff" fontSize={10} fontWeight="bold">ZONE {h.cluster_id} CENTROID</text>
-                      <text x={cx + 25} y={cy + 10} fill="#FF4A5A" fontSize={9}>{h.fir_count} Cases Spiked</text>
+                      <rect x={cx + 15} y={cy - 20} width={130} height={40} rx={6} fill="#ffffff" stroke="#ef4444" strokeWidth={1} filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.1))" />
+                      <text x={cx + 25} y={cy - 5} fill="#0f172a" fontSize={10} fontWeight="bold">ZONE {h.cluster_id} CENTROID</text>
+                      <text x={cx + 25} y={cy + 10} fill="#ef4444" fontSize={9}>{h.fir_count} Cases Spiked</text>
                     </g>
                   )}
                 </g>
@@ -163,13 +173,13 @@ function GeoMapView({ token, user }) {
 
           {/* Map details box */}
           {selectedHotspot && (
-            <div className="absolute bottom-6 right-6 glass-panel p-5 rounded-2xl border-l-4 border-l-crimson max-w-sm glow-border z-10">
-              <h5 className="text-xs font-bold text-white uppercase tracking-wider mb-2">Zone Analysis Detail</h5>
-              <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between"><span className="text-gray-400">Centroid Coordinates:</span><span className="text-white font-mono">{selectedHotspot.lat.toFixed(4)}, {selectedHotspot.lng.toFixed(4)}</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">Total Incidents:</span><span className="text-white font-semibold">{selectedHotspot.fir_count} FIRs</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">Cluster Density:</span><span className="text-crimson font-bold">{selectedHotspot.heat_score}% High</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">Dominant IPC Section:</span><span className="text-white font-mono">Sec 66D IT Act</span></div>
+            <div className="absolute bottom-6 right-6 bg-white p-5 rounded-2xl border border-slate-200 border-l-4 border-l-rose-500 max-w-sm shadow-lg z-10">
+              <h5 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">Zone Analysis Detail</h5>
+              <div className="space-y-1.5 text-xs text-slate-700">
+                <div className="flex justify-between"><span className="text-slate-500">Centroid Coordinates:</span><span className="text-slate-800 font-mono">{selectedHotspot.lat.toFixed(4)}, {selectedHotspot.lng.toFixed(4)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Total Incidents:</span><span className="text-slate-800 font-semibold">{selectedHotspot.fir_count} FIRs</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Cluster Density:</span><span className="text-rose-600 font-bold">{selectedHotspot.heat_score}% High</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Primary Crime Law (IPC Section):</span><span className="text-slate-800 font-mono">Sec 66D IT Act</span></div>
               </div>
             </div>
           )}

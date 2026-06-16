@@ -9,8 +9,8 @@ function DashboardView({ token, user }) {
   const [districts, setDistricts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Colors for Pie/Bar charts
-  const COLORS = ['#9D8DF1', '#B8B5FF', '#F4D068', '#FF4A5A', '#FFE79A', '#7B6CF6', '#FF8F94'];
+  // Clean, professional color palette for Pie/Bar charts
+  const COLORS = ['#4F46E5', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,7 +86,7 @@ function DashboardView({ token, user }) {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-lavender"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
@@ -98,13 +98,14 @@ function DashboardView({ token, user }) {
         {/* KPI 1 */}
         <div className="glass-panel p-6 rounded-2xl glass-panel-hover flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Filed FIRs</span>
-            <h3 className="text-3xl font-extrabold text-white mt-1.5">{summary?.total_firs.toLocaleString()}</h3>
-            <div className="text-[10px] text-lavender mt-1 font-medium flex items-center">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Total Filed FIRs</span>
+            <h3 className="text-3xl font-extrabold text-slate-900 mt-1.5">{summary?.total_firs.toLocaleString()}</h3>
+            <div className="text-[10px] text-indigo-600 mt-1 font-semibold flex items-center">
               <span>+14.5% vs. previous half</span>
             </div>
+            <p className="text-[9px] text-slate-400 mt-1">Total registered complaints</p>
           </div>
-          <div className="p-3 bg-lavender/10 rounded-xl text-lavender">
+          <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
             <FileText className="w-6 h-6" />
           </div>
         </div>
@@ -112,13 +113,14 @@ function DashboardView({ token, user }) {
         {/* KPI 2 */}
         <div className="glass-panel p-6 rounded-2xl glass-panel-hover flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Active Investigations</span>
-            <h3 className="text-3xl font-extrabold text-white mt-1.5">{summary?.active_cases.toLocaleString()}</h3>
-            <div className="text-[10px] text-gray-400 mt-1 font-medium">
-              <span>Under review by field officers</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Active Cases</span>
+            <h3 className="text-3xl font-extrabold text-slate-900 mt-1.5">{summary?.active_cases.toLocaleString()}</h3>
+            <div className="text-[10px] text-slate-500 mt-1 font-medium">
+              <span>Under active investigation</span>
             </div>
+            <p className="text-[9px] text-slate-400 mt-1">Currently being solved by officers</p>
           </div>
-          <div className="p-3 bg-gold/10 rounded-xl text-gold">
+          <div className="p-3 bg-amber-50 rounded-xl text-amber-600">
             <Activity className="w-6 h-6" />
           </div>
         </div>
@@ -126,14 +128,15 @@ function DashboardView({ token, user }) {
         {/* KPI 3 */}
         <div className="glass-panel p-6 rounded-2xl glass-panel-hover flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Conviction Rate</span>
-            <h3 className="text-3xl font-extrabold text-white mt-1.5">{summary?.conviction_rate}%</h3>
-            <div className="text-[10px] text-emerald-400 mt-1 font-medium flex items-center">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Conviction Rate</span>
+            <h3 className="text-3xl font-extrabold text-slate-900 mt-1.5">{summary?.conviction_rate}%</h3>
+            <div className="text-[10px] text-emerald-600 mt-1 font-semibold flex items-center">
               <CheckCircle2 className="w-3 h-3 mr-1" />
               <span>+2.1% improvement</span>
             </div>
+            <p className="text-[9px] text-slate-400 mt-1">Percentage of cases solved with guilty verdict</p>
           </div>
-          <div className="p-3 bg-emerald-400/10 rounded-xl text-emerald-400">
+          <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
             <Shield className="w-6 h-6" />
           </div>
         </div>
@@ -141,13 +144,14 @@ function DashboardView({ token, user }) {
         {/* KPI 4 */}
         <div className="glass-panel p-6 rounded-2xl glass-panel-hover flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Avg Response Time</span>
-            <h3 className="text-3xl font-extrabold text-white mt-1.5">{summary?.avg_response_time_mins} min</h3>
-            <div className="text-[10px] text-crimson mt-1 font-medium">
-              <span>Target standard is &lt;20 min</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Avg Response Time</span>
+            <h3 className="text-3xl font-extrabold text-slate-900 mt-1.5">{summary?.avg_response_time_mins} min</h3>
+            <div className="text-[10px] text-rose-600 mt-1 font-semibold">
+              <span>Target standard: &lt;20 min</span>
             </div>
+            <p className="text-[9px] text-slate-400 mt-1">Average emergency dispatch time</p>
           </div>
-          <div className="p-3 bg-crimson/10 rounded-xl text-crimson">
+          <div className="p-3 bg-rose-50 rounded-xl text-rose-600">
             <Clock className="w-6 h-6" />
           </div>
         </div>
@@ -158,20 +162,21 @@ function DashboardView({ token, user }) {
         {/* Crime Trend Chart */}
         <div className="glass-panel p-6 rounded-2xl lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-white">Statewide Crime Trend (12 Months)</h4>
-            <span className="text-xs px-2.5 py-1 bg-obsidian-700 rounded-lg text-gray-400 font-medium">FIR Volume</span>
+            <h4 className="text-sm font-bold uppercase tracking-wider text-slate-800">Statewide Crime Trend (12 Months)</h4>
+            <span className="text-xs px-2.5 py-1 bg-slate-100 rounded-lg text-slate-600 font-medium">FIR Volume</span>
           </div>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trend} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A2A35" />
-                <XAxis dataKey="date" stroke="#9ca3af" fontSize={11} tickLine={false} />
-                <YAxis stroke="#9ca3af" fontSize={11} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="date" stroke="#64748b" fontSize={11} tickLine={false} />
+                <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1E1E24', borderColor: '#2A2A35', borderRadius: '12px' }}
-                  labelStyle={{ color: '#fff', fontWeight: 'bold' }}
+                  contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  labelStyle={{ color: '#0f172a', fontWeight: 'bold' }}
+                  itemStyle={{ color: '#334155' }}
                 />
-                <Line type="monotone" dataKey="count" stroke="#9D8DF1" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="count" stroke="#4F46E5" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -179,7 +184,7 @@ function DashboardView({ token, user }) {
 
         {/* Crime Categories Donut Chart */}
         <div className="glass-panel p-6 rounded-2xl">
-          <h4 className="text-sm font-bold uppercase tracking-wider text-white mb-6">Crime Type Distribution</h4>
+          <h4 className="text-sm font-bold uppercase tracking-wider text-slate-800 mb-6">Crime Type Distribution</h4>
           <div className="h-60 w-full relative flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -196,13 +201,14 @@ function DashboardView({ token, user }) {
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1E1E24', borderColor: '#2A2A35', borderRadius: '12px' }}
+                  contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  itemStyle={{ color: '#334155' }}
                 />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute flex flex-col items-center">
-              <span className="text-xs text-gray-400 uppercase">Top Offense</span>
-              <span className="text-xs font-bold text-lavender text-center max-w-[120px] truncate mt-0.5">{summary?.top_crime_category}</span>
+              <span className="text-[10px] text-slate-400 uppercase font-semibold">Top Crime</span>
+              <span className="text-xs font-bold text-indigo-600 text-center max-w-[120px] truncate mt-0.5">{summary?.top_crime_category}</span>
             </div>
           </div>
           
@@ -210,8 +216,8 @@ function DashboardView({ token, user }) {
           <div className="grid grid-cols-2 gap-2 text-xs mt-2 max-h-24 overflow-y-auto pr-1">
             {categories.slice(0, 4).map((entry, index) => (
               <div key={entry.category} className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                <span className="text-gray-400 truncate max-w-[100px]">{entry.category}</span>
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                <span className="text-slate-600 truncate max-w-[100px]">{entry.category}</span>
               </div>
             ))}
           </div>
@@ -222,17 +228,18 @@ function DashboardView({ token, user }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top High-Risk Districts */}
         <div className="glass-panel p-6 rounded-2xl">
-          <h4 className="text-sm font-bold uppercase tracking-wider text-white mb-6">Top 5 Districts by Crime Volume</h4>
+          <h4 className="text-sm font-bold uppercase tracking-wider text-slate-800 mb-6">Top 5 Districts by Crime Volume</h4>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={districts} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A2A35" horizontal={false} />
-                <XAxis type="number" stroke="#9ca3af" fontSize={11} tickLine={false} />
-                <YAxis dataKey="district_name" type="category" stroke="#9ca3af" fontSize={11} tickLine={false} width={100} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                <XAxis type="number" stroke="#64748b" fontSize={11} tickLine={false} />
+                <YAxis dataKey="district_name" type="category" stroke="#64748b" fontSize={11} tickLine={false} width={100} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1E1E24', borderColor: '#2A2A35', borderRadius: '12px' }}
+                  contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  itemStyle={{ color: '#334155' }}
                 />
-                <Bar dataKey="count" fill="#F4D068" radius={[0, 8, 8, 0]} barSize={15} />
+                <Bar dataKey="count" fill="#3B82F6" radius={[0, 8, 8, 0]} barSize={15} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -240,29 +247,29 @@ function DashboardView({ token, user }) {
 
         {/* Hotspot & Alert Ticker */}
         <div className="glass-panel p-6 rounded-2xl flex flex-col h-[320px]">
-          <h4 className="text-sm font-bold uppercase tracking-wider text-white mb-4">Command Center Bulletins</h4>
+          <h4 className="text-sm font-bold uppercase tracking-wider text-slate-800 mb-4">Command Center Bulletins</h4>
           <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-            <div className="p-4 bg-crimson/10 border-l-4 border-crimson rounded-r-xl flex space-x-3">
-              <Flame className="w-5 h-5 text-crimson shrink-0" />
+            <div className="p-4 bg-rose-50/50 border border-rose-100 border-l-4 border-l-rose-500 rounded-r-xl flex space-x-3 shadow-sm">
+              <Flame className="w-5 h-5 text-rose-500 shrink-0" />
               <div>
-                <h5 className="text-xs font-bold text-white uppercase tracking-wider">Critical Hotspot Spike</h5>
-                <p className="text-xs text-gray-400 mt-1">DBSCAN algorithm identified a high-density cyber fraud cluster forming in Hebbal block, Bengaluru.</p>
+                <h5 className="text-xs font-bold text-rose-950 uppercase tracking-wider">Critical Alert: High-Crime Area Spike</h5>
+                <p className="text-xs text-rose-900/80 mt-1">Alert: System has detected a sudden cluster of cyber fraud complaints in Hebbal, Bengaluru. Officers should increase patrol and awareness.</p>
               </div>
             </div>
             
-            <div className="p-4 bg-lavender/10 border-l-4 border-lavender rounded-r-xl flex space-x-3">
-              <Shield className="w-5 h-5 text-lavender shrink-0" />
+            <div className="p-4 bg-indigo-50/50 border border-indigo-100 border-l-4 border-l-indigo-500 rounded-r-xl flex space-x-3 shadow-sm">
+              <Shield className="w-5 h-5 text-indigo-600 shrink-0" />
               <div>
-                <h5 className="text-xs font-bold text-white uppercase tracking-wider">Recidivism Watch Alert</h5>
-                <p className="text-xs text-gray-400 mt-1">Repeat offender tracking flags 3 watchlist suspects released on bail residing in the Mysore Central division.</p>
+                <h5 className="text-xs font-bold text-indigo-950 uppercase tracking-wider">Security Watch: Repeat Offender Activity</h5>
+                <p className="text-xs text-indigo-900/80 mt-1">Alert: 3 repeat offenders on the watchlist have been released on bail and are in the Mysore Central division. Keep under close watch.</p>
               </div>
             </div>
 
-            <div className="p-4 bg-gold/10 border-l-4 border-gold rounded-r-xl flex space-x-3">
-              <AlertCircle className="w-5 h-5 text-gold shrink-0" />
+            <div className="p-4 bg-amber-50/50 border border-amber-100 border-l-4 border-l-amber-500 rounded-r-xl flex space-x-3 shadow-sm">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
               <div>
-                <h5 className="text-xs font-bold text-white uppercase tracking-wider">Socio-Economic Correlation</h5>
-                <p className="text-xs text-gray-400 mt-1">District analysis indicates a 0.76 Pearson correlation coefficient between youth unemployment and property crimes.</p>
+                <h5 className="text-xs font-bold text-amber-950 uppercase tracking-wider">Socio-Economic Insight: Crime Drivers</h5>
+                <p className="text-xs text-amber-900/80 mt-1">Insight: Analysis shows a very strong link between youth unemployment and property crimes. Creating job programs in high-unemployment areas can help reduce property crime.</p>
               </div>
             </div>
           </div>
