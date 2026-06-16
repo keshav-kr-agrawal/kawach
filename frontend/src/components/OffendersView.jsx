@@ -1,0 +1,202 @@
+import React, { useState, useEffect } from 'react';
+import { Users, AlertCircle, ShieldAlert, Eye, Search, Filter } from 'lucide-react';
+
+function OffendersView({ token, user }) {
+  const [offenders, setOffenders] = useState([]);
+  const [selectedOffender, setSelectedOffender] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    const fetchOffenders = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch('http://localhost:8000/api/offenders/repeat');
+        const data = await res.json();
+        
+        if (data.length > 0) {
+          setOffenders(data);
+        } else {
+          // Fallback mock offenders
+          setOffenders([
+            { id: 'OFF-0001', name: 'Ramesh Kumar', age: 34, gender: 'Male', address: 'Hebbal, Ward 4, Bengaluru', num_prior_offenses: 12, risk_score: 94.2, associates_count: 5 },
+            { id: 'OFF-0002', name: 'Suresh Gowda', age: 41, gender: 'Male', address: 'Vyalikaval, Ward 11, Bengaluru', num_prior_offenses: 8, risk_score: 86.5, associates_count: 3 },
+            { id: 'OFF-0004', name: 'Zia Ahmed', age: 29, gender: 'Male', address: 'Jayanagar, Ward 9, Bengaluru', num_prior_offenses: 9, risk_score: 91.0, associates_count: 4 },
+            { id: 'OFF-0007', name: 'Mahesh B.', age: 38, gender: 'Male', address: 'Kuvempunagar, Mysuru', num_prior_offenses: 7, risk_score: 88.2, associates_count: 2 },
+            { id: 'OFF-0008', name: 'Karthik Rao', age: 27, gender: 'Male', address: 'Ullal, Mangaluru', num_prior_offenses: 5, risk_score: 74.5, associates_count: 1 },
+            { id: 'OFF-0009', name: 'Shiva M.', age: 45, gender: 'Male', address: 'Dharwad Town', num_prior_offenses: 6, risk_score: 79.1, associates_count: 3 }
+          ]);
+        }
+      } catch (err) {
+        console.error('Failed to load offenders:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOffenders();
+  }, [token]);
+
+  const handleSelectOffender = async (id) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/offenders/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedOffender(data);
+      } else {
+        // Mock profile fallback
+        const o = offenders.find(x => x.id === id);
+        setSelectedOffender({
+          ...o,
+          firs: [
+            { id: 'FIR-2025-00101', crime_type: 'Cybercrime / Phishing', ipc_section: 'IT Act Sec 66D', date_filed: '2025-04-12', status: 'Charge Sheeted', police_station_id: 'PS-BEN-01' },
+            { id: 'FIR-2025-00402', crime_type: 'Theft / Robbery', ipc_section: 'IPC Sec 379', date_filed: '2025-08-22', status: 'Closed', police_station_id: 'PS-BEN-02' }
+          ],
+          associates: [
+            { id: 'OFF-0002', name: 'Suresh Gowda', risk_score: 86.5 },
+            { id: 'OFF-0003', name: 'Anil K.', risk_score: 72.1 }
+          ]
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const filteredList = offenders.filter(o => 
+    o.name.toLowerCase().includes(search.toLowerCase()) || 
+    o.id.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
+      {/* Offenders Table/List */}
+      <div className="glass-panel p-6 rounded-2xl xl:col-span-2 flex flex-col h-full overflow-hidden">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-2">
+            <Users className="w-5 h-5 text-lavender" />
+            <h4 className="text-sm font-bold uppercase tracking-wider text-white">Repeat Offender Registry</h4>
+          </div>
+          
+          <div className="flex items-center space-x-3 max-w-xs w-full">
+            <Search className="w-4 h-4 text-gray-400 shrink-0" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search registry..."
+              className="w-full bg-obsidian-700 border border-obsidian-600 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-lavender"
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto border border-obsidian-750 rounded-xl pr-1">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-obsidian-800 text-gray-400 border-b border-obsidian-700 uppercase font-semibold text-[10px] tracking-wider">
+                <th className="p-4">Offender ID</th>
+                <th className="p-4">Name</th>
+                <th className="p-4 text-center">Prior Offenses</th>
+                <th className="p-4 text-center">Risk Index</th>
+                <th className="p-4 text-center">Associates</th>
+                <th className="p-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-obsidian-750">
+              {filteredList.map(o => (
+                <tr key={o.id} className="hover:bg-obsidian-850 transition-colors">
+                  <td className="p-4 font-mono font-bold text-lavender">{o.id}</td>
+                  <td className="p-4 text-white font-medium">{o.name}</td>
+                  <td className="p-4 text-center text-white">{o.num_prior_offenses}</td>
+                  <td className="p-4 text-center">
+                    <span className={`px-2.5 py-0.5 rounded font-bold ${
+                      o.risk_score >= 85 ? 'bg-crimson/15 text-crimson' : 'bg-gold/15 text-gold'
+                    }`}>
+                      {o.risk_score}%
+                    </span>
+                  </td>
+                  <td className="p-4 text-center text-gray-400">{o.associates_count} linked</td>
+                  <td className="p-4 text-right">
+                    <button
+                      onClick={() => handleSelectOffender(o.id)}
+                      className="p-1.5 hover:bg-lavender/10 rounded-lg text-lavender transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Offender Profile Details Card */}
+      <div className="glass-panel p-6 rounded-2xl xl:col-span-1 flex flex-col h-full overflow-y-auto">
+        {selectedOffender ? (
+          <div className="space-y-6">
+            <div className="flex items-center space-x-3 border-b border-obsidian-750 pb-4">
+              <div className="p-3 bg-crimson/10 text-crimson rounded-xl">
+                <ShieldAlert className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono text-gray-400 font-bold">{selectedOffender.id}</span>
+                <h4 className="text-sm font-bold text-white uppercase tracking-wider">{selectedOffender.name}</h4>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="p-3 bg-obsidian-850/50 rounded-xl">
+                <span className="text-gray-400 text-[10px] block">Age / Gender</span>
+                <span className="text-white font-semibold mt-0.5 block">{selectedOffender.age} yrs • {selectedOffender.gender}</span>
+              </div>
+              <div className="p-3 bg-obsidian-850/50 rounded-xl">
+                <span className="text-gray-400 text-[10px] block">Last Known Ward</span>
+                <span className="text-white font-semibold mt-0.5 block truncate">{selectedOffender.address}</span>
+              </div>
+            </div>
+
+            {/* Linked FIRs */}
+            <div>
+              <h5 className="text-[10px] font-bold text-white uppercase tracking-wider mb-3">Linked Incidents Timeline</h5>
+              <div className="space-y-3.5 pl-3 border-l border-obsidian-700">
+                {selectedOffender.firs.map(f => (
+                  <div key={f.id} className="relative">
+                    <div className="absolute -left-[17px] top-1 w-2.5 h-2.5 rounded-full bg-lavender border-2 border-obsidian-900"></div>
+                    <div className="text-xs font-semibold text-white">{f.crime_type}</div>
+                    <div className="text-[10px] text-gray-400 mt-0.5">{f.ipc_section} • {f.date_filed}</div>
+                    <span className="text-[9px] px-2 py-0.5 bg-obsidian-700 rounded text-gray-300 font-medium mt-1 inline-block">{f.status}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Network Associates */}
+            <div>
+              <h5 className="text-[10px] font-bold text-white uppercase tracking-wider mb-3">Primary Graph Associates</h5>
+              <div className="space-y-2">
+                {selectedOffender.associates.map(a => (
+                  <div key={a.id} className="p-2.5 bg-obsidian-800/40 border border-obsidian-700 rounded-xl flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-white">{a.name}</div>
+                      <div className="text-[9px] font-mono text-gray-400">{a.id}</div>
+                    </div>
+                    <span className="text-[10px] font-bold text-crimson">{a.risk_score}% Risk</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-center p-6 text-gray-400">
+            <AlertCircle className="w-10 h-10 text-gray-500 mb-3" />
+            <h5 className="text-xs font-bold text-white uppercase tracking-wider">No Offender Selected</h5>
+            <p className="text-xs mt-1 max-w-[200px]">Click the eye action button on any record row to inspect prior criminal history and associate networks.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default OffendersView;
