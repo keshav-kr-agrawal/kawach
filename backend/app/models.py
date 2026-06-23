@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Table, text
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Table, text, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from app.database import Base
+from datetime import datetime
 
 # Junction table for FIR to Accused (Many-to-Many)
 fir_accused = Table(
@@ -18,6 +19,54 @@ offender_associates = Table(
     Column('offender_id', String, ForeignKey('offenders.id', ondelete='CASCADE'), primary_key=True),
     Column('associate_id', String, ForeignKey('offenders.id', ondelete='CASCADE'), primary_key=True)
 )
+
+# Junction table for Offender to Gangs
+offender_gang = Table(
+    'offender_gang',
+    Base.metadata,
+    Column('offender_id', String, ForeignKey('offenders.id', ondelete='CASCADE'), primary_key=True),
+    Column('gang_id', String, ForeignKey('gangs.id', ondelete='CASCADE'), primary_key=True)
+)
+
+class User(Base):
+    __tablename__ = 'users'
+    
+    username = Column(String, primary_key=True)
+    hashed_password = Column(String, nullable=False)
+    role = Column(String, nullable=False)  # DGP, SP, SHO, Constable
+    district_id = Column(Integer, ForeignKey('districts.id', ondelete='SET NULL'), nullable=True)
+    station_id = Column(String, ForeignKey('police_stations.id', ondelete='SET NULL'), nullable=True)
+    mfa_secret = Column(String, nullable=True)
+    mfa_enabled = Column(Boolean, default=True)
+    
+    district = relationship("District")
+    station = relationship("PoliceStation")
+
+class AuditLog(Base):
+    __tablename__ = 'audit_logs'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    username = Column(String, nullable=False)
+    role = Column(String, nullable=False)
+    action = Column(String, nullable=False)
+    details = Column(JSONB, nullable=True)
+    ip_address = Column(String, nullable=True)
+
+class EntityMatchReview(Base):
+    __tablename__ = 'entity_match_reviews'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    offender1_id = Column(String, ForeignKey('offenders.id', ondelete='CASCADE'), nullable=False)
+    offender2_id = Column(String, ForeignKey('offenders.id', ondelete='CASCADE'), nullable=False)
+    confidence_score = Column(Float, nullable=False)
+    status = Column(String, default="Pending")  # Pending, Merged, Rejected
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    reviewed_by = Column(String, nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    
+    offender1 = relationship("Offender", foreign_keys=[offender1_id])
+    offender2 = relationship("Offender", foreign_keys=[offender2_id])
 
 class District(Base):
     __tablename__ = 'districts'
@@ -48,6 +97,70 @@ class PoliceStation(Base):
     district = relationship("District", back_populates="stations")
     firs = relationship("FIRRecord", back_populates="station")
 
+class Gang(Base):
+    __tablename__ = 'gangs'
+    
+    id = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    description = Column(String)
+    
+    members = relationship("Offender", secondary=offender_gang, back_populates="gangs")
+
+class Vehicle(Base):
+    __tablename__ = 'vehicles'
+    
+    plate_number = Column(String, primary_key=True)
+    make = Column(String)
+    model = Column(String)
+    owner_offender_id = Column(String, ForeignKey('offenders.id', ondelete='SET NULL'), nullable=True)
+    
+    owner = relationship("Offender", back_populates="vehicles")
+
+class Phone(Base):
+    __tablename__ = 'phones'
+    
+    phone_number = Column(String, primary_key=True)
+    owner_offender_id = Column(String, ForeignKey('offenders.id', ondelete='SET NULL'), nullable=True)
+    
+    owner = relationship("Offender", back_populates="phones")
+
+class Account(Base):
+    __tablename__ = 'accounts'
+    
+    account_number = Column(String, primary_key=True)
+    bank_name = Column(String)
+    owner_offender_id = Column(String, ForeignKey('offenders.id', ondelete='SET NULL'), nullable=True)
+    
+    owner = relationship("Offender", back_populates="accounts")
+
+class Call(Base):
+    __tablename__ = 'calls'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    caller_phone = Column(String, ForeignKey('phones.phone_number', ondelete='CASCADE'), nullable=False)
+    receiver_phone = Column(String, ForeignKey('phones.phone_number', ondelete='CASCADE'), nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+    duration_seconds = Column(Integer, nullable=False)
+
+class Location(Base):
+    __tablename__ = 'locations'
+    
+    id = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    lat = Column(Float, nullable=False)
+    lng = Column(Float, nullable=False)
+
+class Visit(Base):
+    __tablename__ = 'visits'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    offender_id = Column(String, ForeignKey('offenders.id', ondelete='CASCADE'), nullable=False)
+    location_id = Column(String, ForeignKey('locations.id', ondelete='CASCADE'), nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+    
+    offender = relationship("Offender")
+    location = relationship("Location")
+
 class Offender(Base):
     __tablename__ = 'offenders'
     
@@ -60,6 +173,10 @@ class Offender(Base):
     risk_score = Column(Float, default=0.0)
     
     firs = relationship("FIRRecord", secondary=fir_accused, back_populates="accused")
+    gangs = relationship("Gang", secondary=offender_gang, back_populates="members")
+    vehicles = relationship("Vehicle", back_populates="owner")
+    phones = relationship("Phone", back_populates="owner")
+    accounts = relationship("Account", back_populates="owner")
     
     # Self-referencing relationship for associates
     associates = relationship(
@@ -80,12 +197,22 @@ class FIRRecord(Base):
     date_filed = Column(DateTime, nullable=False)
     lat = Column(Float, nullable=False)
     lng = Column(Float, nullable=False)
-    status = Column(String, default="Investigation") # Investigation, Charge Sheeted, Closed
+    status = Column(String, default="Investigation")  # Investigation, Charge Sheeted, Closed
     victim_age = Column(Integer)
     victim_gender = Column(String)
     
+    # SLA, routing, AI helper columns
+    assigned_officer_id = Column(String, ForeignKey('users.username', ondelete='SET NULL'), nullable=True)
+    priority = Column(String, default="Medium")  # Low, Medium, High, Critical
+    sla_deadline = Column(DateTime, nullable=True)
+    summary = Column(String, nullable=True)
+    leads = Column(JSONB, nullable=True)
+    evidence_correlations = Column(JSONB, nullable=True)
+    timeline = Column(JSONB, nullable=True)
+    
     station = relationship("PoliceStation", back_populates="firs")
     accused = relationship("Offender", secondary=fir_accused, back_populates="firs")
+    assigned_officer = relationship("User")
 
 class SocioEconomicIndicator(Base):
     __tablename__ = 'socio_economic_indicators'

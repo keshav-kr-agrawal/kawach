@@ -77,9 +77,9 @@ function OffendersView({ token, user }) {
   );
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-auto xl:h-[calc(100vh-12rem)]">
       {/* Offenders Table/List */}
-      <div className="glass-panel p-6 rounded-2xl xl:col-span-2 flex flex-col h-full overflow-hidden">
+      <div className="glass-panel p-6 rounded-2xl xl:col-span-2 flex flex-col h-[450px] xl:h-full overflow-hidden">
         <div className="flex items-between justify-between mb-6 flex-wrap gap-4">
           <div className="flex items-center space-x-2">
             <Users className="w-5 h-5 text-indigo-600" />
@@ -98,7 +98,7 @@ function OffendersView({ token, user }) {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-white shadow-sm">
+        <div className="flex-1 overflow-auto border border-slate-200 rounded-xl bg-white shadow-sm">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 text-slate-500 border-b border-slate-200 uppercase font-bold text-[10px] tracking-wider">
@@ -143,7 +143,7 @@ function OffendersView({ token, user }) {
       </div>
 
       {/* Offender Profile Details Card */}
-      <div className="glass-panel p-6 rounded-2xl xl:col-span-1 flex flex-col h-full overflow-y-auto">
+      <div className="glass-panel p-6 rounded-2xl xl:col-span-1 flex flex-col h-auto xl:h-full overflow-y-auto">
         {selectedOffender ? (
           <div className="space-y-6">
             <div className="flex items-center space-x-3 border-b border-slate-200 pb-4">

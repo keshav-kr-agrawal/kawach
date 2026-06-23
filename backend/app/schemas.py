@@ -15,6 +15,7 @@ class TokenResponse(BaseModel):
     username: str
     role: str
     district_id: Optional[int] = None
+    station_id: Optional[str] = None
 
 # District Schemas
 class DistrictBase(BaseModel):

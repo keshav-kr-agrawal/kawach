@@ -16,12 +16,13 @@ function DashboardView({ token, user }) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // In real app, fetch from endpoints. Fallback to mock data if API is starting/failing.
+        const headers = { 'Authorization': `Bearer ${token}` };
+        
         const [summaryRes, trendRes, catsRes, distsRes] = await Promise.all([
-          fetch('http://localhost:8000/api/dashboard/summary').then(r => r.json()).catch(() => null),
-          fetch('http://localhost:8000/api/dashboard/trend').then(r => r.json()).catch(() => []),
-          fetch('http://localhost:8000/api/dashboard/categories').then(r => r.json()).catch(() => []),
-          fetch('http://localhost:8000/api/dashboard/districts').then(r => r.json()).catch(() => [])
+          fetch('http://localhost:8000/api/dashboard/summary', { headers }).then(r => r.json()).catch(() => null),
+          fetch('http://localhost:8000/api/dashboard/trend', { headers }).then(r => r.json()).catch(() => []),
+          fetch('http://localhost:8000/api/dashboard/categories', { headers }).then(r => r.json()).catch(() => []),
+          fetch('http://localhost:8000/api/dashboard/districts', { headers }).then(r => r.json()).catch(() => [])
         ]);
 
         if (summaryRes) {
@@ -91,8 +92,24 @@ function DashboardView({ token, user }) {
     );
   }
 
+  const getScopeBanner = () => {
+    switch (user?.role) {
+      case 'DGP': return 'State-Wide Command Center (State of Karnataka)';
+      case 'SP': return 'District Security Scope (Bengaluru Urban District)';
+      case 'SHO': return `Police Station Command Scope (${user.stationId || 'Bengaluru PS-01'})`;
+      default: return 'Constable Case Scope (Assigned Cases Only)';
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
+      <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-sm">
+        <div>
+          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Active Directive</span>
+          <h4 className="text-xs font-bold text-indigo-700 mt-1">{getScopeBanner()}</h4>
+        </div>
+        <div className="text-[10px] font-bold text-slate-500 uppercase">Status: Connected</div>
+      </div>
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* KPI 1 */}

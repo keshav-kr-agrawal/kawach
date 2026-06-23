@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts
+from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -25,6 +25,11 @@ app.include_router(network.router, prefix=f"{settings.API_V1_STR}/network", tags
 app.include_router(offenders.router, prefix=f"{settings.API_V1_STR}/offenders", tags=["Offenders"])
 app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/analytics", tags=["Analytics"])
 app.include_router(alerts.router, prefix=f"{settings.API_V1_STR}/alerts", tags=["Alerts"])
+app.include_router(investigations.router, prefix=f"{settings.API_V1_STR}/investigations", tags=["Investigations"])
+app.include_router(ai.router, prefix=f"{settings.API_V1_STR}/ai", tags=["AI Copilot"])
+app.include_router(audit.router, prefix=f"{settings.API_V1_STR}/audit", tags=["Audit Log"])
+app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin", tags=["Administration"])
+app.include_router(reports.router, prefix=f"{settings.API_V1_STR}/reports", tags=["Reports"])
 
 @app.get("/")
 def read_root():

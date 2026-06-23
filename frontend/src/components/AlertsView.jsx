@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Clock, MapPin, Zap, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Clock, MapPin, Zap, RefreshCw, MessageSquare, Mail, ShieldAlert } from 'lucide-react';
 
 function AlertsView({ token, user }) {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dispatchStatus, setDispatchStatus] = useState({}); // alertId -> string description
 
   const fetchAlerts = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:8000/api/alerts');
+      const res = await fetch('http://localhost:8000/api/alerts', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await res.json();
       setAlerts(data);
     } catch (err) {
@@ -21,6 +24,20 @@ function AlertsView({ token, user }) {
   useEffect(() => {
     fetchAlerts();
   }, [token]);
+
+  const handleSimulateDispatch = (alertId, channel, district) => {
+    setDispatchStatus(prev => ({
+      ...prev,
+      [alertId]: `Sending ${channel} trigger...`
+    }));
+
+    setTimeout(() => {
+      setDispatchStatus(prev => ({
+        ...prev,
+        [alertId]: `✅ ${channel} alert successfully dispatched to ${district} SP & Station SHOs.`
+      }));
+    }, 1200);
+  };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-fade-in">
@@ -50,50 +67,89 @@ function AlertsView({ token, user }) {
           {alerts.map(alert => (
             <div 
               key={alert.id}
-              className={`border border-slate-200 p-5 rounded-2xl border-l-4 flex items-start space-x-4 transition-all duration-200 hover:scale-[1.01] hover:shadow-md ${
+              className={`border border-slate-200 p-5 rounded-2xl border-l-4 flex flex-col transition-all duration-200 hover:scale-[1.01] hover:shadow-md ${
                 alert.severity === 'Critical' 
                   ? 'border-l-rose-500 bg-rose-50/30 hover:bg-rose-50' 
                   : 'border-l-amber-500 bg-amber-50/30 hover:bg-amber-50'
               }`}
             >
-              <div className={`p-2 rounded-xl shrink-0 ${
-                alert.severity === 'Critical' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'
-              }`}>
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">{alert.district}</span>
-                    <span className="text-[10px] px-2 py-0.5 bg-slate-100 rounded text-slate-600 font-bold tracking-wide uppercase">
-                      {alert.type}
+              <div className="flex items-start space-x-4 w-full">
+                <div className={`p-2 rounded-xl shrink-0 ${
+                  alert.severity === 'Critical' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'
+                }`}>
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">{alert.district}</span>
+                      <span className="text-[10px] px-2 py-0.5 bg-slate-100 rounded text-slate-600 font-bold tracking-wide uppercase">
+                        {alert.type}
+                      </span>
+                    </div>
+                    <span className={`text-[10px] font-bold ${
+                      alert.severity === 'Critical' ? 'text-rose-600' : 'text-amber-600'
+                    }`}>
+                      SPIKE INDEX: {alert.z_score}
                     </span>
                   </div>
-                  <span className={`text-[10px] font-bold ${
-                    alert.severity === 'Critical' ? 'text-rose-600' : 'text-amber-600'
-                  }`}>
-                    SPIKE INDEX: {alert.z_score}
+                  
+                  <p className="text-xs text-slate-700 mt-2 font-semibold leading-relaxed">{alert.message}</p>
+                  
+                  <div className="flex items-center space-x-4 mt-3 text-[10px] text-slate-500">
+                    <div className="flex items-center space-x-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{new Date(alert.timestamp).toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>Karnataka Command Center</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Simulated dispatch channel bar */}
+              <div className="border-t border-slate-200/50 mt-4 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center w-full gap-3">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleSimulateDispatch(alert.id, 'SMS', alert.district)}
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-500 text-slate-700 hover:text-indigo-600 rounded-lg text-[10px] font-bold shadow-sm transition-all"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Send SMS Broadcast</span>
+                  </button>
+                  <button
+                    onClick={() => handleSimulateDispatch(alert.id, 'Email', alert.district)}
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-500 text-slate-700 hover:text-indigo-600 rounded-lg text-[10px] font-bold shadow-sm transition-all"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Send Email Alert</span>
+                  </button>
+                </div>
+                
+                {dispatchStatus[alert.id] && (
+                  <span className="text-[10px] font-bold text-indigo-700 animate-fade-in bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1">
+                    {dispatchStatus[alert.id]}
                   </span>
-                </div>
-                
-                <p className="text-xs text-slate-700 mt-2 font-semibold leading-relaxed">{alert.message}</p>
-                
-                <div className="flex items-center space-x-4 mt-3 text-[10px] text-slate-500">
-                  <div className="flex items-center space-x-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{new Date(alert.timestamp).toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>Karnataka Command Center</span>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Escalation Policy info card */}
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-xs flex items-start space-x-4 mt-8">
+        <ShieldAlert className="w-6 h-6 text-slate-500 mt-0.5 shrink-0" />
+        <div>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Spike Alert Escalation Policy</h4>
+          <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+            Standard Operating Procedure (SOP) requires all **Critical** level spike warnings to be resolved within 4 hours by the SP. If no status modifications occur, alerts escalate automatically to DGP and alert channels.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

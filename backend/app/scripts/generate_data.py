@@ -4,7 +4,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
 from app.database import Base, SessionLocal, engine
-from app.models import District, PoliceStation, Offender, FIRRecord, SocioEconomicIndicator
+from app.models import (
+    District, PoliceStation, Offender, FIRRecord, SocioEconomicIndicator,
+    User, AuditLog, EntityMatchReview, Gang, Vehicle, Phone, Account, Call, Location, Visit
+)
+from app.auth import get_password_hash
 
 # Districts of Karnataka with approximate center coords & metrics
 KARNATAKA_DISTRICTS = [
@@ -84,12 +88,10 @@ def seed_database():
         # 2. Seed Police Stations
         stations_objects = []
         for d_info, d_model in districts_objects:
-            # High-population districts get more police stations (e.g. Bengaluru gets 15, others get 3-5)
             num_stations = 15 if d_model.name == "Bengaluru Urban" else random.randint(3, 5)
             
             for i in range(num_stations):
                 station_id = f"PS-{d_model.id:02d}-{i+1:02d}"
-                # Add jitter to coordinates to distribute stations around the district center
                 jitter_lat = random.uniform(-0.15, 0.15)
                 jitter_lng = random.uniform(-0.15, 0.15)
                 
@@ -107,19 +109,78 @@ def seed_database():
                 
         db.commit()
         print(f"{len(stations_objects)} Police Stations seeded.")
+
+        # 3. Seed Users with credentials, roles, and boundaries
+        blr_dist = db.query(District).filter(District.name == "Bengaluru Urban").first()
+        blr_station = db.query(PoliceStation).filter(PoliceStation.district_id == blr_dist.id).first()
+
+        users_to_seed = [
+            {"username": "dgp", "password": "dgp123", "role": "DGP", "dist": None, "stat": None},
+            {"username": "sp", "password": "sp123", "role": "SP", "dist": blr_dist.id, "stat": None},
+            {"username": "sho", "password": "sho123", "role": "SHO", "dist": blr_dist.id, "stat": blr_station.id},
+            {"username": "constable", "password": "constable123", "role": "Constable", "dist": blr_dist.id, "stat": blr_station.id},
+            # Dummy test users to show ease of use
+            {"username": "admin", "password": "admin123", "role": "DGP", "dist": None, "stat": None},
+            {"username": "district", "password": "district123", "role": "SP", "dist": blr_dist.id, "stat": None},
+            {"username": "officer", "password": "officer123", "role": "SHO", "dist": blr_dist.id, "stat": blr_station.id}
+        ]
+
+        users_objects = {}
+        for u in users_to_seed:
+            user = User(
+                username=u["username"],
+                hashed_password=get_password_hash(u["password"]),
+                role=u["role"],
+                district_id=u["dist"],
+                station_id=u["stat"],
+                mfa_secret="GA_SECRET_KEY_KAWACH_DEMO_2026",
+                mfa_enabled=True
+            )
+            db.add(user)
+            users_objects[u["username"]] = user
+
+        db.commit()
+        print("Users seeded successfully.")
         
-        # 3. Seed Offenders
+        # 4. Seed Gangs
+        gangs_objects = []
+        gang_names = [
+            "KGF Syndicate", "Silk Board Extortionists", "Brigade Road Gang", 
+            "Electronic City Cyber Cartel", "Deccan Smugglers", "Coastal Mavericks",
+            "Malleswaram Hackers", "Indiranagar Syndicate", "Whitefield Mafia"
+        ]
+        for idx, gname in enumerate(gang_names):
+            gang = Gang(
+                id=f"GANG-{idx+1:02d}",
+                name=gname,
+                description=f"Active organized syndicate specialized in operations near {gname.split(' ')[0]} areas."
+            )
+            db.add(gang)
+            gangs_objects.append(gang)
+        db.commit()
+        print("Criminal Gangs seeded.")
+
+        # 5. Seed Offenders
         offenders_objects = []
         genders = ["Male", "Female", "Other"]
         # Generate 1500 offenders
         for i in range(1500):
             offender_id = f"OFF-{i+1:04d}"
-            name = f"Offender {i+1}"
+            # Let's seed specific names for entity resolution demo
+            if i == 10:
+                name = "Ramesh Kumar"
+            elif i == 110:
+                name = "Ramesh K. (Alias R. Kumar)"
+            elif i == 20:
+                name = "Zia Ahmed"
+            elif i == 120:
+                name = "Syed Zia Ahmed"
+            else:
+                name = f"Offender {i+1}"
+                
             age = random.randint(18, 65)
             gender = random.choices(genders, weights=[88, 11, 1], k=1)[0]
             num_priors = random.choices([0, 1, 2, 3, 4, 5, 8, 12], weights=[60, 20, 10, 5, 2, 1.5, 1, 0.5], k=1)[0]
-            
-            # Risk score based on priors and age (higher priors, higher risk)
             risk_score = min(100.0, float(num_priors * 12 + random.randint(0, 15)))
             
             offender = Offender(
@@ -137,8 +198,93 @@ def seed_database():
         db.commit()
         print(f"{len(offenders_objects)} Offenders seeded.")
         
+        # Link some offenders to the Gangs
+        for offender in offenders_objects:
+            if random.random() < 0.15:
+                gang = random.choice(gangs_objects)
+                offender.gangs.append(gang)
+                
+        # Seed Graph Nodes: Phones, Vehicles, Bank Accounts
+        phones_objects = []
+        vehicles_objects = []
+        accounts_objects = []
+        
+        for idx, o in enumerate(offenders_objects):
+            # Seed Phone (75% of offenders have phones)
+            if random.random() < 0.75:
+                phone = Phone(
+                    phone_number=f"+91-9844{idx:06d}",
+                    owner_offender_id=o.id
+                )
+                db.add(phone)
+                phones_objects.append(phone)
+                
+            # Seed Vehicle (50% of offenders have vehicles)
+            if random.random() < 0.50:
+                vehicle = Vehicle(
+                    plate_number=f"KA-{random.randint(10,55)}-XY-{idx:04d}",
+                    make=random.choice(["Maruti", "Hyundai", "Tata", "Mahindra", "Honda"]),
+                    model=random.choice(["Swift", "i20", "Nexon", "Thar", "City"]),
+                    owner_offender_id=o.id
+                )
+                db.add(vehicle)
+                vehicles_objects.append(vehicle)
+                
+            # Seed Bank Account (60% of offenders)
+            if random.random() < 0.60:
+                account = Account(
+                    account_number=f"SB-{random.randint(100000,999999)}-{idx:04d}",
+                    bank_name=random.choice(["State Bank of India", "HDFC Bank", "ICICI Bank", "Canara Bank"]),
+                    owner_offender_id=o.id
+                )
+                db.add(account)
+                accounts_objects.append(account)
+                
+        db.commit()
+        print("Associated Phones, Vehicles, and Accounts seeded.")
+
+        # Seed Calls between phones
+        for i in range(120):
+            if len(phones_objects) > 2:
+                caller = random.choice(phones_objects)
+                receiver = random.choice(phones_objects)
+                if caller.phone_number != receiver.phone_number:
+                    call = Call(
+                        caller_phone=caller.phone_number,
+                        receiver_phone=receiver.phone_number,
+                        timestamp=datetime.utcnow() - timedelta(days=random.randint(0, 90), hours=random.randint(0, 23)),
+                        duration_seconds=random.randint(10, 600)
+                    )
+                    db.add(call)
+        
+        # Seed Locations & Visits
+        locations_objects = []
+        loc_names = ["Kempegowda Bus Stand", "MG Road Metro", "Koramangala 3rd Block", "Yeshwanthpur Toll", "Silk Board Junction", "Mysore Palace Plaza", "Mangalore Port Warehouse", "Dharwad Court Complex"]
+        for idx, lname in enumerate(loc_names):
+            location = Location(
+                id=f"LOC-{idx+1:02d}",
+                name=lname,
+                lat=12.9716 + random.uniform(-0.1, 0.1),
+                lng=77.5946 + random.uniform(-0.1, 0.1)
+            )
+            db.add(location)
+            locations_objects.append(location)
+            
+        db.commit()
+        
+        for idx, o in enumerate(offenders_objects[:100]): # Seed visits for a subset of offenders
+            for _ in range(random.randint(1, 3)):
+                loc = random.choice(locations_objects)
+                visit = Visit(
+                    offender_id=o.id,
+                    location_id=loc.id,
+                    timestamp=datetime.utcnow() - timedelta(days=random.randint(1, 45), hours=random.randint(0, 23))
+                )
+                db.add(visit)
+        db.commit()
+        print("Calls, Locations, and Visits graph links seeded.")
+
         # Establish known associate connections for network analysis
-        # Connect some offenders to create gangs/communities
         gang_count = 15
         for g in range(gang_count):
             gang_size = random.randint(5, 20)
@@ -152,8 +298,18 @@ def seed_database():
         db.commit()
         print("Criminal network associates linked.")
         
-        # 4. Seed FIR Records
-        # Generate 8000 FIRs spread over 2024 to mid-2026
+        # 6. Seed Entity Match Review queue
+        reviews = [
+            EntityMatchReview(offender1_id=offenders_objects[10].id, offender2_id=offenders_objects[110].id, confidence_score=0.88, status="Pending"),
+            EntityMatchReview(offender1_id=offenders_objects[20].id, offender2_id=offenders_objects[120].id, confidence_score=0.91, status="Pending"),
+            EntityMatchReview(offender1_id=offenders_objects[35].id, offender2_id=offenders_objects[235].id, confidence_score=0.74, status="Pending")
+        ]
+        for r in reviews:
+            db.add(r)
+        db.commit()
+        print("Entity merge candidate reviews seeded.")
+
+        # 7. Seed FIR Records
         fir_objects = []
         statuses = ["Investigation", "Charge Sheeted", "Closed"]
         victim_genders = ["Male", "Female"]
@@ -162,31 +318,70 @@ def seed_database():
         end_date = datetime(2026, 6, 15)
         delta_days = (end_date - start_date).days
         
+        officer_usernames = ["sho", "constable", "officer"]
+
         for i in range(8000):
             fir_id = f"FIR-{2024 + random.randint(0,2)}-{i+1:05d}"
             station = random.choice(stations_objects)
             crime_type, ipc, severity = random.choice(CRIME_TYPES_IPC)
             
-            # Random date
             days_offset = random.randint(0, delta_days)
             date_filed = start_date + timedelta(days=days_offset)
             
-            # Point location around station
             jitter_lat = random.uniform(-0.04, 0.04)
             jitter_lng = random.uniform(-0.04, 0.04)
             
-            # 20% of FIRs have accused linked, 5% have multiple co-accused (syndicates)
             accused_list = []
             if random.random() < 0.25:
-                # Repeat offenders are 3x more likely to be picked
                 weighted_offenders = random.choices(
                     offenders_objects,
                     weights=[(o.num_prior_offenses + 1) for o in offenders_objects],
                     k=random.choices([1, 2, 3], weights=[80, 15, 5])[0]
                 )
-                # Ensure unique accused per FIR
                 accused_list = list(set(weighted_offenders))
                 
+            priority = random.choice(["Critical", "High", "Medium", "Low"])
+            sla_days = {"Critical": 15, "High": 30, "Medium": 60, "Low": 90}[priority]
+            sla_deadline = date_filed + timedelta(days=sla_days)
+
+            # Assign timeline logs
+            timeline_logs = [
+                {"date": date_filed.isoformat(), "event": "FIR registered automatically in system Data Lake."},
+                {"date": (date_filed + timedelta(hours=2)).isoformat(), "event": f"Case cataloged under {ipc}."}
+            ]
+            status = random.choices(statuses, weights=[50, 35, 15])[0]
+            if status != "Investigation":
+                timeline_logs.append({
+                    "date": (date_filed + timedelta(days=random.randint(5, 12))).isoformat(),
+                    "event": "Evidence collected: Suspect details mapped to database profiles."
+                })
+            if status == "Charge Sheeted":
+                timeline_logs.append({
+                    "date": (date_filed + timedelta(days=random.randint(15, 25))).isoformat(),
+                    "event": "Chargesheet drafted and filed in District Court."
+                })
+            elif status == "Closed":
+                timeline_logs.append({
+                    "date": (date_filed + timedelta(days=random.randint(10, 20))).isoformat(),
+                    "event": "Final report approved. Case closed by station head."
+                })
+
+            # Mock AI assistance fields
+            summary = f"FIR registered on {date_filed.strftime('%Y-%m-%d')} regarding {crime_type} at {station.name}. Victim reported {ipc} violation. Preliminary assessment has been initiated."
+            
+            # Simulated evidence links
+            linked_evidences = []
+            if accused_list:
+                prime = accused_list[0]
+                linked_evidences.append({"type": "Primary Suspect", "id": prime.id, "reason": "Linked in complaints and FIR statements."})
+                if random.random() < 0.6:
+                    linked_evidences.append({"type": "Associate Phone Link", "id": f"+91-9844{random.randint(1,100):03d}", "reason": "Call log correlation detected 1hr prior to crime."})
+                    
+            leads = [
+                f"Obtain CCTV feeds from near lat {station.lat:.4f}, lng {station.lng:.4f}.",
+                "Cross reference accused associates list for vehicle ownership checks."
+            ]
+
             fir = FIRRecord(
                 id=fir_id,
                 police_station_id=station.id,
@@ -195,9 +390,16 @@ def seed_database():
                 date_filed=date_filed,
                 lat=station.lat + jitter_lat,
                 lng=station.lng + jitter_lng,
-                status=random.choices(statuses, weights=[50, 35, 15])[0],
+                status=status,
                 victim_age=random.randint(18, 70),
-                victim_gender=random.choice(victim_genders)
+                victim_gender=random.choice(victim_genders),
+                assigned_officer_id=random.choice(officer_usernames) if status == "Investigation" else None,
+                priority=priority,
+                sla_deadline=sla_deadline,
+                summary=summary,
+                leads=leads,
+                evidence_correlations=linked_evidences,
+                timeline=timeline_logs
             )
             
             for acc in accused_list:
@@ -206,18 +408,17 @@ def seed_database():
             db.add(fir)
             
         db.commit()
-        print("8,000 FIR Records seeded.")
+        print("8,000 FIR Records with timeline & SLA seeded.")
         
-        # 5. Seed Socio-Economic Indicators (5 years per district)
+        # 8. Seed Socio-Economic Indicators (5 years per district)
         for _, d_model in districts_objects:
             base_gdp = random.randint(90000, 220000)
             base_poverty = random.uniform(8.0, 35.0)
             base_school = random.uniform(1.2, 5.0)
             base_hospital = random.uniform(0.5, 3.0)
-            base_police = random.uniform(80.0, 200.0) # officers per 100K pop
+            base_police = random.uniform(80.0, 200.0)
             
             for year in range(2022, 2027):
-                # Apply small yearly trend changes
                 trend = (year - 2022)
                 indicator = SocioEconomicIndicator(
                     district_id=d_model.id,
@@ -232,6 +433,28 @@ def seed_database():
                 
         db.commit()
         print("Socio-economic indicators seeded.")
+
+        # 9. Seed Audit Logs to demonstrate immutable logging
+        audit_activities = [
+            {"user": "admin", "role": "DGP", "action": "LOGIN", "details": "Successful login via Web Console."},
+            {"user": "sp", "role": "SP", "action": "VIEW_OFFENDER_PROFILE", "details": "Viewed criminal profile for Ramesh Kumar (OFF-0011)"},
+            {"user": "sho", "role": "SHO", "action": "EXPORT_REPORT", "details": "Exported Case SLA Statistics Report for Bengaluru District as CSV"},
+            {"user": "admin", "role": "DGP", "action": "ENTITY_RESOLVE_MERGE", "details": "Merged profile Ramesh K. (OFF-0111) into Ramesh Kumar (OFF-0011)"},
+            {"user": "sho", "role": "SHO", "action": "AI_COPILOT_QUERY", "details": "AI Chat: 'What are the main associate links for Gang 01?'"}
+        ]
+        for act in audit_activities:
+            log = AuditLog(
+                timestamp=datetime.utcnow() - timedelta(hours=random.randint(1, 48)),
+                username=act["user"],
+                role=act["role"],
+                action=act["action"],
+                details={"message": act["details"]},
+                ip_address=f"10.25.{random.randint(10,99)}.{random.randint(1,250)}"
+            )
+            db.add(log)
+        db.commit()
+        print("Initial Audit Trail seeded.")
+
         print("Data Seeding Completed Successfully!")
         
     except Exception as e:

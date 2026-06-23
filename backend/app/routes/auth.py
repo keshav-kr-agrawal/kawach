@@ -1,70 +1,60 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models import User
 from app.schemas import TokenResponse, LoginRequest
-from app.auth import create_access_token, get_password_hash, verify_password
+from app.auth import create_access_token, verify_password
 
 router = APIRouter()
 
-# Mock users for Datathon Demo Day
-MOCK_USERS = {
-    "admin": {
-        "password_hash": get_password_hash("admin123"),
-        "role": "State Admin",
-        "district_id": None
-    },
-    "district": {
-        "password_hash": get_password_hash("district123"),
-        "role": "District Head",
-        "district_id": 1  # Bengaluru Urban
-    },
-    "officer": {
-        "password_hash": get_password_hash("officer123"),
-        "role": "Field Officer",
-        "district_id": 1  # Bengaluru Urban
-    }
-}
-
 @router.post("/login", response_model=TokenResponse)
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = MOCK_USERS.get(form_data.username)
-    if not user or not verify_password(form_data.password, user["password_hash"]):
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Simple role logic (or read from custom fields in OAuth2 form)
-    # We can pass the role in the client scope/client_id, but here we read it directly from the mock database
     access_token = create_access_token(
-        data={"sub": form_data.username, "role": user["role"], "district_id": user["district_id"]}
+        data={"sub": user.username, "role": user.role, "district_id": user.district_id, "station_id": user.station_id}
     )
     
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "username": form_data.username,
-        "role": user["role"],
-        "district_id": user["district_id"]
+        "username": user.username,
+        "role": user.role,
+        "district_id": user.district_id,
+        "station_id": user.station_id
     }
 
 @router.post("/login-json", response_model=TokenResponse)
-def login_json(request: LoginRequest):
-    user = MOCK_USERS.get(request.username)
-    if not user or not verify_password(request.password, user["password_hash"]):
+def login_json(request: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == request.username).first()
+    if not user or not verify_password(request.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password"
         )
     
+    # Allow overwriting role/district for demo testing from UI dropdown if admin
+    role = request.role if (user.role == "DGP" and request.role) else user.role
+    district_id = request.district_id if (user.role == "DGP" and request.district_id) else user.district_id
+    station_id = user.station_id
+    
     access_token = create_access_token(
-        data={"sub": request.username, "role": request.role, "district_id": request.district_id or user["district_id"]}
+        data={"sub": user.username, "role": role, "district_id": district_id, "station_id": station_id}
     )
     
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "username": request.username,
-        "role": request.role,
-        "district_id": request.district_id or user["district_id"]
+        "username": user.username,
+        "role": role,
+        "district_id": district_id,
+        "station_id": station_id
     }
+

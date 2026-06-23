@@ -3,108 +3,180 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import networkx as nx
 from app.database import get_db
-from app.models import Offender, FIRRecord
-from sqlalchemy import select
+from app.models import Offender, FIRRecord, PoliceStation, Gang, Vehicle, Phone, Account, Call, Location, Visit
+from app.auth import get_current_user_claims
 
 router = APIRouter()
 
 @router.get("/graph")
-def get_network_graph(min_weight: int = 1, db: Session = Depends(get_db)):
-    # Fetch all offenders and their mutual links through FIRs
-    offenders = db.query(Offender).all()
-    firs = db.query(FIRRecord).all()
+def get_network_graph(min_weight: int = 1, db: Session = Depends(get_db), claims: dict = Depends(get_current_user_claims)):
+    role = claims.get("role")
     
-    # Construct NetworkX Graph
-    G = nx.Graph()
+    # 1. Gather filtered list of Offenders based on role boundaries
+    offenders_query = db.query(Offender)
+    if role == "SP":
+        offenders_query = offenders_query.join(FIRRecord, Offender.firs).join(PoliceStation).filter(PoliceStation.district_id == claims.get("district_id"))
+    elif role == "SHO":
+        offenders_query = offenders_query.join(FIRRecord, Offender.firs).filter(FIRRecord.police_station_id == claims.get("station_id"))
+    elif role == "Constable":
+        offenders_query = offenders_query.join(FIRRecord, Offender.firs).filter(FIRRecord.assigned_officer_id == claims.get("username"))
+        
+    offenders = offenders_query.distinct().all()
+    offender_ids = {o.id for o in offenders}
+    
+    nodes_res = []
+    links_res = []
     
     # Add offender nodes
-    offender_map = {}
     for o in offenders:
-        G.add_node(
-            o.id,
-            name=o.name,
-            risk_score=o.risk_score,
-            priors=o.num_prior_offenses
-        )
-        offender_map[o.id] = o
+        nodes_res.append({
+            "id": o.id,
+            "label": o.name,
+            "type": "Person",
+            "risk_score": o.risk_score,
+            "priors": o.num_prior_offenses
+        })
         
-    # Add links for known associates
-    for o in offenders:
+        # Add links for associates (if both are in the filtered scope or to show immediate links)
         for assoc in o.associates:
-            G.add_edge(o.id, assoc.id, weight=2)
+            if assoc.id in offender_ids:
+                links_res.append({
+                    "source": o.id,
+                    "target": assoc.id,
+                    "type": "Associated With"
+                })
+                
+        # Link to Gangs
+        for gang in o.gangs:
+            # Add Gang node if not already added
+            gang_node_id = f"gang_{gang.id}"
+            if not any(n["id"] == gang_node_id for n in nodes_res):
+                nodes_res.append({
+                    "id": gang_node_id,
+                    "label": gang.name,
+                    "type": "Gang",
+                    "description": gang.description
+                })
+            links_res.append({
+                "source": o.id,
+                "target": gang_node_id,
+                "type": "Member Of"
+            })
             
-    # Add links for co-accused in FIRs
+        # Link to Vehicles
+        for veh in o.vehicles:
+            veh_node_id = f"veh_{veh.plate_number}"
+            if not any(n["id"] == veh_node_id for n in nodes_res):
+                nodes_res.append({
+                    "id": veh_node_id,
+                    "label": f"{veh.make} {veh.model} ({veh.plate_number})",
+                    "type": "Vehicle"
+                })
+            links_res.append({
+                "source": o.id,
+                "target": veh_node_id,
+                "type": "Owned"
+            })
+            
+        # Link to Phones
+        for ph in o.phones:
+            ph_node_id = f"ph_{ph.phone_number}"
+            if not any(n["id"] == ph_node_id for n in nodes_res):
+                nodes_res.append({
+                    "id": ph_node_id,
+                    "label": ph.phone_number,
+                    "type": "Phone"
+                })
+            links_res.append({
+                "source": o.id,
+                "target": ph_node_id,
+                "type": "Owned"
+            })
+            
+        # Link to Accounts
+        for acc in o.accounts:
+            acc_node_id = f"acc_{acc.account_number}"
+            if not any(n["id"] == acc_node_id for n in nodes_res):
+                nodes_res.append({
+                    "id": acc_node_id,
+                    "label": f"{acc.bank_name} {acc.account_number}",
+                    "type": "Account"
+                })
+            links_res.append({
+                "source": o.id,
+                "target": acc_node_id,
+                "type": "Owned"
+            })
+
+    # Add calls between seeded phone nodes in scope
+    phone_numbers = {n["id"].replace("ph_", "") for n in nodes_res if n["type"] == "Phone"}
+    if phone_numbers:
+        calls = db.query(Call).filter(Call.caller_phone.in_(phone_numbers) | Call.receiver_phone.in_(phone_numbers)).all()
+        for call in calls:
+            links_res.append({
+                "source": f"ph_{call.caller_phone}",
+                "target": f"ph_{call.receiver_phone}",
+                "type": "Called",
+                "details": f"{call.duration_seconds} sec on {call.timestamp.strftime('%Y-%m-%d')}"
+            })
+            
+    # Add locations visited
+    visits = db.query(Visit).filter(Visit.offender_id.in_(offender_ids)).all()
+    for v in visits:
+        loc_node_id = f"loc_{v.location_id}"
+        # Add Location node if not already added
+        if not any(n["id"] == loc_node_id for n in nodes_res):
+            nodes_res.append({
+                "id": loc_node_id,
+                "label": v.location.name,
+                "type": "Location",
+                "lat": v.location.lat,
+                "lng": v.location.lng
+            })
+        links_res.append({
+            "source": v.offender_id,
+            "target": loc_node_id,
+            "type": "Visited"
+        })
+
+    # Co-accused in FIRs
+    firs_query = db.query(FIRRecord)
+    if role == "SP":
+        firs_query = firs_query.join(PoliceStation).filter(PoliceStation.district_id == claims.get("district_id"))
+    elif role == "SHO":
+        firs_query = firs_query.filter(FIRRecord.police_station_id == claims.get("station_id"))
+    elif role == "Constable":
+        firs_query = firs_query.filter(FIRRecord.assigned_officer_id == claims.get("username"))
+        
+    firs = firs_query.all()
     for f in firs:
-        accused_ids = [a.id for a in f.accused]
+        accused_ids = [a.id for a in f.accused if a.id in offender_ids]
         if len(accused_ids) > 1:
             for i in range(len(accused_ids)):
                 for j in range(i + 1, len(accused_ids)):
-                    id1, id2 = accused_ids[i], accused_ids[j]
-                    if G.has_edge(id1, id2):
-                        G[id1][id2]['weight'] += 1
-                    else:
-                        G.add_edge(id1, id2, weight=1)
-                        
-    # Filter by min_weight edge filter to keep graph clean
-    filtered_edges = [(u, v, d) for u, v, d in G.edges(data=True) if d['weight'] >= min_weight]
-    
-    # Create new graph with filtered edges to compute metrics
-    F = nx.Graph()
-    F.add_nodes_from(G.nodes(data=True))
-    F.add_edges_from(filtered_edges)
-    
-    # Keep only nodes with degree > 0 for demo visual clarity (unless they have high risk score)
-    nodes_to_keep = [n for n in F.nodes() if F.degree(n) > 0 or (G.nodes[n].get('priors', 0) > 4)]
-    F = F.subgraph(nodes_to_keep).copy()
-    
-    if len(F.nodes()) == 0:
-        return {"nodes": [], "links": []}
-        
-    # Calculate Centrality and PageRank
-    try:
-        deg_centrality = nx.degree_centrality(F)
-        betweenness = nx.betweenness_centrality(F)
-        pagerank = nx.pagerank(F, alpha=0.85)
-    except Exception:
-        deg_centrality = {n: 0.0 for n in F.nodes()}
-        betweenness = {n: 0.0 for n in F.nodes()}
-        pagerank = {n: 0.0 for n in F.nodes()}
-        
-    # Louvain Community Detection
-    try:
-        from networkx.algorithms.community import louvain_communities
-        communities = list(louvain_communities(F))
-        community_map = {}
-        for c_idx, comm in enumerate(communities):
-            for node in comm:
-                community_map[node] = c_idx
-    except Exception:
-        community_map = {n: 0 for n in F.nodes()}
-        
-    # Format nodes
-    nodes_res = []
-    for n_id, data in F.nodes(data=True):
-        nodes_res.append({
-            "id": n_id,
-            "name": data.get("name"),
-            "risk_score": data.get("risk_score", 0.0),
-            "priors": data.get("priors", 0),
-            "degree_centrality": round(float(deg_centrality.get(n_id, 0.0)), 4),
-            "betweenness_centrality": round(float(betweenness.get(n_id, 0.0)), 4),
-            "pagerank": round(float(pagerank.get(n_id, 0.0)), 4),
-            "community_id": community_map.get(n_id, 0)
-        })
-        
-    # Format edges
-    links_res = []
-    for u, v, data in F.edges(data=True):
-        links_res.append({
-            "source": u,
-            "target": v,
-            "weight": data.get("weight", 1)
-        })
-        
+                    links_res.append({
+                        "source": accused_ids[i],
+                        "target": accused_ids[j],
+                        "type": "Arrested With",
+                        "details": f"FIR: {f.id} ({f.crime_type})"
+                    })
+
+    # Limit nodes to 120 max for optimal rendering performance
+    if len(nodes_res) > 120:
+        # Sort by importance: prioritize Person/Gang/Location, then risk score/priors
+        nodes_res = sorted(
+            nodes_res,
+            key=lambda x: (
+                0 if x["type"] in ["Person", "Gang"] else 1,
+                -x.get("risk_score", 0) if "risk_score" in x else 0
+            )
+        )[:120]
+        nodes_ids = {n["id"] for n in nodes_res}
+        # Filter links
+        links_res = [l for l in links_res if l["source"] in nodes_ids and l["target"] in nodes_ids]
+
     return {
         "nodes": nodes_res,
         "links": links_res
     }
+

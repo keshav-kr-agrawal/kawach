@@ -1,41 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { Network, Search, Shield, Zap, Info, Filter } from 'lucide-react';
+import { Network, Search, Shield, Zap, Info, Filter, Phone, Car, CreditCard, Users, MapPin, User } from 'lucide-react';
 
 function NetworkView({ token, user }) {
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
   const [selectedNode, setSelectedNode] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('All');
   const [loading, setLoading] = useState(true);
+
+  // Simulated layout coordinates for rendering the full graph in a responsive container
+  const [coords, setCoords] = useState({});
 
   useEffect(() => {
     const fetchGraph = async () => {
       try {
         setLoading(true);
-        const res = await fetch('http://localhost:8000/api/network/graph');
+        const res = await fetch('http://localhost:8000/api/network/graph', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch graph data');
         const data = await res.json();
         
         if (data.nodes && data.nodes.length > 0) {
           setGraphData(data);
-        } else {
-          // Mock network data fallback
-          const mockNodes = [
-            { id: 'OFF-0001', name: 'Ramesh Kumar', risk_score: 94.2, priors: 12, community_id: 1, betweenness_centrality: 0.185, pagerank: 0.082 },
-            { id: 'OFF-0002', name: 'Suresh Gowda', risk_score: 86.5, priors: 8, community_id: 1, betweenness_centrality: 0.124, pagerank: 0.064 },
-            { id: 'OFF-0003', name: 'Anil K.', risk_score: 72.1, priors: 5, community_id: 1, betweenness_centrality: 0.042, pagerank: 0.031 },
-            { id: 'OFF-0004', name: 'Zia Ahmed', risk_score: 91.0, priors: 9, community_id: 2, betweenness_centrality: 0.210, pagerank: 0.095 },
-            { id: 'OFF-0005', name: 'Imran Khan', risk_score: 78.4, priors: 6, community_id: 2, betweenness_centrality: 0.095, pagerank: 0.048 },
-            { id: 'OFF-0006', name: 'Vikram Singh', risk_score: 64.0, priors: 3, community_id: 2, betweenness_centrality: 0.021, pagerank: 0.022 },
-            { id: 'OFF-0007', name: 'Mahesh B.', risk_score: 88.2, priors: 7, community_id: 3, betweenness_centrality: 0.142, pagerank: 0.071 }
-          ];
-          const mockLinks = [
-            { source: 'OFF-0001', target: 'OFF-0002', weight: 3 },
-            { source: 'OFF-0002', target: 'OFF-0003', weight: 1 },
-            { source: 'OFF-0004', target: 'OFF-0005', weight: 4 },
-            { source: 'OFF-0005', target: 'OFF-0006', weight: 2 },
-            { source: 'OFF-0001', target: 'OFF-0004', weight: 1 }, // Broker link connecting syndicates!
-            { source: 'OFF-0004', target: 'OFF-0007', weight: 2 }
-          ];
-          setGraphData({ nodes: mockNodes, links: mockLinks });
+          
+          // Generate layout coordinates using simple circle/radial coordinates to avoid library mismatches
+          const newCoords = {};
+          const centerX = 300;
+          const centerY = 200;
+          
+          data.nodes.forEach((node, idx) => {
+            // Distribute nodes radially based on type to separate them visually
+            let radius = 120;
+            if (node.type === 'Person') radius = 70;
+            else if (node.type === 'Gang') radius = 30;
+            else if (node.type === 'Location') radius = 170;
+            
+            const angle = (idx / data.nodes.length) * 2 * Math.PI;
+            newCoords[node.id] = {
+              x: centerX + radius * Math.cos(angle) + (randomJitter(idx) * 15),
+              y: centerY + radius * Math.sin(angle) + (randomJitter(idx + 1) * 15)
+            };
+          });
+          setCoords(newCoords);
+          
+          // Set default selected node
+          const leader = data.nodes.find(n => n.type === 'Person' && n.risk_score > 80);
+          if (leader) setSelectedNode(leader);
         }
       } catch (err) {
         console.error('Failed to fetch graph data:', err);
@@ -47,144 +58,209 @@ function NetworkView({ token, user }) {
     fetchGraph();
   }, [token]);
 
-  // Color mapping per community using clean professional colors
-  const COMMUNITY_COLORS = {
-    0: '#4F46E5', // Indigo
-    1: '#F59E0B', // Amber
-    2: '#EF4444', // Rose
-    3: '#3B82F6'  // Blue
+  const randomJitter = (seed) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x) - 0.5;
   };
 
-  const filteredNodes = graphData.nodes.filter(n =>
-    n.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    n.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const TYPE_COLORS = {
+    Person: '#4F46E5',  // Indigo
+    Gang: '#F59E0B',    // Amber
+    Vehicle: '#3B82F6', // Blue
+    Phone: '#10B981',   // Emerald
+    Account: '#8B5CF6', // Violet
+    Location: '#EF4444' // Rose
+  };
+
+  const getNodeIcon = (type) => {
+    switch (type) {
+      case 'Person': return <User className="w-3.5 h-3.5" />;
+      case 'Gang': return <Users className="w-3.5 h-3.5" />;
+      case 'Vehicle': return <Car className="w-3.5 h-3.5" />;
+      case 'Phone': return <Phone className="w-3.5 h-3.5" />;
+      case 'Account': return <CreditCard className="w-3.5 h-3.5" />;
+      default: return <MapPin className="w-3.5 h-3.5" />;
+    }
+  };
+
+  const filteredNodes = graphData.nodes.filter(n => {
+    const matchesSearch = n.label.toLowerCase().includes(searchQuery.toLowerCase()) || n.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = filterType === 'All' || n.type === filterType;
+    return matchesSearch && matchesType;
+  });
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 h-[calc(100vh-12rem)]">
-      {/* Network Sidebar */}
-      <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-full overflow-hidden">
-        <div className="flex items-center space-x-2 mb-6">
+    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 h-auto xl:h-[calc(100vh-12rem)]">
+      {/* Search & List Panel */}
+      <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-[450px] xl:h-full overflow-hidden">
+        <div className="flex items-center space-x-2 mb-4">
           <Search className="w-4 h-4 text-indigo-600" />
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Search Criminal Gangs</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Search Entity Graph</h4>
         </div>
         
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Enter criminal name or ID..."
-          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm mb-6"
+          placeholder="Search suspects, plates, phones..."
+          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm mb-4"
         />
 
-        <div className="border-t border-slate-200 my-2"></div>
+        <div className="mb-4">
+          <label className="block text-[10px] text-slate-500 mb-1.5 uppercase font-bold">Filter Entity Type</label>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+          >
+            <option value="All">All Entities</option>
+            <option value="Person">Suspects (Persons)</option>
+            <option value="Gang">Criminal Gangs</option>
+            <option value="Vehicle">Registered Vehicles</option>
+            <option value="Phone">Phone Numbers</option>
+            <option value="Account">Bank Accounts</option>
+            <option value="Location">Seeded Locations</option>
+          </select>
+        </div>
 
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">Key Gang Connectors</h4>
-        <p className="text-[9px] text-slate-400 mb-4">Criminals who link different gang syndicates:</p>
-        <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-          {filteredNodes.slice(0, 10).map(n => (
+        <div className="border-t border-slate-200 my-2" />
+
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-3">Matching Node Indexes</h4>
+        <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+          {filteredNodes.slice(0, 25).map(n => (
             <button
               key={n.id}
               onClick={() => setSelectedNode(n)}
-              className={`w-full p-4 rounded-xl text-left border transition-all duration-200 ${
+              className={`w-full p-3.5 rounded-xl text-left border transition-all duration-200 ${
                 selectedNode?.id === n.id
                   ? 'bg-indigo-50/50 border-indigo-500 shadow-sm'
                   : 'bg-white border-slate-200 hover:bg-slate-50'
               }`}
             >
               <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] font-bold text-slate-400 font-mono">{n.id}</span>
-                <span className="text-[10px] font-bold" style={{ color: COMMUNITY_COLORS[n.community_id % 4] }}>
-                  Gang Syndicate {n.community_id}
+                <span className="text-[9px] font-bold text-slate-400 font-mono">{n.id}</span>
+                <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-sm" style={{ backgroundColor: `${TYPE_COLORS[n.type]}10`, color: TYPE_COLORS[n.type] }}>
+                  {n.type}
                 </span>
               </div>
-              <h5 className="text-xs font-bold text-slate-800">{n.name}</h5>
-              <div className="flex justify-between text-[9px] text-slate-500 mt-2">
-                <span>Connection Score: {n.pagerank}</span>
-                <span>Bridge Score: {n.betweenness_centrality}</span>
-              </div>
+              <h5 className="text-xs font-bold text-slate-800 truncate">{n.label}</h5>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Network Graph Render Canvas */}
-      <div className="glass-panel p-6 rounded-2xl xl:col-span-3 flex flex-col h-full relative overflow-hidden">
-        <div className="absolute top-8 left-8 flex items-center space-x-2 z-10 bg-white/90 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-          <Zap className="w-5 h-5 text-amber-500 animate-pulse" />
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-800">Gang Relationship Network</span>
+      {/* Relation Graph Canvas */}
+      <div className="glass-panel p-6 rounded-2xl xl:col-span-3 flex flex-col h-[500px] xl:h-full relative overflow-hidden">
+        <div className="absolute top-8 left-8 flex items-center space-x-2 z-10 bg-white/95 px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+          <Zap className="w-5 h-5 text-indigo-600 animate-pulse" />
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-800">Intelligence Graph Workspace</span>
         </div>
 
-        {/* Info box overlay explaining graph relationships */}
         <div className="absolute top-20 left-8 right-8 bg-blue-50 border border-blue-100 rounded-xl p-3 text-[10px] text-blue-800 z-10">
-          <strong>Help Guide:</strong> Circles represent offenders. Connected lines mean they co-offended in the same FIR case. Larger circles have committed more crimes. Red dashed lines identify critical bridge suspect brokers connecting separate gangs. Click on any circle to view criminal profile.
+          <strong>Graph Network Guide:</strong> Visualizes connections spanning phone calls, vehicle ownerships, co-arrests, and gang affiliations. Click on nodes to review connection properties and owner records.
         </div>
 
-        {/* Graph simulation panel */}
-        <div className="flex-1 w-full bg-slate-100 rounded-xl border border-slate-200 relative flex items-center justify-center overflow-hidden shadow-inner pt-16">
-          {/* SVG representation of Force directed nodes */}
+        <div className="flex-1 w-full bg-slate-100/50 rounded-2xl border border-slate-200/50 relative flex items-center justify-center overflow-hidden pt-16 shadow-inner">
           <svg className="w-full h-full max-h-[500px]" viewBox="0 0 600 400">
-            {/* Draw Links/Edges with light theme colors */}
-            <line x1={180} y1={180} x2={280} y2={130} stroke="#cbd5e1" strokeWidth={3} />
-            <line x1={280} y1={130} x2={220} y2={250} stroke="#cbd5e1" strokeWidth={1} />
-            <line x1={400} y1={150} x2={480} y2={220} stroke="#cbd5e1" strokeWidth={4} />
-            <line x1={480} y1={220} x2={430} y2={290} stroke="#cbd5e1" strokeWidth={2} />
-            <line x1={400} y1={150} x2={350} y2={240} stroke="#cbd5e1" strokeWidth={2} />
-            
-            {/* Broker connection edge linking communities */}
-            <line x1={180} y1={180} x2={400} y2={150} stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" />
+            {/* Draw Links */}
+            {graphData.links.map((link, idx) => {
+              const from = coords[link.source];
+              const to = coords[link.target];
+              if (!from || !to) return null;
+              
+              const isCall = link.type === 'Called';
+              const isCoAccused = link.type === 'Arrested With';
+              
+              return (
+                <line
+                  key={idx}
+                  x1={from.x}
+                  y1={from.y}
+                  x2={to.x}
+                  y2={to.y}
+                  stroke={isCoAccused ? '#ef4444' : isCall ? '#10b981' : '#94a3b8'}
+                  strokeWidth={isCall || isCoAccused ? 2 : 1.2}
+                  strokeDasharray={isCoAccused ? "4 4" : "0"}
+                  title={link.type}
+                />
+              );
+            })}
 
-            {/* Render Nodes as SVG circles */}
-            {graphData.nodes.map((node, idx) => {
-              // Standard positions
-              const positions = [
-                { x: 180, y: 180 }, // OFF-1
-                { x: 280, y: 130 }, // OFF-2
-                { x: 220, y: 250 }, // OFF-3
-                { x: 400, y: 150 }, // OFF-4 (Broker node)
-                { x: 480, y: 220 }, // OFF-5
-                { x: 430, y: 290 }, // OFF-6
-                { x: 350, y: 240 }  // OFF-7
-              ];
-              const pos = positions[idx % positions.length];
+            {/* Draw Nodes */}
+            {graphData.nodes.map((node) => {
+              const pos = coords[node.id];
+              if (!pos) return null;
+              
               const isSelected = selectedNode?.id === node.id;
-              const size = isSelected ? 22 : 14 + (node.priors * 0.8);
-
+              const size = isSelected ? 16 : (node.type === 'Person' ? 12 : 9);
+              
               return (
                 <g key={node.id} className="cursor-pointer" onClick={() => setSelectedNode(node)}>
-                  {/* Outer circle halo for selection */}
                   {isSelected && (
                     <circle cx={pos.x} cy={pos.y} r={size + 6} fill="none" stroke="#4F46E5" strokeWidth={1.5} strokeDasharray="3 3" />
                   )}
-                  {/* Central Node Circle */}
                   <circle
                     cx={pos.x}
                     cy={pos.y}
                     r={size}
-                    fill={COMMUNITY_COLORS[node.community_id % 4]}
+                    fill={TYPE_COLORS[node.type]}
                     stroke="#ffffff"
                     strokeWidth={2}
                   />
-                  {/* Text labels for names */}
-                  <text x={pos.x} y={pos.y - size - 4} fill="#0f172a" fontSize={9} fontWeight="semibold" textAnchor="middle">{node.name}</text>
+                  {/* Icon representations inside nodes if selected */}
+                  {isSelected && (
+                    <foreignObject x={pos.x - 7} y={pos.y - 7} width={14} height={14}>
+                      <div className="text-white flex items-center justify-center">
+                        {getNodeIcon(node.type)}
+                      </div>
+                    </foreignObject>
+                  )}
+                  <text
+                    x={pos.x}
+                    y={pos.y - size - 4}
+                    fill="#0f172a"
+                    fontSize={8}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    className="select-none bg-white px-1"
+                  >
+                    {node.label}
+                  </text>
                 </g>
               );
             })}
           </svg>
 
-          {/* Node detail display panel */}
+          {/* Node detail card overlay */}
           {selectedNode && (
-            <div className="absolute bottom-6 right-6 bg-white p-5 rounded-2xl border border-slate-200 border-l-4 border-l-indigo-500 max-w-sm shadow-lg z-10">
-              <div className="flex items-center justify-between mb-3">
+            <div className="absolute bottom-6 right-6 bg-white p-5 rounded-2xl border border-slate-200 border-l-4 max-w-sm shadow-lg z-10" style={{ borderLeftColor: TYPE_COLORS[selectedNode.type] }}>
+              <div className="flex items-center justify-between mb-3 space-x-4">
                 <span className="text-[10px] font-bold text-slate-400 font-mono">{selectedNode.id}</span>
-                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Syndicate Leader</span>
+                <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded" style={{ backgroundColor: `${TYPE_COLORS[selectedNode.type]}10`, color: TYPE_COLORS[selectedNode.type] }}>
+                  {selectedNode.type}
+                </span>
               </div>
-              <h4 className="text-sm font-bold text-slate-900 mb-2">{selectedNode.name}</h4>
+              <h4 className="text-sm font-bold text-slate-900 mb-2">{selectedNode.label}</h4>
+              
               <div className="space-y-1.5 text-xs text-slate-700">
-                <div className="flex justify-between"><span className="text-slate-500">Past Offenses (Crimes):</span><span className="text-slate-800 font-semibold">{selectedNode.priors} offenses</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Risk Level:</span><span className="text-rose-600 font-bold">{selectedNode.risk_score}%</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Bridge Score (Central Linker):</span><span className="text-slate-800 font-mono">{selectedNode.betweenness_centrality}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Connection Score (Influence):</span><span className="text-slate-800 font-mono">{selectedNode.pagerank}</span></div>
+                {selectedNode.type === 'Person' && (
+                  <>
+                    <div className="flex justify-between"><span className="text-slate-500">Priors Crimes:</span><span className="text-slate-800 font-semibold">{selectedNode.priors} offenses</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Risk Assessment:</span><span className="text-rose-600 font-bold">{selectedNode.risk_score}%</span></div>
+                  </>
+                )}
+                {selectedNode.type === 'Gang' && (
+                  <p className="text-[11px] text-slate-500 leading-normal">{selectedNode.description}</p>
+                )}
+                {selectedNode.type === 'Location' && (
+                  <div className="flex justify-between"><span className="text-slate-500">Coordinates:</span><span className="text-slate-800 font-mono">{selectedNode.lat.toFixed(4)}, {selectedNode.lng.toFixed(4)}</span></div>
+                )}
+                {selectedNode.type === 'Vehicle' && (
+                  <p className="text-[11px] text-slate-500 leading-normal">Registered vehicle identifier linked to offender files.</p>
+                )}
+                {selectedNode.type === 'Phone' && (
+                  <p className="text-[11px] text-slate-500 leading-normal">Active cellular connection flagged in call transcripts.</p>
+                )}
               </div>
             </div>
           )}

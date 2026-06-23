@@ -106,9 +106,9 @@ function PredictiveView({ token, user }) {
   }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-auto xl:h-[calc(100vh-12rem)]">
       {/* Districts risk ranking list */}
-      <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-full overflow-hidden">
+      <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-[400px] xl:h-full overflow-hidden">
         <div className="flex items-center space-x-2 mb-6">
           <Sparkles className="w-5 h-5 text-indigo-600" />
           <h4 className="text-sm font-bold uppercase tracking-wider text-slate-800">Future Crime Risk Estimation</h4>
@@ -147,7 +147,7 @@ function PredictiveView({ token, user }) {
       </div>
 
       {/* Detail panel: SHAP weights explainability */}
-      <div className="glass-panel p-6 rounded-2xl xl:col-span-2 flex flex-col h-full overflow-y-auto">
+      <div className="glass-panel p-6 rounded-2xl xl:col-span-2 flex flex-col h-auto xl:h-full overflow-y-auto">
         {selectedDistrict ? (
           <div className="space-y-6">
             <div className="border-b border-slate-200 pb-4">

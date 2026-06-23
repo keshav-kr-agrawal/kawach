@@ -6,28 +6,32 @@ function GeoMapView({ token, user }) {
   const [hotspots, setHotspots] = useState([]);
   const [selectedHotspot, setSelectedHotspot] = useState(null);
   const [selectedCrime, setSelectedCrime] = useState('All');
+  const [precision, setPrecision] = useState('exact'); // exact, blurred, masked
+  const [maskSensitive, setMaskSensitive] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchGeoData = async () => {
       try {
         setLoading(true);
+        const headers = { 'Authorization': `Bearer ${token}` };
+        
+        // Build url query params
+        let pointsUrl = `http://localhost:8000/api/geo/points?precision=${precision}&mask_sensitive=${maskSensitive}`;
+        if (selectedCrime !== 'All') {
+          pointsUrl += `&crime_type=${encodeURIComponent(selectedCrime)}`;
+        }
+
         const [pointsRes, hotspotsRes] = await Promise.all([
-          fetch('http://localhost:8000/api/geo/points').then(r => r.json()).catch(() => []),
-          fetch('http://localhost:8000/api/geo/hotspots').then(r => r.json()).catch(() => [])
+          fetch(pointsUrl, { headers }).then(r => r.json()).catch(() => []),
+          fetch('http://localhost:8000/api/geo/hotspots', { headers }).then(r => r.json()).catch(() => [])
         ]);
 
-        if (hotspotsRes.length > 0) {
-          setPoints(pointsRes);
-          setHotspots(hotspotsRes);
-        } else {
-          // Mock geo fallback
-          setHotspots([
-            { cluster_id: 1, lat: 12.9716, lng: 77.5946, radius_km: 2.1, fir_count: 124, dominant_crime: 'Cybercrime / Phishing', heat_score: 92 },
-            { cluster_id: 2, lat: 12.2958, lng: 76.6394, radius_km: 1.5, fir_count: 54, dominant_crime: 'Theft / Robbery', heat_score: 74 },
-            { cluster_id: 3, lat: 12.8703, lng: 74.8827, radius_km: 3.2, fir_count: 42, dominant_crime: 'Riot / Public Mischief', heat_score: 65 },
-            { cluster_id: 4, lat: 15.4589, lng: 75.0078, radius_km: 1.8, fir_count: 38, dominant_crime: 'Assault / Hurt', heat_score: 58 }
-          ]);
+        setPoints(pointsRes);
+        setHotspots(hotspotsRes);
+        
+        if (hotspotsRes.length > 0 && !selectedHotspot) {
+          setSelectedHotspot(hotspotsRes[0]);
         }
       } catch (err) {
         console.error('Failed to load geo data:', err);
@@ -37,7 +41,7 @@ function GeoMapView({ token, user }) {
     };
 
     fetchGeoData();
-  }, [token]);
+  }, [token, selectedCrime, precision, maskSensitive]);
 
   if (loading) {
     return (
@@ -48,18 +52,17 @@ function GeoMapView({ token, user }) {
   }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 h-[calc(100vh-12rem)]">
+    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 h-auto xl:h-[calc(100vh-12rem)]">
       {/* Left panel: Filters & Hotspot List */}
-      <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-full overflow-hidden">
+      <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-auto xl:h-full overflow-y-auto">
         <div className="flex items-center space-x-2 mb-6">
           <Filter className="w-4 h-4 text-indigo-600" />
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Search Filters</h4>
         </div>
 
-        <div className="space-y-4 mb-6">
+        <div className="space-y-4">
           <div>
             <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Select Crime Type</label>
-            <p className="text-[9px] text-slate-400 mb-2">Show only specific crimes on the map:</p>
             <select 
               value={selectedCrime}
               onChange={(e) => setSelectedCrime(e.target.value)}
@@ -68,17 +71,46 @@ function GeoMapView({ token, user }) {
               <option value="All">All Crime Types</option>
               <option value="Cybercrime / Phishing">Cybercrime</option>
               <option value="Theft / Robbery">Theft / Robbery</option>
-              <option value="Assault / Hurt">Assault</option>
+              <option value="Assault / Grievous Hurt">Assault</option>
               <option value="Riot / Public Mischief">Riots</option>
             </select>
           </div>
+
+          <div className="border-t border-slate-200 my-4"></div>
+
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-3">Privacy & Compliance</h4>
+          
+          <div>
+            <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Location Precision</label>
+            <select 
+              value={precision}
+              onChange={(e) => setPrecision(e.target.value)}
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+            >
+              <option value="exact">Exact (Authorized Only)</option>
+              <option value="blurred">Blurred (Jitter 500m-1km)</option>
+              <option value="masked">Masked (Snap to Station)</option>
+            </select>
+          </div>
+
+          <div className="flex items-center space-x-2.5 pt-2">
+            <input
+              type="checkbox"
+              id="maskSensitive"
+              checked={maskSensitive}
+              onChange={(e) => setMaskSensitive(e.target.checked)}
+              className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <label htmlFor="maskSensitive" className="text-xs text-slate-700 font-semibold cursor-pointer">
+              Mask Sensitive Sites
+            </label>
+          </div>
         </div>
 
-        <div className="border-t border-slate-200 my-4"></div>
+        <div className="border-t border-slate-200 my-6"></div>
 
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">High Crime Areas (Hotspots)</h4>
-        <p className="text-[9px] text-slate-400 mb-3">Click on an area below to zoom in on the map:</p>
-        <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+        <div className="space-y-3">
           {hotspots.map(h => (
             <button
               key={h.cluster_id}
@@ -105,7 +137,7 @@ function GeoMapView({ token, user }) {
       </div>
 
       {/* Right panel: Geospatial Map Canvas Simulation */}
-      <div className="glass-panel p-6 rounded-2xl xl:col-span-3 flex flex-col h-full relative overflow-hidden">
+      <div className="glass-panel p-6 rounded-2xl xl:col-span-3 flex flex-col h-[500px] xl:h-full relative overflow-hidden">
         {/* Interactive Controls Overlay */}
         <div className="absolute top-8 left-8 bg-white/95 border border-slate-200 p-2 rounded-xl flex space-x-1 shadow-md z-10">
           <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-900 transition-colors">
@@ -121,14 +153,33 @@ function GeoMapView({ token, user }) {
 
         {/* Map Canvas Background (Simulating rich Deck.gl visual map) */}
         <div className="flex-1 w-full bg-blue-50/20 rounded-xl border border-slate-200 relative flex items-center justify-center overflow-hidden shadow-inner">
-          {/* Custom SVG Drawing Karnataka District Heatmap blobs */}
           <svg className="w-full h-full max-h-[500px]" viewBox="0 0 800 500">
-            {/* Karnataka Coast & boundaries simulated with light landmass fill */}
-            <path d="M 280 80 Q 250 120 230 180 T 220 280 T 260 380 Q 290 420 330 450 L 380 430 L 400 370 Q 420 310 440 250 T 420 120 Z" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth={1.5} />
+            {/* Landmass outline */}
+            <path d="M 280 80 Q 250 120 230 180 T 220 280 T 260 380 Q 290 420 330 450 L 380 430 L 400 370 Q 420 310 440 250 T 420 120 Z" fill="#f8fafc" stroke="#cbd5e1" strokeWidth={1.5} />
             
+            {/* Render FIR Points */}
+            {points.map((p, idx) => {
+              // Map lat/lng within bounds
+              const x = 300 + (p.lng - 77.5946) * 1200;
+              const y = 350 - (p.lat - 12.9716) * 1200;
+              
+              if (x < 150 || x > 650 || y < 100 || y > 450) return null;
+              
+              return (
+                <circle 
+                  key={p.id}
+                  cx={x}
+                  cy={y}
+                  r={4}
+                  fill={p.crime_type.includes('Cyber') ? '#4F46E5' : p.crime_type.includes('Theft') ? '#3B82F6' : '#EF4444'}
+                  opacity={0.7}
+                  title={`${p.id}: ${p.crime_type}`}
+                />
+              );
+            })}
+
             {/* Pulsating Hotspot Centroid Blobs */}
-            {hotspots.map((h, i) => {
-              // Custom placements corresponding roughly to Bengaluru, Mysuru, Mangaluru, Hubli
+            {hotspots.slice(0, 4).map((h, i) => {
               const x_coords = [350, 310, 250, 270];
               const y_coords = [380, 420, 360, 220];
               const cx = x_coords[i % 4];
@@ -138,7 +189,6 @@ function GeoMapView({ token, user }) {
 
               return (
                 <g key={h.cluster_id} className="cursor-pointer" onClick={() => setSelectedHotspot(h)}>
-                  {/* Outer glow aura */}
                   <circle 
                     cx={cx} 
                     cy={cy} 
@@ -148,7 +198,6 @@ function GeoMapView({ token, user }) {
                     className="animate-ping" 
                     style={{ animationDuration: `${2 + i}s` }}
                   />
-                  {/* Solid core */}
                   <circle 
                     cx={cx} 
                     cy={cy} 
@@ -158,7 +207,6 @@ function GeoMapView({ token, user }) {
                     strokeWidth={2}
                   />
                   
-                  {/* Hotspot centroid text label */}
                   {isSelected && (
                     <g>
                       <rect x={cx + 15} y={cy - 20} width={130} height={40} rx={6} fill="#ffffff" stroke="#ef4444" strokeWidth={1} filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.1))" />
@@ -171,7 +219,6 @@ function GeoMapView({ token, user }) {
             })}
           </svg>
 
-          {/* Map details box */}
           {selectedHotspot && (
             <div className="absolute bottom-6 right-6 bg-white p-5 rounded-2xl border border-slate-200 border-l-4 border-l-rose-500 max-w-sm shadow-lg z-10">
               <h5 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">Zone Analysis Detail</h5>
@@ -179,7 +226,7 @@ function GeoMapView({ token, user }) {
                 <div className="flex justify-between"><span className="text-slate-500">Centroid Coordinates:</span><span className="text-slate-800 font-mono">{selectedHotspot.lat.toFixed(4)}, {selectedHotspot.lng.toFixed(4)}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Total Incidents:</span><span className="text-slate-800 font-semibold">{selectedHotspot.fir_count} FIRs</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Cluster Density:</span><span className="text-rose-600 font-bold">{selectedHotspot.heat_score}% High</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Primary Crime Law (IPC Section):</span><span className="text-slate-800 font-mono">Sec 66D IT Act</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Primary Crime:</span><span className="text-slate-800 font-mono">{selectedHotspot.dominant_crime}</span></div>
               </div>
             </div>
           )}
