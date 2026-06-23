@@ -227,3 +227,50 @@ class SocioEconomicIndicator(Base):
     police_per_capita = Column(Float)
     
     district = relationship("District", back_populates="socio_economic")
+
+class MissingPerson(Base):
+    __tablename__ = 'missing_persons'
+    
+    id = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    age = Column(Integer)
+    gender = Column(String)
+    last_seen_date = Column(DateTime, nullable=False)
+    last_seen_location = Column(String)
+    photo_url = Column(String, nullable=True)
+    status = Column(String, default="Active") # Active, Found
+
+class UnidentifiedBody(Base):
+    __tablename__ = 'unidentified_bodies'
+    
+    id = Column(String, primary_key=True)
+    estimated_age = Column(Integer)
+    gender = Column(String)
+    found_date = Column(DateTime, nullable=False)
+    found_location = Column(String)
+    distinguishing_features = Column(String)
+    status = Column(String, default="Unidentified") # Unidentified, Identified
+
+class TelecomCDR(Base):
+    __tablename__ = 'telecom_cdrs'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    phone_number = Column(String, nullable=False)
+    imsi = Column(String)
+    imei = Column(String)
+    cell_tower_id = Column(String)
+    call_type = Column(String) # Incoming, Outgoing, SMS
+    associated_number = Column(String)
+    duration_seconds = Column(Integer)
+    timestamp = Column(DateTime, nullable=False)
+
+class RBIFraudRegistry(Base):
+    __tablename__ = 'rbi_fraud_registry'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    account_number = Column(String, nullable=False)
+    bank_name = Column(String)
+    flagged_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    fraud_type = Column(String)
+    reported_amount = Column(Float)
+    status = Column(String, default="Flagged") # Flagged, Frozen

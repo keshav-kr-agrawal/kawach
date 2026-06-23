@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports, fraud_shield
+from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports, fraud_shield, ingestion
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -31,6 +31,7 @@ app.include_router(audit.router, prefix=f"{settings.API_V1_STR}/audit", tags=["A
 app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin", tags=["Administration"])
 app.include_router(reports.router, prefix=f"{settings.API_V1_STR}/reports", tags=["Reports"])
 app.include_router(fraud_shield.router, prefix=f"{settings.API_V1_STR}/fraud-shield", tags=["Citizen Fraud Shield"])
+app.include_router(ingestion.router, prefix=f"{settings.API_V1_STR}/ingestion", tags=["Data Ingestion Layer"])
 
 @app.get("/")
 def read_root():

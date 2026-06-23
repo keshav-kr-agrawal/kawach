@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, LayoutDashboard, Map, Network, AlertTriangle, Users, BarChart3, LineChart, FileText, ChevronRight, Bell, User, LogOut, Menu, X, Sparkles, FileSpreadsheet, Lock } from 'lucide-react';
+import { Shield, LayoutDashboard, Map, Network, AlertTriangle, Users, BarChart3, LineChart, FileText, ChevronRight, Bell, User, LogOut, Menu, X, Sparkles, FileSpreadsheet, Lock, Camera, Award, Smartphone } from 'lucide-react';
 import DashboardView from './components/DashboardView';
 import GeoMapView from './components/GeoMapView';
 import NetworkView from './components/NetworkView';
@@ -12,6 +12,10 @@ import AICopilotView from './components/AICopilotView';
 import ReportsView from './components/ReportsView';
 import AdminView from './components/AdminView';
 import CitizenFraudShieldView from './components/CitizenFraudShieldView';
+import CounterfeitScannerView from './components/CounterfeitScannerView';
+import FaceAnalyticsView from './components/FaceAnalyticsView';
+import DistrictPerformanceView from './components/DistrictPerformanceView';
+import MobileFieldSimulatorView from './components/MobileFieldSimulatorView';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -112,6 +116,10 @@ function App() {
     { id: 'offenders', label: 'Criminal Profiles', icon: Users, component: OffendersView },
     { id: 'alerts', label: 'Alerts Hub', icon: AlertTriangle, component: AlertsView },
     { id: 'fraudshield', label: 'Citizen Fraud Shield', icon: Shield, component: CitizenFraudShieldView },
+    { id: 'counterfeit', label: 'Counterfeit Scanner', icon: Camera, component: CounterfeitScannerView },
+    { id: 'face', label: 'Face Analytics', icon: User, component: FaceAnalyticsView },
+    { id: 'performance', label: 'District Performance', icon: Award, component: DistrictPerformanceView, minRole: 'SP' },
+    { id: 'mobile', label: 'Mobile Field App', icon: Smartphone, component: MobileFieldSimulatorView },
     { id: 'investigations', label: 'Investigations', icon: FileText, component: InvestigationsView },
     { id: 'ai', label: 'AI Copilot', icon: Sparkles, component: AICopilotView },
     { id: 'reports', label: 'Reports Hub', icon: FileSpreadsheet, component: ReportsView },

@@ -6,7 +6,8 @@ from app.config import settings
 from app.database import Base, SessionLocal, engine
 from app.models import (
     District, PoliceStation, Offender, FIRRecord, SocioEconomicIndicator,
-    User, AuditLog, EntityMatchReview, Gang, Vehicle, Phone, Account, Call, Location, Visit
+    User, AuditLog, EntityMatchReview, Gang, Vehicle, Phone, Account, Call, Location, Visit,
+    MissingPerson, UnidentifiedBody, TelecomCDR, RBIFraudRegistry
 )
 from app.auth import get_password_hash
 
@@ -454,6 +455,84 @@ def seed_database():
             db.add(log)
         db.commit()
         print("Initial Audit Trail seeded.")
+
+        # 10. Seed Missing Persons
+        missing_names = ["Amit Gowda", "Kavitha Raj", "Chethan Kumar", "Sushma Hedge", "Nandini Reddy", "Vikram Sen", "Rupa Patel", "Srinivas Rao", "Ananya Bhat", "Aditya Sharma"]
+        for idx in range(50):
+            name = random.choice(missing_names) + f" {random.randint(1, 100)}"
+            age = random.randint(5, 75)
+            gender = random.choice(["Male", "Female"])
+            last_seen_date = datetime(2024, 1, 1) + timedelta(days=random.randint(1, 800))
+            last_seen_loc = random.choice(KARNATAKA_DISTRICTS)["name"]
+            person = MissingPerson(
+                id=f"MP-{idx+1:04d}",
+                name=name,
+                age=age,
+                gender=gender,
+                last_seen_date=last_seen_date,
+                last_seen_location=last_seen_loc,
+                photo_url=f"/assets/missing/photo_{idx+1}.jpg",
+                status=random.choices(["Active", "Found"], weights=[80, 20])[0]
+            )
+            db.add(person)
+        print("Missing persons seeded.")
+
+        # 11. Seed Unidentified Bodies
+        features_list = ["Tattoo of trident on left forearm", "Surgical scar on right knee", "Silver ring on index finger", "Black birthmark on neck", "Stature approx 175cm, wearing blue shirt", "Gold tooth on upper left jaw"]
+        for idx in range(30):
+            gender = random.choice(["Male", "Female", "Unknown"])
+            found_date = datetime(2024, 1, 1) + timedelta(days=random.randint(1, 800))
+            found_loc = random.choice(KARNATAKA_DISTRICTS)["name"]
+            body = UnidentifiedBody(
+                id=f"UB-{idx+1:04d}",
+                estimated_age=random.randint(20, 60),
+                gender=gender,
+                found_date=found_date,
+                found_location=found_loc,
+                distinguishing_features=random.choice(features_list) + f" (Code: {idx*7})",
+                status=random.choices(["Unidentified", "Identified"], weights=[85, 15])[0]
+            )
+            db.add(body)
+        print("Unidentified bodies seeded.")
+
+        # 12. Seed Telecom CDRs
+        cdr_types = ["Incoming", "Outgoing", "SMS"]
+        offender_phones = [p.phone_number for p in phones_objects]
+        for idx in range(500):
+            phone = random.choice(offender_phones) if (offender_phones and random.random() < 0.3) else f"+91-9844{random.randint(100000, 999999)}"
+            associated = f"+91-9123{random.randint(100000, 999999)}"
+            timestamp = datetime(2024, 1, 1) + timedelta(days=random.randint(1, 800), hours=random.randint(0, 23))
+            cdr = TelecomCDR(
+                phone_number=phone,
+                imsi=f"IMSI-404-45-{random.randint(10000, 99999)}",
+                imei=f"IMEI-3589{random.randint(100000, 999999)}",
+                cell_tower_id=f"TOWER-{random.choice(KARNATAKA_DISTRICTS)['name'][:4].upper()}-{random.randint(1, 50)}",
+                call_type=random.choice(cdr_types),
+                associated_number=associated,
+                duration_seconds=random.randint(10, 1200) if random.random() < 0.7 else 0,
+                timestamp=timestamp
+            )
+            db.add(cdr)
+        print("Telecom CDRs seeded.")
+
+        # 13. Seed RBI Fraud Registry
+        fraud_types = ["UPI Phishing", "Mule Account Transfer", "Investment Scam", "Digital Arrest Ransom", "Card Spoofing"]
+        offender_accounts = [a.account_number for a in accounts_objects]
+        for idx in range(100):
+            account = random.choice(offender_accounts) if (offender_accounts and random.random() < 0.25) else f"SB-{random.randint(100000, 999999)}-{random.randint(1000, 9999)}"
+            bank = random.choice(["State Bank of India", "HDFC Bank", "ICICI Bank", "Canara Bank", "Axis Bank"])
+            flagged_date = datetime(2024, 1, 1) + timedelta(days=random.randint(1, 800))
+            registry = RBIFraudRegistry(
+                account_number=account,
+                bank_name=bank,
+                flagged_date=flagged_date,
+                fraud_type=random.choice(fraud_types),
+                reported_amount=float(random.randint(5000, 250000)),
+                status=random.choices(["Flagged", "Frozen"], weights=[75, 25])[0]
+            )
+            db.add(registry)
+        db.commit()
+        print("RBI Fraud Registry seeded.")
 
         print("Data Seeding Completed Successfully!")
         
