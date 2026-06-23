@@ -163,8 +163,8 @@ def seed_database():
         # 5. Seed Offenders
         offenders_objects = []
         genders = ["Male", "Female", "Other"]
-        # Generate 1500 offenders
-        for i in range(1500):
+        # Generate 2000 offenders
+        for i in range(2000):
             offender_id = f"OFF-{i+1:04d}"
             # Let's seed specific names for entity resolution demo
             if i == 10:
@@ -320,7 +320,7 @@ def seed_database():
         
         officer_usernames = ["sho", "constable", "officer"]
 
-        for i in range(8000):
+        for i in range(10500):
             fir_id = f"FIR-{2024 + random.randint(0,2)}-{i+1:05d}"
             station = random.choice(stations_objects)
             crime_type, ipc, severity = random.choice(CRIME_TYPES_IPC)
@@ -408,7 +408,7 @@ def seed_database():
             db.add(fir)
             
         db.commit()
-        print("8,000 FIR Records with timeline & SLA seeded.")
+        print("10,500 FIR Records with timeline & SLA seeded.")
         
         # 8. Seed Socio-Economic Indicators (5 years per district)
         for _, d_model in districts_objects:

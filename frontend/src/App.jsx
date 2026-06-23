@@ -11,6 +11,7 @@ import InvestigationsView from './components/InvestigationsView';
 import AICopilotView from './components/AICopilotView';
 import ReportsView from './components/ReportsView';
 import AdminView from './components/AdminView';
+import CitizenFraudShieldView from './components/CitizenFraudShieldView';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -110,6 +111,7 @@ function App() {
     { id: 'network', label: 'Network Analysis', icon: Network, component: NetworkView, minRole: 'SP' },
     { id: 'offenders', label: 'Criminal Profiles', icon: Users, component: OffendersView },
     { id: 'alerts', label: 'Alerts Hub', icon: AlertTriangle, component: AlertsView },
+    { id: 'fraudshield', label: 'Citizen Fraud Shield', icon: Shield, component: CitizenFraudShieldView },
     { id: 'investigations', label: 'Investigations', icon: FileText, component: InvestigationsView },
     { id: 'ai', label: 'AI Copilot', icon: Sparkles, component: AICopilotView },
     { id: 'reports', label: 'Reports Hub', icon: FileSpreadsheet, component: ReportsView },

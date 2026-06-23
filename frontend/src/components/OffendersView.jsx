@@ -167,6 +167,29 @@ function OffendersView({ token, user }) {
               </div>
             </div>
 
+            {/* Explainable AI Risk Score & Rationale */}
+            <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Explainable AI Risk Profile</span>
+                <span className={`px-2.5 py-0.5 rounded font-bold text-[11px] border ${
+                  selectedOffender.risk_score >= 85 
+                    ? 'bg-rose-50 text-rose-600 border-rose-100' 
+                    : 'bg-amber-50 text-amber-600 border-amber-100'
+                }`}>
+                  {selectedOffender.risk_score}% Threat Score
+                </span>
+              </div>
+              <div>
+                <span className="text-[9px] uppercase font-bold text-slate-400 block mb-1">XAI Decision Rationale</span>
+                <p className="text-xs text-slate-700 leading-relaxed font-semibold">
+                  {selectedOffender.xai_rationale || `Risk score calculated at ${selectedOffender.risk_score}% based on prior convictions, mobile pings, and associate network centrality index.`}
+                </p>
+              </div>
+              <div className="text-[8px] text-slate-400 italic font-medium leading-normal">
+                *Ethics Compliance Notice: Personal identifiers (caste, religion, community) are entirely excluded from risk calculations. All decisions require human signature.
+              </div>
+            </div>
+
             {/* Linked FIRs */}
             <div>
               <h5 className="text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-3">Linked Incidents Timeline</h5>
