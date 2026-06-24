@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, LayoutDashboard, Map, Network, AlertTriangle, Users, BarChart3, LineChart, FileText, ChevronRight, Bell, User, LogOut, Menu, X, Sparkles, FileSpreadsheet, Lock, Camera, Award, Smartphone } from 'lucide-react';
+import { Shield, LayoutDashboard, Map, Network, AlertTriangle, Users, BarChart3, LineChart, FileText, ChevronRight, Bell, User, LogOut, Menu, X, Sparkles, FileSpreadsheet, Lock, Camera, Award, Smartphone, Database } from 'lucide-react';
 import DashboardView from './components/DashboardView';
 import GeoMapView from './components/GeoMapView';
 import NetworkView from './components/NetworkView';
@@ -16,6 +16,8 @@ import CounterfeitScannerView from './components/CounterfeitScannerView';
 import FaceAnalyticsView from './components/FaceAnalyticsView';
 import DistrictPerformanceView from './components/DistrictPerformanceView';
 import MobileFieldSimulatorView from './components/MobileFieldSimulatorView';
+import IngestionExplorerView from './components/IngestionExplorerView';
+import ExecutiveDashboardView from './components/ExecutiveDashboardView';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -120,6 +122,8 @@ function App() {
     { id: 'face', label: 'Face Analytics', icon: User, component: FaceAnalyticsView },
     { id: 'performance', label: 'District Performance', icon: Award, component: DistrictPerformanceView, minRole: 'SP' },
     { id: 'mobile', label: 'Mobile Field App', icon: Smartphone, component: MobileFieldSimulatorView },
+    { id: 'ingestion', label: 'Ingestion Explorer', icon: Database, component: IngestionExplorerView },
+    { id: 'executive', label: 'Executive Dashboard', icon: LineChart, component: ExecutiveDashboardView, minRole: 'SP' },
     { id: 'investigations', label: 'Investigations', icon: FileText, component: InvestigationsView },
     { id: 'ai', label: 'AI Copilot', icon: Sparkles, component: AICopilotView },
     { id: 'reports', label: 'Reports Hub', icon: FileSpreadsheet, component: ReportsView },
