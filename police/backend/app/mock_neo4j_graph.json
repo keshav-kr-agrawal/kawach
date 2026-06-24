@@ -1,0 +1,1718 @@
+{
+  "nodes": [
+    {
+      "id": "L-1",
+      "labels": [
+        "Location"
+      ],
+      "properties": {
+        "id": "L-1",
+        "name": "Koramangala 80ft Ring Rd",
+        "lat": 12.9345,
+        "lng": 77.6256,
+        "type": "Hotspot"
+      }
+    },
+    {
+      "id": "L-2",
+      "labels": [
+        "Location"
+      ],
+      "properties": {
+        "id": "L-2",
+        "name": "Town Hall Entrance",
+        "lat": 12.9634,
+        "lng": 77.5855,
+        "type": "Public Ground"
+      }
+    },
+    {
+      "id": "L-3",
+      "labels": [
+        "Location"
+      ],
+      "properties": {
+        "id": "L-3",
+        "name": "Coastal Warehouse Zone",
+        "lat": 12.92,
+        "lng": 77.67,
+        "type": "Restricted Checkpoint"
+      }
+    },
+    {
+      "id": "L-4",
+      "labels": [
+        "Location"
+      ],
+      "properties": {
+        "id": "L-4",
+        "name": "Indiranagar 100ft Rd",
+        "lat": 12.9718,
+        "lng": 77.6411,
+        "type": "Hotspot"
+      }
+    },
+    {
+      "id": "L-5",
+      "labels": [
+        "Location"
+      ],
+      "properties": {
+        "id": "L-5",
+        "name": "HSR Layout Sector 1",
+        "lat": 12.9105,
+        "lng": 77.645,
+        "type": "Residential"
+      }
+    },
+    {
+      "id": "L-6",
+      "labels": [
+        "Location"
+      ],
+      "properties": {
+        "id": "L-6",
+        "name": "Jayanagar 4th Block",
+        "lat": 12.9284,
+        "lng": 77.5913,
+        "type": "Market Area"
+      }
+    },
+    {
+      "id": "L-7",
+      "labels": [
+        "Location"
+      ],
+      "properties": {
+        "id": "L-7",
+        "name": "Whitefield ITPL Gate",
+        "lat": 12.984,
+        "lng": 77.734,
+        "type": "Industrial Area"
+      }
+    },
+    {
+      "id": "L-8",
+      "labels": [
+        "Location"
+      ],
+      "properties": {
+        "id": "L-8",
+        "name": "Malleshwaram Metro",
+        "lat": 12.9984,
+        "lng": 77.5702,
+        "type": "Transit Hub"
+      }
+    },
+    {
+      "id": "L-9",
+      "labels": [
+        "Location"
+      ],
+      "properties": {
+        "id": "L-9",
+        "name": "Mysuru Palace Gate",
+        "lat": 12.3051,
+        "lng": 76.6551,
+        "type": "Historical Hub"
+      }
+    },
+    {
+      "id": "L-10",
+      "labels": [
+        "Location"
+      ],
+      "properties": {
+        "id": "L-10",
+        "name": "Mangaluru Harbor Portal",
+        "lat": 12.87,
+        "lng": 74.88,
+        "type": "Secure Port"
+      }
+    },
+    {
+      "id": "L-11",
+      "labels": [
+        "Location"
+      ],
+      "properties": {
+        "id": "L-11",
+        "name": "Hubballi Station Yard",
+        "lat": 15.3524,
+        "lng": 75.1384,
+        "type": "Transit Hub"
+      }
+    },
+    {
+      "id": "L-12",
+      "labels": [
+        "Location"
+      ],
+      "properties": {
+        "id": "L-12",
+        "name": "Belagavi Central Ward",
+        "lat": 15.8497,
+        "lng": 74.4977,
+        "type": "Residential"
+      }
+    },
+    {
+      "id": "P-1",
+      "labels": [
+        "Person"
+      ],
+      "properties": {
+        "id": "P-1",
+        "name": "Ramesh K.",
+        "risk_score": 88
+      }
+    },
+    {
+      "id": "P-2",
+      "labels": [
+        "Person"
+      ],
+      "properties": {
+        "id": "P-2",
+        "name": "John Kumar",
+        "risk_score": 75
+      }
+    },
+    {
+      "id": "P-3",
+      "labels": [
+        "Person"
+      ],
+      "properties": {
+        "id": "P-3",
+        "name": "Jon Offender",
+        "risk_score": 92
+      }
+    },
+    {
+      "id": "P-4",
+      "labels": [
+        "Person"
+      ],
+      "properties": {
+        "id": "P-4",
+        "name": "Suresh G.",
+        "risk_score": 45
+      }
+    },
+    {
+      "id": "P-5",
+      "labels": [
+        "Person"
+      ],
+      "properties": {
+        "id": "P-5",
+        "name": "Anil Sharma",
+        "risk_score": 81
+      }
+    },
+    {
+      "id": "P-6",
+      "labels": [
+        "Person"
+      ],
+      "properties": {
+        "id": "P-6",
+        "name": "Vijay Prasad",
+        "risk_score": 62
+      }
+    },
+    {
+      "id": "P-7",
+      "labels": [
+        "Person"
+      ],
+      "properties": {
+        "id": "P-7",
+        "name": "Gang Leader Rocky",
+        "risk_score": 95
+      }
+    },
+    {
+      "id": "P-8",
+      "labels": [
+        "Person"
+      ],
+      "properties": {
+        "id": "P-8",
+        "name": "Vikram Rathore",
+        "risk_score": 30
+      }
+    },
+    {
+      "id": "P-9",
+      "labels": [
+        "Person"
+      ],
+      "properties": {
+        "id": "P-9",
+        "name": "Amit Shah",
+        "risk_score": 55
+      }
+    },
+    {
+      "id": "P-10",
+      "labels": [
+        "Person"
+      ],
+      "properties": {
+        "id": "P-10",
+        "name": "Dinesh Karthik",
+        "risk_score": 78
+      }
+    },
+    {
+      "id": "P-11",
+      "labels": [
+        "Person"
+      ],
+      "properties": {
+        "id": "P-11",
+        "name": "Manoj Bajpayee",
+        "risk_score": 40
+      }
+    },
+    {
+      "id": "P-12",
+      "labels": [
+        "Person"
+      ],
+      "properties": {
+        "id": "P-12",
+        "name": "Nitin Gadkari",
+        "risk_score": 15
+      }
+    },
+    {
+      "id": "I-9",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-9",
+        "type": "Nuisance Spurt",
+        "description": "Incident registry check ID #4409 flagged at station beat.",
+        "threat_level": "High",
+        "timestamp": "2026-06-24T09:21:00"
+      }
+    },
+    {
+      "id": "I-10",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-10",
+        "type": "General Alert",
+        "description": "Incident registry check ID #4410 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T09:30:00"
+      }
+    },
+    {
+      "id": "I-11",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-11",
+        "type": "Nuisance Spurt",
+        "description": "Incident registry check ID #4411 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T09:39:00"
+      }
+    },
+    {
+      "id": "I-12",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-12",
+        "type": "General Alert",
+        "description": "Incident registry check ID #4412 flagged at station beat.",
+        "threat_level": "High",
+        "timestamp": "2026-06-24T08:48:00"
+      }
+    },
+    {
+      "id": "I-13",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-13",
+        "type": "Nuisance Spurt",
+        "description": "Incident registry check ID #4413 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T08:57:00"
+      }
+    },
+    {
+      "id": "I-14",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-14",
+        "type": "General Alert",
+        "description": "Incident registry check ID #4414 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T08:06:00"
+      }
+    },
+    {
+      "id": "I-15",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-15",
+        "type": "Nuisance Spurt",
+        "description": "Incident registry check ID #4415 flagged at station beat.",
+        "threat_level": "High",
+        "timestamp": "2026-06-24T07:15:00"
+      }
+    },
+    {
+      "id": "I-16",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-16",
+        "type": "General Alert",
+        "description": "Incident registry check ID #4416 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T07:24:00"
+      }
+    },
+    {
+      "id": "I-17",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-17",
+        "type": "Nuisance Spurt",
+        "description": "Incident registry check ID #4417 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T07:33:00"
+      }
+    },
+    {
+      "id": "I-18",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-18",
+        "type": "General Alert",
+        "description": "Incident registry check ID #4418 flagged at station beat.",
+        "threat_level": "High",
+        "timestamp": "2026-06-24T06:42:00"
+      }
+    },
+    {
+      "id": "I-19",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-19",
+        "type": "Nuisance Spurt",
+        "description": "Incident registry check ID #4419 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T06:51:00"
+      }
+    },
+    {
+      "id": "I-20",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-20",
+        "type": "General Alert",
+        "description": "Incident registry check ID #4420 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T06:00:00"
+      }
+    },
+    {
+      "id": "I-21",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-21",
+        "type": "Nuisance Spurt",
+        "description": "Incident registry check ID #4421 flagged at station beat.",
+        "threat_level": "High",
+        "timestamp": "2026-06-24T05:09:00"
+      }
+    },
+    {
+      "id": "I-22",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-22",
+        "type": "General Alert",
+        "description": "Incident registry check ID #4422 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T05:18:00"
+      }
+    },
+    {
+      "id": "I-23",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-23",
+        "type": "Nuisance Spurt",
+        "description": "Incident registry check ID #4423 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T05:27:00"
+      }
+    },
+    {
+      "id": "I-24",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-24",
+        "type": "General Alert",
+        "description": "Incident registry check ID #4424 flagged at station beat.",
+        "threat_level": "High",
+        "timestamp": "2026-06-24T04:36:00"
+      }
+    },
+    {
+      "id": "I-25",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-25",
+        "type": "Nuisance Spurt",
+        "description": "Incident registry check ID #4425 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T04:45:00"
+      }
+    },
+    {
+      "id": "I-26",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-26",
+        "type": "General Alert",
+        "description": "Incident registry check ID #4426 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T04:54:00"
+      }
+    },
+    {
+      "id": "I-27",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-27",
+        "type": "Nuisance Spurt",
+        "description": "Incident registry check ID #4427 flagged at station beat.",
+        "threat_level": "High",
+        "timestamp": "2026-06-24T03:03:00"
+      }
+    },
+    {
+      "id": "I-28",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-28",
+        "type": "General Alert",
+        "description": "Incident registry check ID #4428 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T03:12:00"
+      }
+    },
+    {
+      "id": "I-29",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-29",
+        "type": "Nuisance Spurt",
+        "description": "Incident registry check ID #4429 flagged at station beat.",
+        "threat_level": "Medium",
+        "timestamp": "2026-06-24T03:21:00"
+      }
+    },
+    {
+      "id": "I-30",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-30",
+        "type": "General Alert",
+        "description": "Incident registry check ID #4430 flagged at station beat.",
+        "threat_level": "High",
+        "timestamp": "2026-06-24T02:30:00"
+      }
+    },
+    {
+      "id": "I-1",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-1",
+        "type": "ANPR Spotting",
+        "description": "CRITICAL: Known gang associate vehicle spotted entering Koramangala hotspot.",
+        "threat_level": "Critical",
+        "timestamp": "2026-06-24T12:00:00"
+      }
+    },
+    {
+      "id": "I-2",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-2",
+        "type": "CCTV Crowd Alert",
+        "description": "HIGH: Crowd formation - 15+ people detected near Town Hall entrance.",
+        "threat_level": "High",
+        "timestamp": "2026-06-24T11:45:00"
+      }
+    },
+    {
+      "id": "I-3",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-3",
+        "type": "Restricted Entry",
+        "description": "CRITICAL: Trespassing - Restricted Zone violation flagged at harbor checkpoint.",
+        "threat_level": "Critical",
+        "timestamp": "2026-06-24T11:10:00"
+      }
+    },
+    {
+      "id": "I-4",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-4",
+        "type": "Cyber Fraud",
+        "description": "HIGH: Suspicious UPI digital arrest scam registry flag spotted from suspect node.",
+        "threat_level": "High",
+        "timestamp": "2026-06-24T10:30:00"
+      }
+    },
+    {
+      "id": "I-5",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-5",
+        "type": "Burglary Spike",
+        "description": "WARNING: Burglary spike - 3 break-ins within 2km radius inside Jayanagar.",
+        "threat_level": "High",
+        "timestamp": "2026-06-23T23:15:00"
+      }
+    },
+    {
+      "id": "I-6",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-6",
+        "type": "Vehicle Theft",
+        "description": "CRITICAL: Stolen SUV tracked traversing Indiranagar bypass.",
+        "threat_level": "Critical",
+        "timestamp": "2026-06-24T08:20:00"
+      }
+    },
+    {
+      "id": "I-7",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-7",
+        "type": "Acoustic Detection",
+        "description": "CRITICAL: Low-caliber firearm discharge signature mapped near Whitefield.",
+        "threat_level": "Critical",
+        "timestamp": "2026-06-24T05:12:00"
+      }
+    },
+    {
+      "id": "I-8",
+      "labels": [
+        "Incident"
+      ],
+      "properties": {
+        "id": "I-8",
+        "type": "Digital arrest trigger",
+        "description": "WARNING: Voice-cloned extortion calls targeting senior citizen in Mysuru.",
+        "threat_level": "High",
+        "timestamp": "2026-06-24T09:40:00"
+      }
+    },
+    {
+      "id": "PH-1",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-1",
+        "number": "9876543201",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-2",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-2",
+        "number": "9876543202",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-3",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-3",
+        "number": "9876543203",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-4",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-4",
+        "number": "9876543204",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-5",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-5",
+        "number": "9876543205",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-6",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-6",
+        "number": "9876543206",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-7",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-7",
+        "number": "9876543207",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-8",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-8",
+        "number": "9876543208",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-9",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-9",
+        "number": "9876543209",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-10",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-10",
+        "number": "9876543210",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-11",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-11",
+        "number": "9876543211",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-12",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-12",
+        "number": "9876543212",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-13",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-13",
+        "number": "9876543213",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-14",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-14",
+        "number": "9876543214",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-15",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-15",
+        "number": "9876543215",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-16",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-16",
+        "number": "9876543216",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-17",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-17",
+        "number": "9876543217",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-18",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-18",
+        "number": "9876543218",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "PH-19",
+      "labels": [
+        "Phone"
+      ],
+      "properties": {
+        "id": "PH-19",
+        "number": "9876543219",
+        "type": "Mobile"
+      }
+    },
+    {
+      "id": "BA-1",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-1",
+        "account_no": "ACC4401880001",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-2",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-2",
+        "account_no": "ACC4401880002",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-3",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-3",
+        "account_no": "ACC4401880003",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-4",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-4",
+        "account_no": "ACC4401880004",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-5",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-5",
+        "account_no": "ACC4401880005",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-6",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-6",
+        "account_no": "ACC4401880006",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-7",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-7",
+        "account_no": "ACC4401880007",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-8",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-8",
+        "account_no": "ACC4401880008",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-9",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-9",
+        "account_no": "ACC4401880009",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-10",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-10",
+        "account_no": "ACC4401880010",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-11",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-11",
+        "account_no": "ACC4401880011",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-12",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-12",
+        "account_no": "ACC4401880012",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-13",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-13",
+        "account_no": "ACC4401880013",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "BA-14",
+      "labels": [
+        "BankAccount"
+      ],
+      "properties": {
+        "id": "BA-14",
+        "account_no": "ACC4401880014",
+        "ifsc": "SBIN0004401"
+      }
+    },
+    {
+      "id": "IP-1",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-1",
+        "address": "10.22.140.10"
+      }
+    },
+    {
+      "id": "IP-2",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-2",
+        "address": "10.22.140.20"
+      }
+    },
+    {
+      "id": "IP-3",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-3",
+        "address": "10.22.140.30"
+      }
+    },
+    {
+      "id": "IP-4",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-4",
+        "address": "10.22.140.40"
+      }
+    },
+    {
+      "id": "IP-5",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-5",
+        "address": "10.22.140.50"
+      }
+    },
+    {
+      "id": "IP-6",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-6",
+        "address": "10.22.140.60"
+      }
+    },
+    {
+      "id": "IP-7",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-7",
+        "address": "10.22.140.70"
+      }
+    },
+    {
+      "id": "IP-8",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-8",
+        "address": "10.22.140.80"
+      }
+    },
+    {
+      "id": "IP-9",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-9",
+        "address": "10.22.140.90"
+      }
+    },
+    {
+      "id": "IP-10",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-10",
+        "address": "10.22.140.100"
+      }
+    },
+    {
+      "id": "IP-11",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-11",
+        "address": "10.22.140.110"
+      }
+    },
+    {
+      "id": "IP-12",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-12",
+        "address": "10.22.140.120"
+      }
+    },
+    {
+      "id": "IP-13",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-13",
+        "address": "10.22.140.130"
+      }
+    },
+    {
+      "id": "IP-14",
+      "labels": [
+        "IP_Address"
+      ],
+      "properties": {
+        "id": "IP-14",
+        "address": "10.22.140.140"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "R-IO-9",
+      "type": "OCCURRED_AT",
+      "start_node": "I-9",
+      "end_node": "L-10",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-10",
+      "type": "OCCURRED_AT",
+      "start_node": "I-10",
+      "end_node": "L-11",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-11",
+      "type": "OCCURRED_AT",
+      "start_node": "I-11",
+      "end_node": "L-12",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-12",
+      "type": "OCCURRED_AT",
+      "start_node": "I-12",
+      "end_node": "L-1",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-13",
+      "type": "OCCURRED_AT",
+      "start_node": "I-13",
+      "end_node": "L-2",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-14",
+      "type": "OCCURRED_AT",
+      "start_node": "I-14",
+      "end_node": "L-3",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-15",
+      "type": "OCCURRED_AT",
+      "start_node": "I-15",
+      "end_node": "L-4",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-16",
+      "type": "OCCURRED_AT",
+      "start_node": "I-16",
+      "end_node": "L-5",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-17",
+      "type": "OCCURRED_AT",
+      "start_node": "I-17",
+      "end_node": "L-6",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-18",
+      "type": "OCCURRED_AT",
+      "start_node": "I-18",
+      "end_node": "L-7",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-19",
+      "type": "OCCURRED_AT",
+      "start_node": "I-19",
+      "end_node": "L-8",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-20",
+      "type": "OCCURRED_AT",
+      "start_node": "I-20",
+      "end_node": "L-9",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-21",
+      "type": "OCCURRED_AT",
+      "start_node": "I-21",
+      "end_node": "L-10",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-22",
+      "type": "OCCURRED_AT",
+      "start_node": "I-22",
+      "end_node": "L-11",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-23",
+      "type": "OCCURRED_AT",
+      "start_node": "I-23",
+      "end_node": "L-12",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-24",
+      "type": "OCCURRED_AT",
+      "start_node": "I-24",
+      "end_node": "L-1",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-25",
+      "type": "OCCURRED_AT",
+      "start_node": "I-25",
+      "end_node": "L-2",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-26",
+      "type": "OCCURRED_AT",
+      "start_node": "I-26",
+      "end_node": "L-3",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-27",
+      "type": "OCCURRED_AT",
+      "start_node": "I-27",
+      "end_node": "L-4",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-28",
+      "type": "OCCURRED_AT",
+      "start_node": "I-28",
+      "end_node": "L-5",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-29",
+      "type": "OCCURRED_AT",
+      "start_node": "I-29",
+      "end_node": "L-6",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-30",
+      "type": "OCCURRED_AT",
+      "start_node": "I-30",
+      "end_node": "L-7",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-1",
+      "type": "OCCURRED_AT",
+      "start_node": "I-1",
+      "end_node": "L-1",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-2",
+      "type": "OCCURRED_AT",
+      "start_node": "I-2",
+      "end_node": "L-2",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-3",
+      "type": "OCCURRED_AT",
+      "start_node": "I-3",
+      "end_node": "L-3",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-4",
+      "type": "OCCURRED_AT",
+      "start_node": "I-4",
+      "end_node": "L-4",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-5",
+      "type": "OCCURRED_AT",
+      "start_node": "I-5",
+      "end_node": "L-5",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-6",
+      "type": "OCCURRED_AT",
+      "start_node": "I-6",
+      "end_node": "L-6",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-7",
+      "type": "OCCURRED_AT",
+      "start_node": "I-7",
+      "end_node": "L-7",
+      "properties": {}
+    },
+    {
+      "id": "R-IO-8",
+      "type": "OCCURRED_AT",
+      "start_node": "I-8",
+      "end_node": "L-8",
+      "properties": {}
+    },
+    {
+      "id": "R-PA-1",
+      "type": "ASSOCIATED_WITH",
+      "start_node": "P-1",
+      "end_node": "P-7",
+      "properties": {}
+    },
+    {
+      "id": "R-PA-2",
+      "type": "ASSOCIATED_WITH",
+      "start_node": "P-2",
+      "end_node": "P-1",
+      "properties": {}
+    },
+    {
+      "id": "R-PA-3",
+      "type": "ASSOCIATED_WITH",
+      "start_node": "P-3",
+      "end_node": "P-7",
+      "properties": {}
+    },
+    {
+      "id": "R-PA-4",
+      "type": "ASSOCIATED_WITH",
+      "start_node": "P-5",
+      "end_node": "P-3",
+      "properties": {}
+    },
+    {
+      "id": "R-PA-5",
+      "type": "ASSOCIATED_WITH",
+      "start_node": "P-10",
+      "end_node": "P-1",
+      "properties": {}
+    },
+    {
+      "id": "R-PA-6",
+      "type": "ASSOCIATED_WITH",
+      "start_node": "P-6",
+      "end_node": "P-5",
+      "properties": {}
+    },
+    {
+      "id": "R-PA-7",
+      "type": "ASSOCIATED_WITH",
+      "start_node": "P-9",
+      "end_node": "P-7",
+      "properties": {}
+    },
+    {
+      "id": "R-PA-8",
+      "type": "ASSOCIATED_WITH",
+      "start_node": "P-2",
+      "end_node": "P-10",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-1",
+      "type": "OWNED",
+      "start_node": "P-2",
+      "end_node": "PH-1",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-2",
+      "type": "OWNED",
+      "start_node": "P-3",
+      "end_node": "PH-2",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-3",
+      "type": "OWNED",
+      "start_node": "P-4",
+      "end_node": "PH-3",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-4",
+      "type": "OWNED",
+      "start_node": "P-5",
+      "end_node": "PH-4",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-5",
+      "type": "OWNED",
+      "start_node": "P-6",
+      "end_node": "PH-5",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-6",
+      "type": "OWNED",
+      "start_node": "P-7",
+      "end_node": "PH-6",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-7",
+      "type": "OWNED",
+      "start_node": "P-8",
+      "end_node": "PH-7",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-8",
+      "type": "OWNED",
+      "start_node": "P-9",
+      "end_node": "PH-8",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-9",
+      "type": "OWNED",
+      "start_node": "P-10",
+      "end_node": "PH-9",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-10",
+      "type": "OWNED",
+      "start_node": "P-11",
+      "end_node": "PH-10",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-11",
+      "type": "OWNED",
+      "start_node": "P-12",
+      "end_node": "PH-11",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-12",
+      "type": "OWNED",
+      "start_node": "P-1",
+      "end_node": "PH-12",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-13",
+      "type": "OWNED",
+      "start_node": "P-2",
+      "end_node": "PH-13",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-14",
+      "type": "OWNED",
+      "start_node": "P-3",
+      "end_node": "PH-14",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-15",
+      "type": "OWNED",
+      "start_node": "P-4",
+      "end_node": "PH-15",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-16",
+      "type": "OWNED",
+      "start_node": "P-5",
+      "end_node": "PH-16",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-17",
+      "type": "OWNED",
+      "start_node": "P-6",
+      "end_node": "PH-17",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-18",
+      "type": "OWNED",
+      "start_node": "P-7",
+      "end_node": "PH-18",
+      "properties": {}
+    },
+    {
+      "id": "R-PO-19",
+      "type": "OWNED",
+      "start_node": "P-8",
+      "end_node": "PH-19",
+      "properties": {}
+    },
+    {
+      "id": "R-PC-1",
+      "type": "CALLED",
+      "start_node": "PH-1",
+      "end_node": "PH-7",
+      "properties": {
+        "duration": 40
+      }
+    },
+    {
+      "id": "R-PC-2",
+      "type": "CALLED",
+      "start_node": "PH-2",
+      "end_node": "PH-1",
+      "properties": {
+        "duration": 80
+      }
+    },
+    {
+      "id": "R-PC-3",
+      "type": "CALLED",
+      "start_node": "PH-3",
+      "end_node": "PH-7",
+      "properties": {
+        "duration": 120
+      }
+    },
+    {
+      "id": "R-PC-4",
+      "type": "CALLED",
+      "start_node": "PH-10",
+      "end_node": "PH-2",
+      "properties": {
+        "duration": 160
+      }
+    },
+    {
+      "id": "R-PC-5",
+      "type": "CALLED",
+      "start_node": "PH-5",
+      "end_node": "PH-9",
+      "properties": {
+        "duration": 200
+      }
+    },
+    {
+      "id": "R-PC-6",
+      "type": "CALLED",
+      "start_node": "PH-11",
+      "end_node": "PH-3",
+      "properties": {
+        "duration": 240
+      }
+    },
+    {
+      "id": "R-PC-7",
+      "type": "CALLED",
+      "start_node": "PH-4",
+      "end_node": "PH-1",
+      "properties": {
+        "duration": 280
+      }
+    },
+    {
+      "id": "R-PC-8",
+      "type": "CALLED",
+      "start_node": "PH-12",
+      "end_node": "PH-5",
+      "properties": {
+        "duration": 320
+      }
+    },
+    {
+      "id": "R-FT-1",
+      "type": "TRANSFERRED_TO",
+      "start_node": "BA-1",
+      "end_node": "BA-2",
+      "properties": {
+        "amount": 45000,
+        "date": "2026-06-24"
+      }
+    },
+    {
+      "id": "R-FT-2",
+      "type": "TRANSFERRED_TO",
+      "start_node": "BA-3",
+      "end_node": "BA-1",
+      "properties": {
+        "amount": 112000,
+        "date": "2026-06-24"
+      }
+    },
+    {
+      "id": "R-FT-3",
+      "type": "TRANSFERRED_TO",
+      "start_node": "BA-2",
+      "end_node": "BA-5",
+      "properties": {
+        "amount": 35000,
+        "date": "2026-06-24"
+      }
+    },
+    {
+      "id": "R-FT-4",
+      "type": "TRANSFERRED_TO",
+      "start_node": "BA-7",
+      "end_node": "BA-3",
+      "properties": {
+        "amount": 95000,
+        "date": "2026-06-24"
+      }
+    },
+    {
+      "id": "R-FT-5",
+      "type": "TRANSFERRED_TO",
+      "start_node": "BA-4",
+      "end_node": "BA-1",
+      "properties": {
+        "amount": 10000,
+        "date": "2026-06-24"
+      }
+    },
+    {
+      "id": "R-FT-6",
+      "type": "TRANSFERRED_TO",
+      "start_node": "BA-12",
+      "end_node": "BA-7",
+      "properties": {
+        "amount": 220000,
+        "date": "2026-06-24"
+      }
+    }
+  ]
+}
