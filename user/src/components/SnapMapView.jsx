@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { X, Play, ShieldAlert, Award, Radio, Eye, AlertOctagon } from 'lucide-react';
+import { X, Play, ShieldAlert, Award, Radio, Eye, AlertOctagon, BookOpen, User, Volume2, VolumeX } from 'lucide-react';
 import { getStatusLabel, getStatusColor } from '../api/videoService';
 
 // Fix Leaflet default marker icons in React Leaflet
@@ -23,61 +23,90 @@ function MapRecenter({ center }) {
   return null;
 }
 
-export default function SnapMapView({ gpsCoords, userReports, onReportVideo }) {
+export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onOpenProfile, onOpenLibrary }) {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [playingVideo, setPlayingVideo] = useState(false);
   const [playProgress, setPlayProgress] = useState(0);
   const [showFlagNotice, setShowFlagNotice] = useState(false);
+
+  const mapVideoRef = useRef(null);
+  const [mapIsPaused, setMapIsPaused] = useState(false);
+  const [mapIs2xSpeed, setMapIs2xSpeed] = useState(false);
+  const [showMapCenterIcon, setShowMapCenterIcon] = useState(null); // 'play' or 'pause'
+  const [mapIsMuted, setMapIsMuted] = useState(false); // default unmuted
+  const [showMapMuteIconOverlay, setShowMapMuteIconOverlay] = useState(null); // 'mute' or 'unmute'
+
+  const mapPressTimerRef = useRef(null);
+  const mapPressStartTimeRef = useRef(0);
+
+  // Reset when selectedVideo changes
+  useEffect(() => {
+    setMapIsPaused(false);
+    setMapIs2xSpeed(false);
+    setShowMapCenterIcon(null);
+    setMapIsMuted(false);
+    setShowMapMuteIconOverlay(null);
+    if (mapVideoRef.current) {
+      mapVideoRef.current.playbackRate = 1.0;
+    }
+  }, [selectedVideo]);
+
+  const handleMapVideoTap = () => {
+    if (!mapVideoRef.current) return;
+    if (mapVideoRef.current.paused) {
+      mapVideoRef.current.play().catch(err => console.log(err));
+      setMapIsPaused(false);
+      setShowMapCenterIcon('play');
+    } else {
+      mapVideoRef.current.pause();
+      setMapIsPaused(true);
+      setShowMapCenterIcon('pause');
+    }
+    setTimeout(() => {
+      setShowMapCenterIcon(null);
+    }, 800);
+  };
+
+  const toggleMapMute = (e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const nextMuted = !mapIsMuted;
+    setMapIsMuted(nextMuted);
+    setShowMapMuteIconOverlay(nextMuted ? 'mute' : 'unmute');
+    setTimeout(() => {
+      setShowMapMuteIconOverlay(null);
+    }, 800);
+  };
+
+  const handleMapPressStart = (e) => {
+    if (!mapVideoRef.current) return;
+    mapPressStartTimeRef.current = Date.now();
+    mapPressTimerRef.current = setTimeout(() => {
+      mapVideoRef.current.playbackRate = 2.0;
+      setMapIs2xSpeed(true);
+    }, 300);
+  };
+
+  const handleMapPressEnd = () => {
+    if (mapPressTimerRef.current) {
+      clearTimeout(mapPressTimerRef.current);
+      mapPressTimerRef.current = null;
+    }
+    const pressDuration = Date.now() - mapPressStartTimeRef.current;
+    if (pressDuration < 300) {
+      handleMapVideoTap();
+    }
+    if (mapVideoRef.current) {
+      mapVideoRef.current.playbackRate = 1.0;
+    }
+    setMapIs2xSpeed(false);
+  };
   const [videoPlayProgress, setVideoPlayProgress] = useState(0);
 
-  // Mock upload databases overlay
-  const [mapPins] = useState([
-    {
-      id: 'mock-pin-1',
-      title: 'Suspicious Night Gathering',
-      description: 'Group loitering near commercial bank vault after hours.',
-      lat: 12.9348,
-      lng: 77.6189,
-      uploaderUuid: 'e9b1d3a4-8390-410a-bf1f-b3a1a3a41151',
-      timestamp: '10 minutes ago',
-      distance: '350m away',
-      status: 'PUBLIC_APPROVED',
-      views: 128,
-      avatarGradient: 'linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%)',
-      feedType: 'Violence/Loitering',
-      videoUrl: null
-    },
-    {
-      id: 'mock-pin-2',
-      title: 'Subway Waterlogging Hazard',
-      description: 'Major drain overflow making the pedestrian subway impassable.',
-      lat: 12.9312,
-      lng: 77.6285,
-      uploaderUuid: '419ae2b2-fc8e-4a6c-9c98-cf48a202aef1',
-      timestamp: '2 hours ago',
-      distance: '1.1km away',
-      status: 'COHORT_TEST',
-      views: 45,
-      avatarGradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-      feedType: 'Infrastructure',
-      videoUrl: null
-    },
-    {
-      id: 'mock-pin-3',
-      title: 'Suspicious Vehicle Transfer',
-      description: 'Two individuals loading unlabeled packages between cars without lights.',
-      lat: 12.9412,
-      lng: 77.6098,
-      uploaderUuid: 'ad89012a-3301-44bf-80a2-cd890fb91024',
-      timestamp: '45 mins ago',
-      distance: '850m away',
-      status: 'PUBLIC_APPROVED',
-      views: 14,
-      avatarGradient: 'linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%)',
-      feedType: 'Theft/Property',
-      videoUrl: null
-    }
-  ]);
+  // No pre-seeded mock pins on the map
+  const [mapPins] = useState([]);
 
   // Merge map pins with any approved user-uploaded clips (including AI check states for testing)
   const allPinsRaw = [
@@ -95,7 +124,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo }) {
         distance: 'Within 50m',
         status: r.status,
         views: r.views || 0,
-        avatarGradient: 'linear-gradient(135deg, #fffc00 0%, #ff9500 100%)',
+        avatarGradient: 'linear-gradient(135deg, #eab308 0%, #ff9500 100%)',
         feedType: r.category || 'General Alert',
         videoUrl: r.videoUrl,
         trimStart: r.trimStart,
@@ -186,37 +215,73 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo }) {
         border: '1px solid rgba(0,0,0,0.06)',
         background: '#ffffff'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '10px',
-            height: '10px',
-            borderRadius: '50%',
-            backgroundColor: '#007aff',
-            boxShadow: '0 0 8px #007aff'
-          }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Profile Button */}
+          <button 
+            onClick={onOpenProfile}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              backgroundColor: '#eab308',
+              border: '1.5px solid #000000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+            }}
+            title="Open User Profile"
+          >
+            <User size={16} color="#000000" strokeWidth={2.5} />
+          </button>
+          
           <div>
-            <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '800', fontFamily: 'Outfit, sans-serif', color: '#000000' }}>
+            <h3 style={{ margin: 0, fontSize: '11px', fontWeight: '800', fontFamily: 'Outfit, sans-serif', color: '#000000', letterSpacing: '0.02em' }}>
               SENTINEL GHOST MAP
             </h3>
-            <p style={{ margin: 0, fontSize: '10px', color: '#555555', fontWeight: '500' }}>
-              Encrypted, PII-Free Public Safety Feeds
+            <p style={{ margin: 0, fontSize: '9px', color: '#555555', fontWeight: '600' }}>
+              PII-Free Safety Grid
             </p>
           </div>
         </div>
-        <div style={{
-          backgroundColor: 'rgba(255, 252, 0, 0.2)',
-          color: '#000000',
-          padding: '4px 10px',
-          borderRadius: '12px',
-          fontSize: '10px',
-          fontWeight: '700',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          border: '1px solid rgba(255, 252, 0, 0.5)'
-        }}>
-          <Radio size={12} style={{ color: '#ff3b30' }} />
-          <span>LIVE</span>
+
+        {/* Right side controls: Legal Library & Live indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            onClick={onOpenLibrary}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '10px',
+              backgroundColor: '#f2f2f2',
+              border: '1px solid #e5e5e5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#333333'
+            }}
+            title="Open Legal Library"
+          >
+            <BookOpen size={16} strokeWidth={2.5} />
+          </button>
+          
+          <div style={{
+            backgroundColor: 'rgba(234, 179, 8, 0.2)',
+            color: '#000000',
+            padding: '4px 8px',
+            borderRadius: '10px',
+            fontSize: '9px',
+            fontWeight: '800',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+            border: '1px solid rgba(234, 179, 8, 0.5)'
+          }}>
+            <Radio size={10} style={{ color: '#ff3b30' }} />
+            <span>LIVE</span>
+          </div>
         </div>
       </div>
 
@@ -356,31 +421,111 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo }) {
           }}>
             
             {/* Viewfinder Video Element */}
-            <div style={{
-              width: '100%',
-              aspectRatio: '9/16',
-              maxWidth: '300px',
-              borderRadius: '24px',
-              border: '1px solid #e5e5e5',
-              background: '#000000',
-              overflow: 'hidden',
-              position: 'relative',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}>
+            <div 
+              onMouseDown={handleMapPressStart}
+              onMouseUp={handleMapPressEnd}
+              onMouseLeave={handleMapPressEnd}
+              onTouchStart={handleMapPressStart}
+              onTouchEnd={handleMapPressEnd}
+              style={{
+                width: '100%',
+                aspectRatio: '9/16',
+                maxWidth: '300px',
+                borderRadius: '24px',
+                border: '1px solid #e5e5e5',
+                background: '#000000',
+                overflow: 'hidden',
+                position: 'relative',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              {/* 2x Speed badge overlay */}
+              {mapIs2xSpeed && (
+                <div style={{
+                  position: 'absolute',
+                  top: '16px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  zIndex: 100,
+                  backgroundColor: 'rgba(0,0,0,0.85)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '20px',
+                  padding: '4px 12px',
+                  color: '#eab308',
+                  fontSize: '9px',
+                  fontWeight: '805',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  pointerEvents: 'none'
+                }}>
+                  <span>⏩ 2x SPEED</span>
+                </div>
+              )}
+
+              {/* Center Play/Pause/Mute Indicator overlay */}
+              {(showMapCenterIcon || showMapMuteIconOverlay) && (
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 100,
+                  backgroundColor: 'rgba(0,0,0,0.75)',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: '#ffffff',
+                  pointerEvents: 'none',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                }}>
+                  {showMapCenterIcon === 'play' && (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                      <span style={{ fontSize: '9px', fontWeight: '800', fontFamily: 'Outfit', letterSpacing: '0.05em' }}>PLAY</span>
+                    </>
+                  )}
+                  {showMapCenterIcon === 'pause' && (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                      <span style={{ fontSize: '9px', fontWeight: '800', fontFamily: 'Outfit', letterSpacing: '0.05em' }}>PAUSE</span>
+                    </>
+                  )}
+                  {showMapMuteIconOverlay === 'mute' && (
+                    <>
+                      <VolumeX size={20} />
+                      <span style={{ fontSize: '9px', fontWeight: '800', fontFamily: 'Outfit', letterSpacing: '0.05em' }}>MUTED</span>
+                    </>
+                  )}
+                  {showMapMuteIconOverlay === 'unmute' && (
+                    <>
+                      <Volume2 size={20} />
+                      <span style={{ fontSize: '9px', fontWeight: '800', fontFamily: 'Outfit', letterSpacing: '0.05em' }}>UNMUTED</span>
+                    </>
+                  )}
+                </div>
+              )}
               
               {selectedVideo.videoUrl ? (
                 <>
                   <video
+                    ref={mapVideoRef}
                     src={selectedVideo.trimStart !== undefined && selectedVideo.trimEnd !== undefined 
                       ? `${selectedVideo.videoUrl}#t=${selectedVideo.trimStart},${selectedVideo.trimEnd}` 
                       : selectedVideo.videoUrl}
                     autoPlay
                     loop
-                    muted
+                    muted={mapIsMuted}
+                    playsInline
                     onTimeUpdate={(e) => {
                       const video = e.target;
                       const start = selectedVideo.trimStart !== undefined ? selectedVideo.trimStart : 0;
@@ -393,6 +538,34 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo }) {
                     }}
                     style={{ width: '100%', height: '100%', objectFit: 'cover', zIndex: 2 }}
                   />
+                  {/* Floating Volume Speaker Toggle button */}
+                  <button
+                    onClick={toggleMapMute}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    style={{
+                      position: 'absolute',
+                      bottom: '12px',
+                      right: '12px',
+                      zIndex: 12,
+                      background: mapIsMuted ? 'rgba(255, 59, 48, 0.85)' : 'rgba(0,0,0,0.65)',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '32px',
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    title={mapIsMuted ? "Unmute Audio" : "Mute Audio"}
+                  >
+                    {mapIsMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                  </button>
                   {/* Snapchat-style Top Progress bar */}
                   <div style={{
                     position: 'absolute',
@@ -408,7 +581,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo }) {
                     <div style={{
                       width: `${videoPlayProgress}%`,
                       height: '100%',
-                      backgroundColor: '#fffc00',
+                      backgroundColor: '#eab308',
                       borderRadius: '2px',
                       transition: 'width 0.1s linear'
                     }} />
@@ -445,7 +618,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo }) {
                       onClick={() => { setPlayingVideo(true); setPlayProgress(0); }}
                       style={{
                         zIndex: 2,
-                        background: '#fffc00',
+                        background: '#eab308',
                         border: 'none',
                         borderRadius: '50%',
                         width: '64px',
@@ -455,7 +628,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo }) {
                         justifyContent: 'center',
                         color: '#000000',
                         cursor: 'pointer',
-                        boxShadow: '0 4px 15px rgba(255,252,0,0.4)'
+                        boxShadow: '0 4px 15px rgba(234,179,8,0.4)'
                       }}
                     >
                       <Play size={28} style={{ marginLeft: '4px' }} fill="#000000" />
@@ -475,7 +648,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo }) {
                     <div style={{
                       width: `${playProgress}%`,
                       height: '100%',
-                      backgroundColor: '#fffc00',
+                      backgroundColor: '#eab308',
                       transition: 'width 1s linear'
                     }} />
                   </div>

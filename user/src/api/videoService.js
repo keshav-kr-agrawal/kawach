@@ -37,7 +37,7 @@ export const getStatusLabel = (status) => {
 export const getStatusColor = (status) => {
   switch (status) {
     case VIDEO_STATUS.AI_CHECK_1:
-      return '#06b6d4'; // neon cyan
+      return '#0ea5e9'; // soothing sky blue
     case VIDEO_STATUS.COHORT_TEST:
       return '#3b82f6'; // blue
     case VIDEO_STATUS.REPORTED_SUSPICIOUS:

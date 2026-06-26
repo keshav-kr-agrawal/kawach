@@ -147,7 +147,7 @@ function InvestigationsView({ token, user }) {
     switch (prio) {
       case 'Critical': return 'bg-rose-50 border border-rose-200 text-rose-700';
       case 'High': return 'bg-amber-50 border border-amber-200 text-amber-700';
-      case 'Medium': return 'bg-indigo-50 border border-indigo-200 text-indigo-700';
+      case 'Medium': return 'bg-blue-50 border border-blue-200 text-blue-700';
       default: return 'bg-slate-50 border border-slate-200 text-slate-700';
     }
   };
@@ -166,10 +166,10 @@ function InvestigationsView({ token, user }) {
       <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-[450px] xl:h-full overflow-hidden">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <FileText className="w-4 h-4 text-indigo-600" />
+            <FileText className="w-4 h-4 text-blue-600" />
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Assigned Case Files</h4>
           </div>
-          <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
             {cases.length} cases
           </span>
         </div>
@@ -192,7 +192,7 @@ function InvestigationsView({ token, user }) {
                 onClick={() => fetchCaseDetails(c.id)}
                 className={`w-full p-4 rounded-xl text-left border transition-all duration-200 ${
                   selectedCase?.id === c.id
-                    ? 'bg-indigo-50/50 border-indigo-500 shadow-sm'
+                    ? 'bg-blue-50/50 border-blue-500 shadow-sm'
                     : 'bg-white border-slate-200 hover:bg-slate-50'
                 }`}
               >
@@ -253,7 +253,7 @@ function InvestigationsView({ token, user }) {
                 {/* AI Summary card */}
                 <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
                   <div className="flex items-center space-x-2 mb-3">
-                    <Shield className="w-5 h-5 text-indigo-600 animate-pulse" />
+                    <Shield className="w-5 h-5 text-blue-600 animate-pulse" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">AI Investigation Synthesis</h4>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -264,13 +264,13 @@ function InvestigationsView({ token, user }) {
                 {/* Case timeline logs */}
                 <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
                   <div className="flex items-center space-x-2 mb-4">
-                    <Activity className="w-5 h-5 text-indigo-600" />
+                    <Activity className="w-5 h-5 text-blue-600" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Case Audit Timeline</h4>
                   </div>
                   <div className="space-y-4 relative pl-4 border-l border-slate-100">
                     {selectedCase.timeline.map((event, idx) => (
                       <div key={idx} className="relative">
-                        <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 bg-indigo-500 rounded-full border border-white" />
+                        <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 bg-blue-500 rounded-full border border-white" />
                         <span className="text-[10px] font-bold text-slate-400 font-mono">{event.date.substring(0, 10)}</span>
                         <p className="text-xs text-slate-700 mt-0.5">{event.event}</p>
                       </div>
@@ -281,7 +281,7 @@ function InvestigationsView({ token, user }) {
                 {/* Evidence linkages */}
                 <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
                   <div className="flex items-center space-x-2 mb-3">
-                    <Clock className="w-5 h-5 text-indigo-600" />
+                    <Clock className="w-5 h-5 text-blue-600" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Evidence Linkages & AI Matches</h4>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -312,7 +312,7 @@ function InvestigationsView({ token, user }) {
                     <select
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
                     >
                       <option value="Investigation">Investigation</option>
                       <option value="Charge Sheeted">Charge Sheeted</option>
@@ -320,7 +320,7 @@ function InvestigationsView({ token, user }) {
                     </select>
                     <button
                       type="submit"
-                      className="w-full flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl text-xs shadow-sm transition-all"
+                      className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl text-xs shadow-sm transition-all"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       <span>Update Lifecycle State</span>
@@ -335,7 +335,7 @@ function InvestigationsView({ token, user }) {
                     <select
                       value={assignee}
                       onChange={(e) => setAssignee(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
                     >
                       <option value="">-- Choose Officer --</option>
                       <option value="sho">sho (Bengaluru Station Head)</option>
@@ -362,7 +362,7 @@ function InvestigationsView({ token, user }) {
                       <select
                         value={escalatePriority}
                         onChange={(e) => setEscalatePriority(e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
                       >
                         <option value="Critical">Critical</option>
                         <option value="High">High</option>
@@ -377,7 +377,7 @@ function InvestigationsView({ token, user }) {
                         onChange={(e) => setEscalateReason(e.target.value)}
                         placeholder="Provide details for priority escalation..."
                         rows={3}
-                        className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+                        className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
                         required
                       />
                     </div>

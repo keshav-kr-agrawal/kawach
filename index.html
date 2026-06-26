@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAWACH: Unified Threat Intelligence & Public Safety Portal</title>
+  <!-- Google Fonts: Outfit and Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background Grid -->
+  <div class="cyber-grid"></div>
+  <div class="glow-radial-1"></div>
+  <div class="glow-radial-2"></div>
+
+  <!-- Unified Navigation -->
+  <header class="main-header">
+    <div class="brand">
+      <div class="brand-logo">
+        <i data-lucide="shield-check"></i>
+      </div>
+      <div class="brand-text">
+        <h1>KAWACH</h1>
+        <span>STATE-WIDE THREAT DATA PLATFORM</span>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="#about"><i data-lucide="info"></i> About System</a>
+      <a href="#pillars"><i data-lucide="layout-grid"></i> 29 Pillars</a>
+      <a href="#gate" class="btn-login-shortcut"><i data-lucide="fingerprint"></i> Access Gate</a>
+    </nav>
+  </header>
+
+  <main class="portal-container">
+
+    <!-- Hero Showcase Section -->
+    <section class="hero-section">
+      <div class="hero-badge">
+        <i data-lucide="radio" class="pulse-icon"></i> Active Deployment: Bengaluru Command
+      </div>
+      <h2 class="hero-title">
+        Bridging the Trust Gap Between <br>
+        <span class="gradient-text">Citizens & Law Enforcement</span>
+      </h2>
+      <p class="hero-subtitle">
+        KAWACH is a unified, state-wide geospatial grid and threat intelligence platform designed for Bengaluru City Police. It resolves physical street alerts and digital public safety threats using real-time crowdsourced feeds.
+      </p>
+
+      <div class="hero-stats">
+        <div class="stat-card">
+          <h3>29</h3>
+          <span>Strategic Pillars</span>
+        </div>
+        <div class="stat-card">
+          <h3>100%</h3>
+          <span>PII Encrypted</span>
+        </div>
+        <div class="stat-card">
+          <h3>30%</h3>
+          <span>Faster Response</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Access Gate (Dual Gateway Portal) -->
+    <section class="login-gate-section" id="gate">
+      <div style="display: flex; flex-direction: column; gap: 30px; width: 100%;">
+        <div class="section-header" style="align-items: center; text-align: center; margin-bottom: 10px;">
+          <i data-lucide="fingerprint" style="font-size: 32px; color: var(--accent-color);"></i>
+          <h2>Decoupled Secure Entry Gateways</h2>
+          <p>Select your secure portal below to connect with your state-wide threat intelligence node.</p>
+        </div>
+        
+        <div class="gateway-container">
+          <!-- Citizen Gate Card -->
+          <div class="gateway-card citizen-gate">
+            <div class="gateway-accent-bar"></div>
+            <div>
+              <div class="gateway-icon-wrapper">
+                <i data-lucide="users"></i>
+              </div>
+              <h3>Citizen Sentinel</h3>
+              <p class="gateway-desc">
+                Secure, anonymous safety reporting grid for the public. Report neighborhood incidents in Ghost Mode, watch live proximity feeds, and check local safety indexes with complete metadata scrubbing.
+              </p>
+              <div class="gateway-features">
+                <div class="feature-tag"><i data-lucide="map-pin"></i> Proximity Alerts</div>
+                <div class="feature-tag"><i data-lucide="eye-off"></i> Ghost Mode</div>
+                <div class="feature-tag"><i data-lucide="shield-check"></i> Safe Zone GIS</div>
+              </div>
+            </div>
+            <a href="http://localhost:5175/#/user/login" class="btn-gateway btn-citizen">
+              <span>Access Citizen Portal</span>
+              <i data-lucide="arrow-right"></i>
+            </a>
+          </div>
+
+          <!-- Police Gate Card -->
+          <div class="gateway-card police-gate">
+            <div class="gateway-accent-bar"></div>
+            <div>
+              <div class="gateway-icon-wrapper">
+                <i data-lucide="shield"></i>
+              </div>
+              <h3>Police Command Center</h3>
+              <p class="gateway-desc">
+                Authorized intranet command console for law enforcement officers. Analyze repeat offender recidivism, trace digital arrest scams, track ANPR hotspots, and coordinate dispatches in real-time.
+              </p>
+              <div class="gateway-features">
+                <div class="feature-tag"><i data-lucide="network"></i> Link Analysis</div>
+                <div class="feature-tag"><i data-lucide="fingerprint"></i> Biometric RAG</div>
+                <div class="feature-tag"><i data-lucide="camera"></i> CCTV Analytics</div>
+              </div>
+            </div>
+            <a href="http://localhost:5174/#/police/login" class="btn-gateway btn-police">
+              <span>Enter Command Console</span>
+              <i data-lucide="arrow-right"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Interactive Law Library / Rule Book Banner -->
+        <div class="rulebook-banner">
+          <div class="rulebook-content">
+            <div class="rulebook-icon"><i data-lucide="book-open"></i></div>
+            <div class="rulebook-text">
+              <h3>Citizen Interactive Rule Book & Law Library</h3>
+              <p>Know your legal rights in 60 seconds. Review police protocols, arrest guidelines, and digital fraud protections compiled directly from the Bharatiya Nyaya Sanhita (BNS).</p>
+            </div>
+          </div>
+          <a href="http://localhost:5175/#/user/library" class="btn-rulebook">
+            <span>Explore Rule Book</span>
+            <i data-lucide="external-link"></i>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Geographic Deployment details (About the Place) -->
+    <section class="about-section" id="about">
+      <div class="section-header">
+        <i data-lucide="map-pin"></i>
+        <h2>Geospatial Footprint: Bengaluru Grid</h2>
+      </div>
+
+      <div class="about-grid">
+        <div class="about-card">
+          <div class="card-icon"><i data-lucide="navigation"></i></div>
+          <h3>Localized Proximity Spheres</h3>
+          <p>
+            Fully optimized for high-density hubs including <strong>Koramangala</strong>, <strong>Indiranagar</strong>, and <strong>HSR Layout</strong>. Video pins and incident feeds utilize Leaflet and CartoDB Voyager light tiles to pinpoint emergency hubs within 15 meters.
+          </p>
+        </div>
+
+        <div class="about-card">
+          <div class="card-icon"><i data-lucide="shield-alert"></i></div>
+          <h3>Emergency Interlock</h3>
+          <p>
+            Emergency dispatches from the public bypass standard cohort verification pipelines and are auto-routed directly to district SP dashboards with immediate alert rings and localized sound triggers.
+          </p>
+        </div>
+
+        <div class="about-card">
+          <div class="card-icon"><i data-lucide="eye-off"></i></div>
+          <h3>Anonymized Audit Trails</h3>
+          <p>
+            Every citizen upload is assigned a Section 65B Audit-Hash (e.g. <code>SHA-256</code> logs) containing proof-of-location metadata, ensuring legal admissibility in courts while securing reporter identities.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- The 29 Pillars of the Architecture -->
+    <section class="pillars-section" id="pillars">
+      <div class="section-header">
+        <i data-lucide="layout-grid"></i>
+        <h2>System Architecture: The 29 Strategic Pillars</h2>
+        <p>A comprehensive system of state safety and intelligence pipelines built for Indian Law Enforcement & Citizens.</p>
+      </div>
+
+      <div class="pillars-grid">
+        <div class="pillar-box">
+          <span class="pillar-num">01</span>
+          <h4>Data Ingestion</h4>
+          <p>Multi-modal ingestion of complaint diaries, beat patrols, FIR databases, and public feeds.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">02</span>
+          <h4>Entity Resolution</h4>
+          <p>High-speed deduplication matching phone numbers, suspect aliases, and multiple identities.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">03</span>
+          <h4>Criminal Intelligence Graph</h4>
+          <p>Force-directed network analysis linking suspects to bank accounts, IMEIs, and locations.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">04</span>
+          <h4>Repeat Offender Rank</h4>
+          <p>Calculates dynamic recidivism risks for active gang clusters and parolees.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">05</span>
+          <h4>Hotspot Analytics</h4>
+          <p>Spatial DBSCAN clustering overlays mapping high-density crime sectors.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">06</span>
+          <h4>Predictive Policing</h4>
+          <p>Proximity-based risk forecasting without community profiling or demographic bias.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">07</span>
+          <h4>AI Anomaly Detection</h4>
+          <p>Unsupervised neural networks spotting localized burglary and theft spikes.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">08</span>
+          <h4>Socio-Economic Correlation</h4>
+          <p>Overlays streetlight outages, employment rates, and ward income data with incidents.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">09</span>
+          <h4>GEOINT GIS Layers</h4>
+          <p>Dynamic spatial layers showing police station boundaries, patrol zones, and hospitals.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">10</span>
+          <h4>Real-Time Control Room</h4>
+          <p>Centralized dispatches and live emergency interlocks for command operators.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">11</span>
+          <h4>Emergency Interlock Dispatch</h4>
+          <p>Automated routing of critical citizen alerts directly to precinct patrol cars.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">12</span>
+          <h4>AI Investigation Copilot</h4>
+          <p>High-speed Graph-RAG timeline summaries and court-ready Section 65B dossiers.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">13</span>
+          <h4>Computer Vision Analytics</h4>
+          <p>Live 4-grid street video analysis checking for weapons, crowd sizes, and counter-trespass.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">14</span>
+          <h4>Face Analytics Watchlist</h4>
+          <p>Real-time facial recognition comparing camera feeds against missing persons files.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">15</span>
+          <h4>District Performance Analytics</h4>
+          <p>SP-level clearance speed charts, conviction ratios, and patrol response times.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">16</span>
+          <h4>Mobile Field Patrolling</h4>
+          <p>Offline-first SQLite patrolling grids with automatic background cloud synchronization.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">17</span>
+          <h4>DGP/SP Executive Console</h4>
+          <p>Command dashboard for top-level officers tracking statewide metrics.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">18</span>
+          <h4>Immutable Audit Trails</h4>
+          <p>Section 65B SHA-256 compliance hashing securing legal chain of custody.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">19</span>
+          <h4>Secure Compliance Vault</h4>
+          <p>Access control logging that logs all suspect profile updates.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">20</span>
+          <h4>Ethics & Fairness Guardrails</h4>
+          <p>Strict algorithmic boundaries blocking caste, religion, or community profiling.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">21</span>
+          <h4>Multi-Factor Passcode Gateway</h4>
+          <p>Cryptographic MFA protecting command console intranet sessions.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">22</span>
+          <h4>Station Clearance Metrics</h4>
+          <p>Station-by-station response speeds and case resolution statistics.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">23</span>
+          <h4>WhatsApp Webhook Scanners</h4>
+          <p>Automates public scanning of suspect messages and links using text classifiers.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">24</span>
+          <h4>ANPR Vehicle Spotting</h4>
+          <p>Automatic license plate recognition spotting watchlist cars at toll gates.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">25</span>
+          <h4>Database Case Extender</h4>
+          <p>Seamlessly scales databases with missing persons, unidentified bodies, and CDRs.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">26</span>
+          <h4>Sentinel Ghost Grid</h4>
+          <p>Encrypted citizen PWA with on-device EXIF scrubbing for anonymous reporting.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">27</span>
+          <h4>Multilingual Copilot</h4>
+          <p>Speech-to-text voice command inputs supporting English and Kannada.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">28</span>
+          <h4>Socio-Economic Choropleth</h4>
+          <p>Visual choropleth map overlays identifying poverty-crime causal links.</p>
+        </div>
+        <div class="pillar-box">
+          <span class="pillar-num">29</span>
+          <h4>Deepfake & Spoof Defense</h4>
+          <p>Identifies synthesized voice clones and checks CBI video call authenticity.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="main-footer">
+    <p>© 2026 KAWACH Security Grid. Designed for Indian Law Enforcement Agencies.</p>
+    <div class="footer-links">
+      <span>Karnataka State Police</span>
+      <span>•</span>
+      <span>Zoho Datathon</span>
+      <span>•</span>
+      <span>ET Hackathon</span>
+    </div>
+  </footer>
+
+  <!-- JS Logic for Theme Shifting & Portal Redirection -->
+  <script>
+    // Initialize icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>

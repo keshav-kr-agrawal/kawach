@@ -1,56 +1,97 @@
-import React, { useState } from 'react';
-import { ArrowUp, Share2, AlertOctagon, Radio, ChevronUp, ChevronDown, ShieldAlert } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowUp, Share2, AlertOctagon, Radio, ChevronUp, ChevronDown, ShieldAlert, BookOpen, User, Volume2, VolumeX } from 'lucide-react';
 import { getStatusLabel } from '../api/videoService';
 
-export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVideo }) {
+export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVideo, onOpenProfile, onOpenLibrary }) {
   const [currentReelIndex, setCurrentReelIndex] = useState(0);
   const [upvotedList, setUpvotedList] = useState({});
   const [reportModal, setReportModal] = useState(null);
   const [reportStatusMessage, setReportStatusMessage] = useState('');
   const [reelsPlayProgress, setReelsPlayProgress] = useState(0);
 
-  // Initial local reels data
-  const [reels, setReels] = useState([
-    {
-      id: 'reel-1',
-      title: 'Suspicious Night Gathering',
-      description: 'Group of 4 loitering near commercial bank vault after midnight. Notified community watch.',
-      distanceValue: 0.35,
-      uploaderUuid: 'e9b1d3a4-8390-410a-bf1f-b3a1a3a41151',
-      timestamp: '10m ago',
-      upvotes: 42,
-      shares: 8,
-      status: 'PUBLIC_APPROVED',
-      avatarGradient: 'linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%)',
-      videoUrl: null
-    },
-    {
-      id: 'reel-2',
-      title: 'Subway Waterlogging Hazard',
-      description: 'Pedestrian subway HSR layout fully flooded due to heavy rains. Hazard warning!',
-      distanceValue: 1.1,
-      uploaderUuid: '419ae2b2-fc8e-4a6c-9c98-cf48a202aef1',
-      timestamp: '2h ago',
-      upvotes: 18,
-      shares: 3,
-      status: 'COHORT_TEST',
-      avatarGradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-      videoUrl: null
-    },
-    {
-      id: 'reel-3',
-      title: 'Suspicious Vehicle Transfer',
-      description: 'Moving boxes into vans without registration plates under dark alley. Suspected theft.',
-      distanceValue: 2.4,
-      uploaderUuid: 'ad89012a-3301-44bf-80a2-cd890fb91024',
-      timestamp: '1d ago',
-      upvotes: 67,
-      shares: 14,
-      status: 'PUBLIC_APPROVED',
-      avatarGradient: 'linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%)',
-      videoUrl: null
+  const videoRef = useRef(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [is2xSpeed, setIs2xSpeed] = useState(false);
+  const [showCenterIcon, setShowCenterIcon] = useState(null); // 'play' or 'pause'
+  const [isMuted, setIsMuted] = useState(false); // default unmuted
+  const [showMuteIconOverlay, setShowMuteIconOverlay] = useState(null); // 'mute' or 'unmute'
+
+  const pressTimerRef = useRef(null);
+  const pressStartTimeRef = useRef(0);
+
+  useEffect(() => {
+    setIsPaused(false);
+    setIs2xSpeed(false);
+    setShowCenterIcon(null);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 1.0;
+      videoRef.current.play().catch(err => console.log('Autoplay blocked:', err));
     }
-  ]);
+  }, [currentReelIndex]);
+
+  const handleVideoTap = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(err => console.log(err));
+      setIsPaused(false);
+      setShowCenterIcon('play');
+    } else {
+      videoRef.current.pause();
+      setIsPaused(true);
+      setShowCenterIcon('pause');
+    }
+    setTimeout(() => {
+      setShowCenterIcon(null);
+    }, 800);
+  };
+
+  const toggleMute = (e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    setShowMuteIconOverlay(nextMuted ? 'mute' : 'unmute');
+    setTimeout(() => {
+      setShowMuteIconOverlay(null);
+    }, 800);
+  };
+
+  const handlePressStart = (e) => {
+    if (!videoRef.current) return;
+    pressStartTimeRef.current = Date.now();
+    pressTimerRef.current = setTimeout(() => {
+      videoRef.current.playbackRate = 2.0;
+      setIs2xSpeed(true);
+    }, 300);
+  };
+
+  const handlePressEnd = () => {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+    const pressDuration = Date.now() - pressStartTimeRef.current;
+    if (pressDuration < 300) {
+      handleVideoTap();
+    }
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 1.0;
+    }
+    setIs2xSpeed(false);
+  };
+
+  const handleTouchStart = (e) => {
+    handlePressStart(e);
+  };
+
+  const handleTouchEnd = () => {
+    handlePressEnd();
+  };
+
+  // No pre-seeded mock reels in the feed
+  const [reels, setReels] = useState([]);
 
   // Merge approved user uploads and sort strictly by distance
   const allReelsRaw = [
@@ -67,7 +108,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
         upvotes: 0,
         shares: 0,
         status: r.status,
-        avatarGradient: 'linear-gradient(135deg, #fffc00 0%, #ff9500 100%)',
+        avatarGradient: 'linear-gradient(135deg, #eab308 0%, #ff9500 100%)',
         videoUrl: r.videoUrl,
         trimStart: r.trimStart,
         trimEnd: r.trimEnd
@@ -149,45 +190,188 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        pointerEvents: 'none'
+        pointerEvents: 'auto'
       }}>
-        <div className="glass-panel" style={{
-          padding: '6px 14px',
-          borderRadius: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          border: '1px solid rgba(0, 0, 0, 0.08)'
-        }}>
-          <Radio size={14} className="pulse-red" style={{ color: '#ff3b30' }} />
-          <span style={{ fontSize: '11px', fontWeight: '800', color: '#000000', fontFamily: 'Outfit' }}>
-            PROXIMITY FEED (NEAREST FIRST)
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Profile button */}
+          <button 
+            onClick={(e) => { e.stopPropagation(); onOpenProfile(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              backgroundColor: '#eab308',
+              border: '1.5px solid #000000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+            }}
+            title="Open User Profile"
+          >
+            <User size={16} color="#000000" strokeWidth={2.5} />
+          </button>
+          
+          <div className="glass-panel" style={{
+            padding: '6px 14px',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            border: '1px solid rgba(0, 0, 0, 0.08)'
+          }}>
+            <Radio size={14} className="pulse-red" style={{ color: '#ff3b30' }} />
+            <span style={{ fontSize: '11px', fontWeight: '800', color: '#000000', fontFamily: 'Outfit' }}>
+              PROXIMITY FEED (NEAREST FIRST)
+            </span>
+          </div>
         </div>
+
+        {/* Legal Library button */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); onOpenLibrary(); }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onMouseUp={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '10px',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            border: '1px solid rgba(0, 0, 0, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: '#333333',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+          }}
+          title="Open Legal Library"
+        >
+          <BookOpen size={16} strokeWidth={2.5} />
+        </button>
       </div>
 
       {/* Main Swipeable Feed Simulator */}
-      <div style={{
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-        backgroundColor: '#000000',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
+      <div 
+        style={{
+          width: '100%',
+          height: '100%',
+          position: 'relative',
+          backgroundColor: '#000000',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        {/* Transparent Gesture Overlay Shield covering the entire player background */}
+        <div
+          onMouseDown={handlePressStart}
+          onMouseUp={handlePressEnd}
+          onMouseLeave={handlePressEnd}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 3,
+            cursor: 'pointer',
+            backgroundColor: 'transparent'
+          }}
+        />
+
+        {/* 2x Speed badge overlay */}
+        {is2xSpeed && (
+          <div style={{
+            position: 'absolute',
+            top: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 100,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '20px',
+            padding: '6px 14px',
+            color: '#eab308',
+            fontSize: '11px',
+            fontWeight: '800',
+            letterSpacing: '0.05em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            pointerEvents: 'none',
+            boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+          }}>
+            <span>⏩ 2x SPEED</span>
+          </div>
+        )}
+
+        {/* Center Indicator overlay (Play/Pause/Mute/Unmute) */}
+        {(showCenterIcon || showMuteIconOverlay) && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 100,
+            backgroundColor: 'rgba(0,0,0,0.75)',
+            borderRadius: '16px',
+            padding: '16px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px',
+            color: '#ffffff',
+            pointerEvents: 'none',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+          }}>
+            {showCenterIcon === 'play' && (
+              <>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                <span style={{ fontSize: '10px', fontWeight: '800', fontFamily: 'Outfit', letterSpacing: '0.05em' }}>PLAY</span>
+              </>
+            )}
+            {showCenterIcon === 'pause' && (
+              <>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                <span style={{ fontSize: '10px', fontWeight: '800', fontFamily: 'Outfit', letterSpacing: '0.05em' }}>PAUSE</span>
+              </>
+            )}
+            {showMuteIconOverlay === 'mute' && (
+              <>
+                <VolumeX size={28} />
+                <span style={{ fontSize: '10px', fontWeight: '800', fontFamily: 'Outfit', letterSpacing: '0.05em' }}>MUTED</span>
+              </>
+            )}
+            {showMuteIconOverlay === 'unmute' && (
+              <>
+                <Volume2 size={28} />
+                <span style={{ fontSize: '10px', fontWeight: '800', fontFamily: 'Outfit', letterSpacing: '0.05em' }}>UNMUTED</span>
+              </>
+            )}
+          </div>
+        )}
         
         {/* Real captured video player OR mock animation */}
         {activeReel.videoUrl ? (
           <>
             <video
+              ref={videoRef}
               src={activeReel.trimStart !== undefined && activeReel.trimEnd !== undefined 
                 ? `${activeReel.videoUrl}#t=${activeReel.trimStart},${activeReel.trimEnd}` 
                 : activeReel.videoUrl}
               autoPlay
               loop
-              muted
+              muted={isMuted}
+              playsInline
               onTimeUpdate={(e) => {
                 const video = e.target;
                 const start = activeReel.trimStart !== undefined ? activeReel.trimStart : 0;
@@ -215,7 +399,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
               <div style={{
                 width: `${reelsPlayProgress}%`,
                 height: '100%',
-                backgroundColor: '#fffc00',
+                backgroundColor: '#eab308',
                 borderRadius: '2px',
                 transition: 'width 0.1s linear'
               }} />
@@ -245,12 +429,12 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
                 width: '80px',
                 height: '80px',
                 borderRadius: '50%',
-                backgroundColor: 'rgba(255, 252, 0, 0.1)',
-                border: '2px solid #fffc00',
+                backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                border: '2px solid #eab308',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#fffc00'
+                color: '#eab308'
               }}>
                 <ShieldAlert size={40} />
               </div>
@@ -266,7 +450,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
                 backgroundColor: 'rgba(255,255,255,0.15)',
                 padding: '4px 10px',
                 borderRadius: '12px',
-                color: isReelChecking ? '#fffc00' : (activeReel.status === 'REPORTED_SUSPICIOUS' ? '#ff3b30' : '#007aff')
+                color: isReelChecking ? '#eab308' : (activeReel.status === 'REPORTED_SUSPICIOUS' ? '#ff3b30' : '#007aff')
               }}>
                 {isReelChecking ? '🤖 AI Safety Check Active' : getStatusLabel(activeReel.status)}
               </span>
@@ -288,7 +472,10 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
         }}>
           {/* Swipe Up */}
           <button 
-            onClick={handlePrevReel}
+            onClick={(e) => { e.stopPropagation(); handlePrevReel(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
             disabled={safeIndex === 0}
             style={{
               background: 'rgba(0,0,0,0.5)',
@@ -312,9 +499,12 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
             {/* Upvote button */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <button 
-                onClick={() => toggleUpvote(activeReel.id)}
+                onClick={(e) => { e.stopPropagation(); toggleUpvote(activeReel.id); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
                 style={{
-                  background: upvotedList[activeReel.id] ? '#fffc00' : 'rgba(0,0,0,0.5)',
+                  background: upvotedList[activeReel.id] ? '#eab308' : 'rgba(0,0,0,0.5)',
                   border: '1px solid rgba(255,255,255,0.15)',
                   borderRadius: '50%',
                   width: '46px',
@@ -324,7 +514,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
                   justifyContent: 'center',
                   color: upvotedList[activeReel.id] ? '#000000' : '#ffffff',
                   cursor: 'pointer',
-                  boxShadow: upvotedList[activeReel.id] ? '0 0 12px rgba(255,252,0,0.4)' : 'none'
+                  boxShadow: upvotedList[activeReel.id] ? '0 0 12px rgba(234,179,8,0.4)' : 'none'
                 }}
               >
                 <ArrowUp size={20} strokeWidth={2.5} />
@@ -336,27 +526,65 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
 
             {/* Share */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <button style={{
-                background: 'rgba(0,0,0,0.5)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: '50%',
-                width: '46px',
-                height: '46px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-                cursor: 'pointer'
-              }}>
+              <button 
+                onClick={(e) => { e.stopPropagation(); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                style={{
+                  background: 'rgba(0,0,0,0.5)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '50%',
+                  width: '46px',
+                  height: '46px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  cursor: 'pointer'
+                }}
+              >
                 <Share2 size={20} />
               </button>
               <span style={{ fontSize: '11px', color: '#ffffff', marginTop: '4px', fontWeight: '600' }}>{activeReel.shares}</span>
             </div>
 
+            {/* Volume Toggle Mute Button */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <button 
+                onClick={toggleMute}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                style={{
+                  background: isMuted ? 'rgba(255, 59, 48, 0.15)' : 'rgba(0,0,0,0.5)',
+                  border: isMuted ? '1px solid rgba(255, 59, 48, 0.4)' : '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '50%',
+                  width: '46px',
+                  height: '46px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: isMuted ? '#ff3b30' : '#ffffff',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                title={isMuted ? "Unmute Audio" : "Mute Audio"}
+              >
+                {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              </button>
+              <span style={{ fontSize: '9px', color: isMuted ? '#ff3b30' : '#ffffff', marginTop: '4px', fontWeight: '750' }}>
+                {isMuted ? "Mute Active" : "Sound On"}
+              </span>
+            </div>
+
             {/* Report Fake button */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <button 
-                onClick={() => triggerReportModal(activeReel)}
+                onClick={(e) => { e.stopPropagation(); triggerReportModal(activeReel); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
                 style={{
                   background: 'rgba(255, 59, 48, 0.15)',
                   border: '1px solid rgba(255, 59, 48, 0.4)',
@@ -378,7 +606,10 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
 
           {/* Swipe Down */}
           <button 
-            onClick={handleNextReel}
+            onClick={(e) => { e.stopPropagation(); handleNextReel(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
             disabled={safeIndex === allReels.length - 1}
             style={{
               background: 'rgba(0,0,0,0.5)',
@@ -411,7 +642,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
         }}>
           {isReelChecking && (
             <div style={{
-              backgroundColor: 'rgba(255, 252, 0, 0.95)',
+              backgroundColor: 'rgba(234, 179, 8, 0.95)',
               color: '#000000',
               padding: '4px 10px',
               borderRadius: '8px',

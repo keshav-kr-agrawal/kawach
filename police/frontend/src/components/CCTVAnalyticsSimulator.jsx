@@ -40,11 +40,11 @@ function CCTVAnalyticsSimulator({ token, user }) {
         <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-sm">
           <div>
             <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Pillar 13: Video Analytics & CV</span>
-            <h4 className="text-xs font-bold text-indigo-700 mt-1">CCTV AI Detection Feed Analyzer</h4>
+            <h4 className="text-xs font-bold text-blue-700 mt-1">CCTV AI Detection Feed Analyzer</h4>
           </div>
           <button
             onClick={handleSimulateNewFeedTrigger}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow"
           >
             Simulate Alert Trigger
           </button>
@@ -151,7 +151,7 @@ function CCTVAnalyticsSimulator({ token, user }) {
       {/* Right Side: Live Logs list */}
       <div className="xl:col-span-1 glass-panel p-6 rounded-2xl flex flex-col h-[450px] xl:h-full overflow-hidden">
         <div className="flex items-center space-x-2.5 mb-4">
-          <Camera className="w-4 h-4 text-indigo-600" />
+          <Camera className="w-4 h-4 text-blue-600" />
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Live Detection Logs</h4>
         </div>
         <p className="text-[9px] text-slate-400 mb-4 leading-relaxed">

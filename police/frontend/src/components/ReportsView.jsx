@@ -57,7 +57,7 @@ function ReportsView({ token, user }) {
       {/* Configuration panel */}
       <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-auto xl:h-full overflow-y-auto">
         <div className="flex items-center space-x-2 mb-6">
-          <BarChart4 className="w-5 h-5 text-indigo-600 animate-pulse" />
+          <BarChart4 className="w-5 h-5 text-blue-600 animate-pulse" />
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Compile Official Reports</h4>
         </div>
 
@@ -67,7 +67,7 @@ function ReportsView({ token, user }) {
             <select
               value={reportType}
               onChange={(e) => setReportType(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
             >
               <option value="district_performance">District Performance Statistics</option>
               <option value="repeat_offenders">Repeat Offenders Watchlist</option>
@@ -80,7 +80,7 @@ function ReportsView({ token, user }) {
             <select
               value={format}
               onChange={(e) => setFormat(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
             >
               <option value="pdf">Adobe PDF Document (.pdf)</option>
               <option value="excel">Microsoft Excel Ledger (.xlsx)</option>
@@ -90,7 +90,7 @@ function ReportsView({ token, user }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl text-xs shadow-md shadow-indigo-100 disabled:opacity-50 transition-all transform active:scale-95"
+            className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl text-xs shadow-md shadow-blue-100 disabled:opacity-50 transition-all transform active:scale-95"
           >
             <Database className="w-4 h-4" />
             <span>{loading ? 'Compiling Ledger...' : 'Generate and Audit Report'}</span>
@@ -113,7 +113,7 @@ function ReportsView({ token, user }) {
       {/* Compiled reports grid / ledger */}
       <div className="glass-panel p-6 rounded-2xl xl:col-span-2 flex flex-col h-auto xl:h-full overflow-hidden">
         <div className="flex items-center space-x-2 mb-4 border-b border-slate-200 pb-4">
-          <History className="w-5 h-5 text-indigo-600" />
+          <History className="w-5 h-5 text-blue-600" />
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Export Ledger history</h4>
         </div>
 
@@ -139,7 +139,7 @@ function ReportsView({ token, user }) {
                 <tr key={rep.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                   <td className="p-3.5 pl-4">
                     <div className="flex items-start space-x-2.5">
-                      <FileText className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+                      <FileText className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                       <div>
                         <h5 className="font-bold text-slate-800">{rep.name}</h5>
                         <span className="text-[9px] text-slate-400 font-mono block mt-0.5">{rep.id} — {rep.created_at.substring(0, 16).replace('T', ' ')}</span>
@@ -156,7 +156,7 @@ function ReportsView({ token, user }) {
                   <td className="p-3.5 text-right pr-4">
                     <button
                       onClick={() => alert(`Initiating mock file download for ${rep.id} (${rep.name})`)}
-                      className="p-1.5 bg-white border border-slate-200 hover:border-indigo-500 text-slate-600 hover:text-indigo-600 rounded-lg shadow-sm transition-all"
+                      className="p-1.5 bg-white border border-slate-200 hover:border-blue-500 text-slate-600 hover:text-blue-600 rounded-lg shadow-sm transition-all"
                       title="Download compiled file"
                     >
                       <Download className="w-4 h-4" />

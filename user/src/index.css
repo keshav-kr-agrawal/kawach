@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   font-family: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
@@ -16,27 +20,53 @@
 body {
   margin: 0;
   padding: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #f8fafc; /* bg-slate-50 slate base */
+  color: #333333;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  position: relative;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scoped Mobile PWA mock frame */
+body.in-app {
+  display: flex;
+  place-items: center;
   background: #f2f2f2;
   overflow: hidden;
   user-select: none;
 }
 
-#root {
-  width: 100%;
+body.in-app #root {
   max-width: 480px; /* Force mobile phone frame on desktop */
   height: 100vh;
-  margin: 0 auto;
-  position: relative;
-  background-color: #ffffff;
+  min-height: 100vh;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
   border-left: 1px solid #e5e5e5;
   border-right: 1px solid #e5e5e5;
+}
+
+/* Full-height subview container without bottom navigation padding */
+.subview-container {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f8fafc; /* bg-slate-50 */
+  scrollbar-width: none;
+}
+
+.subview-container::-webkit-scrollbar {
+  display: none;
 }
 
 /* Light Glassmorphism panel styling (Snapchat Vibe) */
@@ -59,6 +89,24 @@ body {
 .glass-card:active {
   transform: scale(0.98);
   background: #fafafa;
+}
+
+/* 3D card flip animation utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
 }
 
 /* Map customization for Light Mode */
@@ -89,7 +137,7 @@ body {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  border: 3px solid #fffc00; /* Snapchat Yellow border */
+  border: 3px solid #ffd900; /* Warm Safety Yellow border */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   background-size: cover;
   background-position: center;
@@ -126,11 +174,11 @@ body {
 @keyframes pulse-marker-yellow {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 4px 10px rgba(255, 252, 0, 0.2);
+    box-shadow: 0 4px 10px rgba(255, 217, 0, 0.2);
   }
   100% {
     transform: scale(1.05);
-    box-shadow: 0 4px 15px rgba(255, 252, 0, 0.5);
+    box-shadow: 0 4px 15px rgba(255, 217, 0, 0.5);
   }
 }
 

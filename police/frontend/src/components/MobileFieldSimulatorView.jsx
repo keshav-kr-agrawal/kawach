@@ -67,7 +67,7 @@ function MobileFieldSimulatorView({ token, user }) {
       <div className="lg:col-span-3 flex flex-col space-y-6 h-full overflow-y-auto pr-1">
         <div className="glass-panel p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
           <div className="flex items-center space-x-2.5">
-            <ClipboardList className="w-5 h-5 text-indigo-600" />
+            <ClipboardList className="w-5 h-5 text-blue-600" />
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Officer Mobile Beat Simulator</h3>
           </div>
           <p className="text-xs text-slate-500 leading-relaxed">
@@ -89,10 +89,10 @@ function MobileFieldSimulatorView({ token, user }) {
         <div className="glass-panel p-6 rounded-2xl border border-slate-200 shadow-sm flex-1 min-h-[220px] flex flex-col">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center space-x-1.5">
-              <Database className="w-4 h-4 text-indigo-600" />
+              <Database className="w-4 h-4 text-blue-600" />
               <span>SQLite Cached Sync Registry</span>
             </h4>
-            <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
+            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-lg">
               {cachedQueue.length} Pending
             </span>
           </div>
@@ -106,7 +106,7 @@ function MobileFieldSimulatorView({ token, user }) {
               cachedQueue.map(t => (
                 <div key={t.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between text-xs animate-fade-in">
                   <div>
-                    <span className="font-mono font-bold text-indigo-600">{t.id}</span>
+                    <span className="font-mono font-bold text-blue-600">{t.id}</span>
                     <span className="text-slate-800 font-bold ml-2">[{t.category}]</span>
                     <p className="text-[10px] text-slate-500 mt-1 truncate max-w-[280px]" title={t.description}>{t.description}</p>
                   </div>
@@ -125,7 +125,7 @@ function MobileFieldSimulatorView({ token, user }) {
           {/* Internal Mobile Interface */}
           <div className="w-full h-full bg-slate-50 rounded-[30px] overflow-hidden flex flex-col text-slate-700">
             {/* Status bar */}
-            <div className="bg-indigo-900 px-4 py-2 flex justify-between items-center text-white text-[9px] font-bold">
+            <div className="bg-blue-900 px-4 py-2 flex justify-between items-center text-white text-[9px] font-bold">
               <span>9:41 AM</span>
               <div className="flex items-center space-x-2">
                 <span>GPS Active</span>
@@ -134,7 +134,7 @@ function MobileFieldSimulatorView({ token, user }) {
             </div>
 
             {/* Application Banner */}
-            <div className="bg-indigo-800 px-4 py-3 text-white flex items-center justify-between shadow">
+            <div className="bg-blue-800 px-4 py-3 text-white flex items-center justify-between shadow">
               <div className="flex items-center space-x-2">
                 <Smartphone className="w-4 h-4" />
                 <span className="text-[11px] font-bold uppercase tracking-wider">Beat App v1.2</span>
@@ -195,7 +195,7 @@ function MobileFieldSimulatorView({ token, user }) {
                       className="p-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-lg"
                       title="Ping coordinates"
                     >
-                      <MapPin className="w-3.5 h-3.5 text-indigo-600" />
+                      <MapPin className="w-3.5 h-3.5 text-blue-600" />
                     </button>
                   </div>
                 </div>
@@ -215,7 +215,7 @@ function MobileFieldSimulatorView({ token, user }) {
                 <button
                   type="submit"
                   disabled={syncing}
-                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow transition-all flex items-center justify-center space-x-1.5"
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow transition-all flex items-center justify-center space-x-1.5"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Report Field Incident</span>
@@ -224,8 +224,8 @@ function MobileFieldSimulatorView({ token, user }) {
 
               {/* Status alerts panel */}
               {statusMsg && (
-                <div className="p-2.5 bg-indigo-950 border border-indigo-900 rounded-lg text-white text-[9px] leading-relaxed font-semibold mt-3 animate-fade-in flex items-center space-x-1.5">
-                  <div className="shrink-0 animate-pulse text-indigo-400">
+                <div className="p-2.5 bg-blue-950 border border-blue-900 rounded-lg text-white text-[9px] leading-relaxed font-semibold mt-3 animate-fade-in flex items-center space-x-1.5">
+                  <div className="shrink-0 animate-pulse text-blue-400">
                     <RotateCw className="w-3.5 h-3.5 animate-spin" />
                   </div>
                   <span>{statusMsg}</span>

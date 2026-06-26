@@ -100,7 +100,7 @@ function PredictiveView({ token, user }) {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -110,7 +110,7 @@ function PredictiveView({ token, user }) {
       {/* Districts risk ranking list */}
       <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-[400px] xl:h-full overflow-hidden">
         <div className="flex items-center space-x-2 mb-6">
-          <Sparkles className="w-5 h-5 text-indigo-600" />
+          <Sparkles className="w-5 h-5 text-blue-600" />
           <h4 className="text-sm font-bold uppercase tracking-wider text-slate-800">Future Crime Risk Estimation</h4>
         </div>
 
@@ -121,7 +121,7 @@ function PredictiveView({ token, user }) {
               onClick={() => setSelectedDistrict(p)}
               className={`w-full p-4 rounded-xl text-left border transition-all duration-200 ${
                 selectedDistrict?.district_id === p.district_id
-                  ? 'bg-indigo-50/50 border-indigo-500 shadow-sm'
+                  ? 'bg-blue-50/50 border-blue-500 shadow-sm'
                   : 'bg-white border-slate-200 hover:bg-slate-50'
               }`}
             >

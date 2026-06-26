@@ -93,7 +93,7 @@ function CounterfeitScannerView({ token, user }) {
         <div className="glass-panel p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-[340px]">
           <div>
             <div className="flex items-center space-x-2.5 mb-5">
-              <Camera className="w-5 h-5 text-indigo-600" />
+              <Camera className="w-5 h-5 text-blue-600" />
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Counterfeit Scanning Agent</h3>
             </div>
             <p className="text-[10px] text-slate-400 mb-4">Select a pre-configured template or upload a capture of a currency note to test security markers:</p>
@@ -104,7 +104,7 @@ function CounterfeitScannerView({ token, user }) {
                 <select
                   value={selectedNote}
                   onChange={(e) => { setSelectedNote(e.target.value); setScanResult(null); setUploadedImage(null); }}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
                 >
                   <option value="500">₹500 Note (Genuine Template)</option>
                   <option value="500_fake">₹500 Note (Imitation Watermark Scan)</option>
@@ -118,7 +118,7 @@ function CounterfeitScannerView({ token, user }) {
             <button
               onClick={() => handleRunScan(selectedNote)}
               disabled={scanning}
-              className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-100 disabled:opacity-50 transition-all flex items-center justify-center space-x-2"
+              className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-100 disabled:opacity-50 transition-all flex items-center justify-center space-x-2"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${scanning ? 'animate-spin' : ''}`} />
               <span>{scanning ? "Analyzing Patterns..." : "Run Security Scan"}</span>
@@ -133,13 +133,13 @@ function CounterfeitScannerView({ token, user }) {
               <img src={uploadedImage} alt="Uploaded currency crop" className="max-h-40 rounded-lg object-contain shadow-sm" />
               <button 
                 onClick={() => handleRunScan(previewNote)}
-                className="mt-4 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 shadow transition-colors"
+                className="mt-4 px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 shadow transition-colors"
               >
                 Scan Uploaded note
               </button>
             </div>
           ) : (
-            <label className="w-full h-full border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors p-6">
+            <label className="w-full h-full border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors p-6">
               <Upload className="w-8 h-8 text-slate-400 mb-3" />
               <span className="text-xs font-semibold text-slate-700">Upload Note Image</span>
               <span className="text-[10px] text-slate-400 mt-1">Supports high-res JPG/PNG crops</span>
@@ -154,8 +154,8 @@ function CounterfeitScannerView({ token, user }) {
         {scanning && (
           <div className="glass-panel p-6 rounded-2xl border border-slate-200 flex flex-col items-center justify-center h-full text-center space-y-4 shadow-sm">
             <div className="relative flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin" />
-              <Sparkles className="w-6 h-6 text-indigo-500 absolute animate-pulse" />
+              <div className="w-16 h-16 rounded-full border-4 border-blue-100 border-t-blue-600 animate-spin" />
+              <Sparkles className="w-6 h-6 text-blue-500 absolute animate-pulse" />
             </div>
             <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Simulating Computer Vision Pipeline</h4>
             <p className="text-[11px] text-slate-400 max-w-[280px] leading-relaxed">Checking Mahatma Gandhi portrait shadow coordinates, tilting color thread hue angles, and matching microprinting font metrics against RBI standards.</p>
@@ -205,11 +205,11 @@ function CounterfeitScannerView({ token, user }) {
             </div>
 
             {/* Details Callout */}
-            <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl flex items-start space-x-3 text-xs">
-              <AlertCircle className="w-4.5 h-4.5 text-indigo-500 shrink-0 mt-0.5" />
+            <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-xl flex items-start space-x-3 text-xs">
+              <AlertCircle className="w-4.5 h-4.5 text-blue-500 shrink-0 mt-0.5" />
               <div>
-                <h6 className="font-bold text-indigo-950 uppercase tracking-wider text-[10px]">Verification Note</h6>
-                <p className="text-indigo-900/80 mt-1 leading-relaxed text-[11px]">This report is produced by a lightweight mobile computer vision model checking watermark density profiles and microprint lines. Always verify high-denomination note features manually in doubtful circumstances.</p>
+                <h6 className="font-bold text-blue-950 uppercase tracking-wider text-[10px]">Verification Note</h6>
+                <p className="text-blue-900/80 mt-1 leading-relaxed text-[11px]">This report is produced by a lightweight mobile computer vision model checking watermark density profiles and microprint lines. Always verify high-denomination note features manually in doubtful circumstances.</p>
               </div>
             </div>
           </div>

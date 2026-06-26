@@ -75,7 +75,7 @@ function GeoMapView({ token, user }) {
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -92,13 +92,13 @@ function GeoMapView({ token, user }) {
       <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-auto xl:h-full overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-indigo-600" />
+            <Filter className="w-4 h-4 text-blue-600" />
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Search Filters</h4>
           </div>
           <button 
             onClick={fetchGeoData}
             title="Reload from Graph"
-            className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-indigo-600 transition-colors"
+            className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-blue-600 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -110,7 +110,7 @@ function GeoMapView({ token, user }) {
             <select 
               value={selectedCrime}
               onChange={(e) => setSelectedCrime(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
             >
               <option value="All">All Categories</option>
               <option value="ANPR Spotting">ANPR Spotting</option>
@@ -125,7 +125,7 @@ function GeoMapView({ token, user }) {
 
           {/* Pillar 28 Socio-Economic Choropleth Panel */}
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-1 flex items-center space-x-1.5">
-            <Layers className="w-4 h-4 text-indigo-600" />
+            <Layers className="w-4 h-4 text-blue-600" />
             <span>Socio-Economic Choropleths</span>
           </h4>
           <p className="text-[9px] text-slate-400 leading-normal mb-3">Overlay mock census dataset blocks to correlate crime root causes (Pillar 28).</p>
@@ -143,7 +143,7 @@ function GeoMapView({ token, user }) {
                   name="choropleth"
                   checked={choropleth === layer.id}
                   onChange={() => setChoropleth(layer.id)}
-                  className="w-3.5 h-3.5 text-indigo-600 focus:ring-indigo-500"
+                  className="w-3.5 h-3.5 text-blue-600 focus:ring-blue-500"
                 />
                 <span>{layer.label}</span>
               </label>
@@ -163,7 +163,7 @@ function GeoMapView({ token, user }) {
                 step="0.05"
                 value={correlationAlpha}
                 onChange={(e) => setCorrelationAlpha(parseFloat(e.target.value))}
-                className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
             </div>
           )}
@@ -187,12 +187,12 @@ function GeoMapView({ token, user }) {
                 onClick={() => setSelectedIncident(f)}
                 className={`w-full p-3 rounded-xl text-left border transition-all duration-200 ${
                   isSelected
-                    ? 'bg-indigo-50 border-indigo-500 shadow-sm'
+                    ? 'bg-blue-50 border-blue-500 shadow-sm'
                     : 'bg-white border-slate-200 hover:bg-slate-50'
                 }`}
               >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-wider">{f.properties.id}</span>
+                  <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider">{f.properties.id}</span>
                   <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold uppercase ${
                     f.properties.threat_level === 'Critical' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
                   }`}>{f.properties.threat_level}</span>
@@ -289,7 +289,7 @@ function GeoMapView({ token, user }) {
                   <Popup>
                     <div className="space-y-1.5 p-1 text-slate-800">
                       <div className="flex justify-between items-center gap-4">
-                        <span className="text-[10px] font-bold text-indigo-600 uppercase font-mono">{f.properties.id}</span>
+                        <span className="text-[10px] font-bold text-blue-600 uppercase font-mono">{f.properties.id}</span>
                         <span className="text-[9px] px-1.5 py-0.5 bg-rose-50 text-rose-600 rounded font-bold uppercase">{f.properties.threat_level}</span>
                       </div>
                       <h5 className="text-xs font-bold text-slate-900 leading-normal">{f.properties.type}</h5>
@@ -307,9 +307,9 @@ function GeoMapView({ token, user }) {
 
           {/* Choropleth disclaimer card overlay */}
           {choropleth !== 'none' && (
-            <div className="absolute top-6 right-6 bg-indigo-950/95 text-white p-3 sm:p-4 rounded-xl border border-indigo-900 text-[10px] space-y-1 max-w-xs shadow-md z-[1000] backdrop-blur-xs">
-              <div className="font-bold flex items-center space-x-1"><Eye className="w-3.5 h-3.5 text-indigo-400" /><span>Correlation Dashboard</span></div>
-              <p className="text-indigo-200 leading-normal">Overlaying mock census metrics against crime hotspots centers to establish root causes and dispatch beat patrols (Pillar 28).</p>
+            <div className="absolute top-6 right-6 bg-blue-950/95 text-white p-3 sm:p-4 rounded-xl border border-blue-900 text-[10px] space-y-1 max-w-xs shadow-md z-[1000] backdrop-blur-xs">
+              <div className="font-bold flex items-center space-x-1"><Eye className="w-3.5 h-3.5 text-blue-400" /><span>Correlation Dashboard</span></div>
+              <p className="text-blue-200 leading-normal">Overlaying mock census metrics against crime hotspots centers to establish root causes and dispatch beat patrols (Pillar 28).</p>
             </div>
           )}
 

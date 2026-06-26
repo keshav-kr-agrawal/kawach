@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Radio, ShieldAlert } from 'lucide-react';
+import { Send, Bot, User } from 'lucide-react';
 
 export default function AlertsChatView() {
   const [messages, setMessages] = useState([
@@ -77,10 +77,10 @@ export default function AlertsChatView() {
   return (
     <div className="view-container" style={{ padding: '0', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 84px)', backgroundColor: '#ffffff' }}>
       
-      {/* Safety Alert Broadcast Banner (Snapchat red warning style) */}
+      {/* Safety Alert Broadcast Banner */}
       <div style={{
-        background: '#fff1f0',
-        borderBottom: '1px solid #ffa39e',
+        background: '#fff5f5',
+        borderBottom: '1px solid #ffe2e2',
         padding: '12px 16px',
         display: 'flex',
         alignItems: 'center',
@@ -90,13 +90,13 @@ export default function AlertsChatView() {
           width: '8px',
           height: '8px',
           borderRadius: '50%',
-          backgroundColor: '#ff3b30'
+          backgroundColor: '#E11D48' // Soft Crimson
         }} className="pulse-red" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: '9px', fontWeight: '800', letterSpacing: '0.05em', color: '#ff3b30', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '9px', fontWeight: '800', letterSpacing: '0.05em', color: '#E11D48', textTransform: 'uppercase' }}>
             Broadcasting Safety Notice
           </span>
-          <p style={{ margin: 0, fontSize: '11px', color: '#333333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }}>
+          <p style={{ margin: 0, fontSize: '11px', color: '#09090B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }}>
             High-speed water clogging logged on Outer Ring Road. Police advising detours.
           </p>
         </div>
@@ -132,12 +132,12 @@ export default function AlertsChatView() {
                 width: '32px',
                 height: '32px',
                 borderRadius: '50%',
-                backgroundColor: isBot ? '#fffde7' : '#f2f2f2',
-                border: `1px solid ${isBot ? '#fffc00' : '#e5e5e5'}`,
+                backgroundColor: isBot ? '#fffde7' : '#f8fafc',
+                border: `1px solid ${isBot ? '#ffd900' : '#e5e5e5'}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: isBot ? '#000000' : '#666666',
+                color: isBot ? '#09090B' : '#64748B',
                 flexShrink: 0
               }}>
                 {isBot ? <Bot size={16} /> : <User size={16} />}
@@ -150,14 +150,14 @@ export default function AlertsChatView() {
                   borderRadius: '16px',
                   borderTopLeftRadius: isBot ? '4px' : '16px',
                   borderTopRightRadius: isBot ? '16px' : '4px',
-                  background: isBot ? '#e3f2fd' : '#f2f2f2', // light blue bot bubbles, light gray user bubbles
-                  border: isBot ? '1px solid rgba(0, 122, 255, 0.15)' : '1px solid #e5e5e5',
+                  background: isBot ? '#eff6ff' : '#f8fafc', // Soft blue and soft slate bubbles
+                  border: isBot ? '1px solid rgba(59, 130, 246, 0.15)' : '1px solid #e2e8f0',
                   boxShadow: '0 2px 6px rgba(0,0,0,0.01)'
                 }}
               >
                 <div style={{ 
                   fontSize: '13px', 
-                  color: '#000000', 
+                  color: '#09090B', 
                   lineHeight: 1.5,
                   whiteSpace: 'pre-wrap',
                   fontWeight: '500'
@@ -167,7 +167,7 @@ export default function AlertsChatView() {
                 <div style={{ 
                   textAlign: isBot ? 'left' : 'right', 
                   fontSize: '9px', 
-                  color: '#999999',
+                  color: '#64748B',
                   marginTop: '6px',
                   fontWeight: '500'
                 }}>
@@ -198,11 +198,11 @@ export default function AlertsChatView() {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              backgroundColor: '#e3f2fd',
-              border: '1px solid rgba(0, 122, 255, 0.15)'
+              backgroundColor: '#eff6ff',
+              border: '1px solid rgba(59, 130, 246, 0.15)'
             }}>
               <span className="shimmer" style={{ width: '40px', height: '8px', borderRadius: '4px' }} />
-              <span style={{ fontSize: '11px', color: '#666666', fontWeight: '500' }}>Auditing safety databases...</span>
+              <span style={{ fontSize: '11px', color: '#64748B', fontWeight: '500' }}>Auditing safety databases...</span>
             </div>
           </div>
         )}
@@ -222,15 +222,16 @@ export default function AlertsChatView() {
         <button
           onClick={() => handleQuickQuestion('Verify kidnap rumor in Koramangala')}
           style={{
-            padding: '6px 14px',
+            padding: '8px 14px',
             borderRadius: '20px',
             border: '1px solid #e5e5e5',
-            backgroundColor: '#f8f8f8',
+            backgroundColor: '#f8fafc',
             fontSize: '11px',
-            color: '#333333',
+            color: '#09090B',
             cursor: 'pointer',
             whiteSpace: 'nowrap',
-            fontWeight: '600'
+            fontWeight: '600',
+            minHeight: '36px'
           }}
         >
           🔍 Kidnap Rumor Check
@@ -238,15 +239,16 @@ export default function AlertsChatView() {
         <button
           onClick={() => handleQuickQuestion('Is route to HSR safe right now?')}
           style={{
-            padding: '6px 14px',
+            padding: '8px 14px',
             borderRadius: '20px',
             border: '1px solid #e5e5e5',
-            backgroundColor: '#f8f8f8',
+            backgroundColor: '#f8fafc',
             fontSize: '11px',
-            color: '#333333',
+            color: '#09090B',
             cursor: 'pointer',
             whiteSpace: 'nowrap',
-            fontWeight: '600'
+            fontWeight: '600',
+            minHeight: '36px'
           }}
         >
           🗺️ Safe Route to HSR
@@ -254,25 +256,26 @@ export default function AlertsChatView() {
         <button
           onClick={() => handleQuickQuestion('Received CBI video call scam')}
           style={{
-            padding: '6px 14px',
+            padding: '8px 14px',
             borderRadius: '20px',
             border: '1px solid #e5e5e5',
-            backgroundColor: '#f8f8f8',
+            backgroundColor: '#f8fafc',
             fontSize: '11px',
-            color: '#333333',
+            color: '#09090B',
             cursor: 'pointer',
             whiteSpace: 'nowrap',
-            fontWeight: '600'
+            fontWeight: '600',
+            minHeight: '36px'
           }}
         >
           ⚠️ CBI Call Scam
         </button>
       </div>
 
-      {/* Message Input Panel (White theme) */}
+      {/* Message Input Panel */}
       <div className="glass-panel" style={{
         padding: '10px 16px 20px',
-        borderTop: '1px solid #e5e5e5',
+        borderTop: '1px solid #e2e8f0',
         display: 'flex',
         gap: '10px',
         alignItems: 'center',
@@ -286,31 +289,34 @@ export default function AlertsChatView() {
           placeholder="Ask KAWACH AI or paste WhatsApp forward..."
           style={{
             flex: 1,
-            backgroundColor: '#f2f2f2',
-            border: '1px solid #e5e5e5',
+            backgroundColor: '#f8fafc',
+            border: '1px solid #e2e8f0',
             borderRadius: '24px',
             padding: '12px 18px',
-            color: '#000000',
+            color: '#09090B',
             fontSize: '13px',
             outline: 'none',
             fontFamily: 'Inter, sans-serif',
-            fontWeight: '500'
+            fontWeight: '500',
+            minHeight: '44px'
           }}
         />
         <button
           onClick={() => handleSendMessage()}
           style={{
-            width: '42px',
-            height: '42px',
+            width: '44px',
+            height: '44px',
             borderRadius: '50%',
-            backgroundColor: '#fffc00', // Snapchat Yellow
-            color: '#000000',
+            backgroundColor: '#ffd900', // Safety Yellow
+            color: '#09090B',
             border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(255, 252, 0, 0.2)'
+            boxShadow: '0 2px 8px rgba(255, 217, 0, 0.2)',
+            minHeight: '44px',
+            minWidth: '44px'
           }}
         >
           <Send size={16} strokeWidth={2.5} />

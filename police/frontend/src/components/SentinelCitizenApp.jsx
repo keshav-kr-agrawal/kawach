@@ -36,7 +36,7 @@ function SentinelCitizenApp({ token, user }) {
         {/* Top Civic Trust Badge */}
         <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-2xl flex items-center justify-between mx-1.5 shadow-sm z-10">
           <div className="flex items-center space-x-2.5">
-            <Award className="w-5 h-5 text-indigo-500" />
+            <Award className="w-5 h-5 text-blue-500" />
             <div>
               <h5 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Civic Safety Rating</h5>
               <span className="text-xs font-extrabold text-white">Trust Score: {trustScore}/100</span>

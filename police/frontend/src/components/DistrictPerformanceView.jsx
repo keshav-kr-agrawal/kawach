@@ -35,7 +35,7 @@ function DistrictPerformanceView({ token, user }) {
       <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-sm">
         <div>
           <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">State Executive Command</span>
-          <h4 className="text-xs font-bold text-indigo-700 mt-1">District Performance Analytics Board (Karnataka SCRB)</h4>
+          <h4 className="text-xs font-bold text-blue-700 mt-1">District Performance Analytics Board (Karnataka SCRB)</h4>
         </div>
         <div className="text-[10px] font-bold text-slate-500 uppercase">Updated: Live Sync</div>
       </div>
@@ -57,9 +57,9 @@ function DistrictPerformanceView({ token, user }) {
           <div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Fastest Response Dispatch</span>
             <h3 className="text-2xl font-extrabold text-slate-900 mt-1.5">Bengaluru Urban</h3>
-            <p className="text-[10px] text-indigo-600 font-semibold mt-1">12.5 mins avg SLA</p>
+            <p className="text-[10px] text-blue-600 font-semibold mt-1">12.5 mins avg SLA</p>
           </div>
-          <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
+          <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
             <Clock className="w-6 h-6" />
           </div>
         </div>
@@ -100,7 +100,7 @@ function DistrictPerformanceView({ token, user }) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search district..."
-                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
               />
             </div>
           </div>
@@ -158,7 +158,7 @@ function DistrictPerformanceView({ token, user }) {
                   <td className="p-4 font-bold text-slate-900">{d.name}</td>
                   <td className="p-4 text-center font-mono">{d.response_time} mins</td>
                   <td className="p-4 text-center">
-                    <span className="px-2.5 py-0.5 rounded-lg border border-indigo-100 bg-indigo-50 text-indigo-600 font-bold">{d.clearance}%</span>
+                    <span className="px-2.5 py-0.5 rounded-lg border border-blue-100 bg-blue-50 text-blue-600 font-bold">{d.clearance}%</span>
                   </td>
                   <td className="p-4 text-center">
                     <span className="px-2.5 py-0.5 rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-600 font-bold">{d.conviction}%</span>
@@ -169,7 +169,7 @@ function DistrictPerformanceView({ token, user }) {
                   <td className="p-4 text-center">
                     <div className="flex items-center justify-center space-x-2">
                       <div className="w-16 bg-slate-100 rounded-full h-1.5 shrink-0">
-                        <div className={`h-1.5 rounded-full ${d.resource_load >= 80 ? 'bg-rose-500' : 'bg-indigo-500'}`} style={{ width: `${d.resource_load}%` }} />
+                        <div className={`h-1.5 rounded-full ${d.resource_load >= 80 ? 'bg-rose-500' : 'bg-blue-500'}`} style={{ width: `${d.resource_load}%` }} />
                       </div>
                       <span className="text-[10px] text-slate-500 font-bold w-10 text-right">{d.resource_load}%</span>
                     </div>

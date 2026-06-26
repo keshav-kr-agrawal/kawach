@@ -68,7 +68,7 @@ function NetworkView({ token, user }) {
   };
 
   const TYPE_COLORS = {
-    Person: '#4F46E5',  // Indigo
+    Person: '#3B82F6',  // Blue
     Gang: '#F59E0B',    // Amber
     Vehicle: '#3B82F6', // Blue
     Phone: '#10B981',   // Emerald
@@ -106,7 +106,7 @@ function NetworkView({ token, user }) {
       {/* Search & List Panel */}
       <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-[450px] xl:h-full overflow-hidden">
         <div className="flex items-center space-x-2 mb-4">
-          <Search className="w-4 h-4 text-indigo-600" />
+          <Search className="w-4 h-4 text-blue-600" />
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Search Entity Graph</h4>
         </div>
         
@@ -115,7 +115,7 @@ function NetworkView({ token, user }) {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search suspects, plates, phones..."
-          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm mb-4"
+          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm mb-4"
         />
 
         <div className="mb-4">
@@ -123,7 +123,7 @@ function NetworkView({ token, user }) {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
           >
             <option value="All">All Entities</option>
             <option value="Person">Suspects (Persons)</option>
@@ -149,7 +149,7 @@ function NetworkView({ token, user }) {
               onClick={() => setSelectedNode(n)}
               className={`w-full p-3.5 rounded-xl text-left border transition-all duration-200 ${
                 selectedNode?.id === n.id
-                  ? 'bg-indigo-50/50 border-indigo-500 shadow-sm'
+                  ? 'bg-blue-50/50 border-blue-500 shadow-sm'
                   : 'bg-white border-slate-200 hover:bg-slate-50'
               }`}
             >
@@ -168,7 +168,7 @@ function NetworkView({ token, user }) {
       {/* Relation Graph Canvas */}
       <div className="glass-panel p-6 rounded-2xl xl:col-span-3 flex flex-col h-[500px] xl:h-full relative overflow-hidden">
         <div className="absolute top-8 left-8 flex items-center space-x-2 z-10 bg-white/95 px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-sm">
-          <Zap className="w-5 h-5 text-indigo-600 animate-pulse" />
+          <Zap className="w-5 h-5 text-blue-600 animate-pulse" />
           <span className="text-xs font-bold uppercase tracking-wider text-slate-800">Intelligence Graph Workspace</span>
         </div>
 
@@ -213,7 +213,7 @@ function NetworkView({ token, user }) {
               return (
                 <g key={node.id} className="cursor-pointer" onClick={() => setSelectedNode(node)}>
                   {isSelected && (
-                    <circle cx={pos.x} cy={pos.y} r={size + 6} fill="none" stroke="#4F46E5" strokeWidth={1.5} strokeDasharray="3 3" />
+                    <circle cx={pos.x} cy={pos.y} r={size + 6} fill="none" stroke="#3B82F6" strokeWidth={1.5} strokeDasharray="3 3" />
                   )}
                   <circle
                     cx={pos.x}

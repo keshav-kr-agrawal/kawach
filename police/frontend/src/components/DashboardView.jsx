@@ -87,7 +87,7 @@ function DashboardView({ token, user }) {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -106,7 +106,7 @@ function DashboardView({ token, user }) {
       <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-sm">
         <div>
           <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Active Directive</span>
-          <h4 className="text-xs font-bold text-indigo-700 mt-1">{getScopeBanner()}</h4>
+          <h4 className="text-xs font-bold text-blue-700 mt-1">{getScopeBanner()}</h4>
         </div>
         <div className="text-[10px] font-bold text-slate-500 uppercase">Status: Connected</div>
       </div>
@@ -117,12 +117,12 @@ function DashboardView({ token, user }) {
           <div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Total Filed FIRs</span>
             <h3 className="text-3xl font-extrabold text-slate-900 mt-1.5">{summary?.total_firs.toLocaleString()}</h3>
-            <div className="text-[10px] text-indigo-600 mt-1 font-semibold flex items-center">
+            <div className="text-[10px] text-blue-600 mt-1 font-semibold flex items-center">
               <span>+14.5% vs. previous half</span>
             </div>
             <p className="text-[9px] text-slate-400 mt-1">Total registered complaints</p>
           </div>
-          <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
+          <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
             <FileText className="w-6 h-6" />
           </div>
         </div>
@@ -225,7 +225,7 @@ function DashboardView({ token, user }) {
             </ResponsiveContainer>
             <div className="absolute flex flex-col items-center">
               <span className="text-[10px] text-slate-400 uppercase font-semibold">Top Crime</span>
-              <span className="text-xs font-bold text-indigo-600 text-center max-w-[120px] truncate mt-0.5">{summary?.top_crime_category}</span>
+              <span className="text-xs font-bold text-blue-600 text-center max-w-[120px] truncate mt-0.5">{summary?.top_crime_category}</span>
             </div>
           </div>
           
@@ -274,11 +274,11 @@ function DashboardView({ token, user }) {
               </div>
             </div>
             
-            <div className="p-4 bg-indigo-50/50 border border-indigo-100 border-l-4 border-l-indigo-500 rounded-r-xl flex space-x-3 shadow-sm">
-              <Shield className="w-5 h-5 text-indigo-600 shrink-0" />
+            <div className="p-4 bg-blue-50/50 border border-blue-100 border-l-4 border-l-blue-500 rounded-r-xl flex space-x-3 shadow-sm">
+              <Shield className="w-5 h-5 text-blue-600 shrink-0" />
               <div>
-                <h5 className="text-xs font-bold text-indigo-950 uppercase tracking-wider">Security Watch: Repeat Offender Activity</h5>
-                <p className="text-xs text-indigo-900/80 mt-1">Alert: 3 repeat offenders on the watchlist have been released on bail and are in the Mysore Central division. Keep under close watch.</p>
+                <h5 className="text-xs font-bold text-blue-950 uppercase tracking-wider">Security Watch: Repeat Offender Activity</h5>
+                <p className="text-xs text-blue-900/80 mt-1">Alert: 3 repeat offenders on the watchlist have been released on bail and are in the Mysore Central division. Keep under close watch.</p>
               </div>
             </div>
 

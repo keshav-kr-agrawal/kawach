@@ -56,9 +56,9 @@ function SocioEconomicView({ token, user }) {
 
   // Helper for heatmap cell color based on correlation coefficient value
   const getCellBg = (val) => {
-    if (val === 1.0) return 'bg-indigo-600 text-white font-bold';
-    if (val > 0.6) return 'bg-indigo-100 text-indigo-800 font-semibold';
-    if (val > 0.3) return 'bg-indigo-50 text-indigo-700';
+    if (val === 1.0) return 'bg-blue-600 text-white font-bold';
+    if (val > 0.6) return 'bg-blue-100 text-blue-800 font-semibold';
+    if (val > 0.3) return 'bg-blue-50 text-blue-700';
     if (val < -0.4) return 'bg-rose-100 text-rose-800 font-semibold';
     if (val < 0) return 'bg-rose-50 text-rose-700';
     return 'bg-slate-50 text-slate-500';
@@ -68,7 +68,7 @@ function SocioEconomicView({ token, user }) {
     <div className="space-y-8 animate-fade-in">
       {/* Overview insights */}
       <div className="glass-panel p-6 rounded-2xl flex items-start space-x-4">
-        <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600 shrink-0">
+        <div className="p-3 bg-blue-50 rounded-xl text-blue-600 shrink-0">
           <BarChart3 className="w-6 h-6" />
         </div>
         <div>
@@ -116,7 +116,7 @@ function SocioEconomicView({ token, user }) {
           </div>
 
           <div className="flex items-start space-x-2 mt-4 text-[10px] text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200">
-            <Info className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+            <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
             <span><strong>Help:</strong> A score of 1.00 means both numbers change together perfectly. A positive score (above 0) means crime increases with that factor (like unemployment). A negative score (below 0) means crime decreases as that factor increases (like having more police).</span>
           </div>
         </div>

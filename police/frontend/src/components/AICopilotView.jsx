@@ -180,7 +180,7 @@ function AICopilotView({ token, user }) {
       head: [["Field Descriptor", "Security System Registry Value"]],
       body: metadata,
       theme: 'grid',
-      headStyles: { fillColor: [79, 70, 229], fontSize: 9 }, // Indigo headers
+      headStyles: { fillColor: [59, 130, 246], fontSize: 9 }, // Cyber Blue headers
       bodyStyles: { fontSize: 8 }
     });
     
@@ -270,7 +270,7 @@ function AICopilotView({ token, user }) {
 
       // Handle titles
       if (line.startsWith('### ')) {
-        return <h3 key={idx} className="text-sm font-bold text-indigo-700 mt-4 mb-2">{line.replace('### ', '')}</h3>;
+        return <h3 key={idx} className="text-sm font-bold text-blue-700 mt-4 mb-2">{line.replace('### ', '')}</h3>;
       }
       if (line.startsWith('#### ')) {
         return <h4 key={idx} className="text-xs font-bold text-slate-800 mt-3 mb-1.5 uppercase tracking-wide">{line.replace('#### ', '')}</h4>;
@@ -306,7 +306,7 @@ function AICopilotView({ token, user }) {
       {/* Help templates & compliance indicators */}
       <div className="glass-panel p-6 rounded-2xl flex flex-col xl:col-span-1 h-[450px] xl:h-full overflow-hidden">
         <div className="flex items-center space-x-2 mb-3">
-          <HelpCircle className="w-4 h-4 text-indigo-600" />
+          <HelpCircle className="w-4 h-4 text-blue-600" />
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Quick Query Templates</h4>
         </div>
         <div className="space-y-1.5 max-h-[140px] overflow-y-auto mb-4 pr-1">
@@ -314,10 +314,10 @@ function AICopilotView({ token, user }) {
             <button
               key={idx}
               onClick={() => handleSendMessage(t)}
-              className="w-full text-left p-2.5 bg-white hover:bg-indigo-50/50 border border-slate-200 hover:border-indigo-300 rounded-xl transition-all duration-200 text-[11px] font-semibold text-slate-700 flex items-center justify-between"
+              className="w-full text-left p-2.5 bg-white hover:bg-blue-50/50 border border-slate-200 hover:border-blue-300 rounded-xl transition-all duration-200 text-[11px] font-semibold text-slate-700 flex items-center justify-between"
             >
               <span className="truncate">{t}</span>
-              <Sparkles className="w-3 h-3 text-indigo-500 flex-shrink-0" />
+              <Sparkles className="w-3 h-3 text-blue-500 flex-shrink-0" />
             </button>
           ))}
         </div>
@@ -325,7 +325,7 @@ function AICopilotView({ token, user }) {
         <div className="border-t border-slate-200 my-3" />
 
         <div className="flex items-center space-x-2 mb-3">
-          <Mic className="w-4 h-4 text-indigo-600" />
+          <Mic className="w-4 h-4 text-blue-600" />
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Voice Kannada Command Simulation</h4>
         </div>
         <div className="space-y-2.5 flex-1 overflow-y-auto pr-1">
@@ -333,10 +333,10 @@ function AICopilotView({ token, user }) {
             <button
               key={idx}
               onClick={() => handleVoicePresetSelect(preset)}
-              className="w-full text-left p-3 bg-slate-50 border border-slate-100 hover:bg-indigo-50 hover:border-indigo-200 rounded-xl text-[10px] font-bold text-slate-700 transition-all flex justify-between items-center"
+              className="w-full text-left p-3 bg-slate-50 border border-slate-100 hover:bg-blue-50 hover:border-blue-200 rounded-xl text-[10px] font-bold text-slate-700 transition-all flex justify-between items-center"
             >
               <span className="truncate pr-1">{preset.label}</span>
-              <span className="text-[8px] px-1.5 py-0.5 bg-indigo-200 text-indigo-800 rounded">{preset.lang}</span>
+              <span className="text-[8px] px-1.5 py-0.5 bg-blue-200 text-blue-800 rounded">{preset.lang}</span>
             </button>
           ))}
         </div>
@@ -344,7 +344,7 @@ function AICopilotView({ token, user }) {
         <div className="border-t border-slate-200 my-3" />
 
         <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl flex items-start space-x-3">
-          <Terminal className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
+          <Terminal className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
           <div>
             <h5 className="text-[9px] font-bold text-slate-800 uppercase tracking-wide">DPDP Compliant AI</h5>
             <p className="text-[8px] text-slate-500 mt-1 leading-normal">Compliance parameters explicitly prevent individual automated profiling.</p>
@@ -356,7 +356,7 @@ function AICopilotView({ token, user }) {
       <div className="glass-panel p-6 rounded-2xl xl:col-span-3 flex flex-col h-[500px] xl:h-full relative overflow-hidden">
         <div className="flex justify-between items-center border-b border-slate-200 pb-4 mb-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-indigo-50 rounded-xl text-indigo-600">
+            <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
@@ -367,7 +367,7 @@ function AICopilotView({ token, user }) {
           <div className="flex items-center space-x-2">
             <button
               onClick={handleExportDossier}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-bold shadow transition-all shrink-0"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-bold shadow transition-all shrink-0"
               title="Export conversation history to PDF format"
             >
               <Download className="w-3.5 h-3.5" />
@@ -382,8 +382,8 @@ function AICopilotView({ token, user }) {
 
         {/* Sync notification bar */}
         {syncStatus && (
-          <div className="bg-indigo-50 border border-indigo-100 text-indigo-800 text-[10px] p-2.5 rounded-xl mb-4 font-bold flex items-center space-x-2 animate-bounce">
-            <span className="w-2 h-2 bg-indigo-600 rounded-full animate-ping" />
+          <div className="bg-blue-50 border border-blue-100 text-blue-800 text-[10px] p-2.5 rounded-xl mb-4 font-bold flex items-center space-x-2 animate-bounce">
+            <span className="w-2 h-2 bg-blue-600 rounded-full animate-ping" />
             <span>{syncStatus}</span>
           </div>
         )}
@@ -398,7 +398,7 @@ function AICopilotView({ token, user }) {
               <div
                 className={`max-w-2xl px-5 py-4 rounded-2xl shadow-sm border ${
                   m.sender === 'user'
-                    ? 'bg-indigo-600 border-indigo-500 text-white rounded-br-none'
+                    ? 'bg-blue-600 border-blue-500 text-white rounded-br-none'
                     : 'bg-white border-slate-200 text-slate-800 rounded-bl-none'
                 }`}
               >
@@ -407,7 +407,7 @@ function AICopilotView({ token, user }) {
                 ) : (
                   <div className="space-y-1">{formatMessage(m.text)}</div>
                 )}
-                <span className={`block text-[8px] text-right mt-2 ${m.sender === 'user' ? 'text-indigo-200' : 'text-slate-400'}`}>
+                <span className={`block text-[8px] text-right mt-2 ${m.sender === 'user' ? 'text-blue-200' : 'text-slate-400'}`}>
                   {m.timestamp}
                 </span>
               </div>
@@ -417,9 +417,9 @@ function AICopilotView({ token, user }) {
           {loading && (
             <div className="flex justify-start">
               <div className="bg-white border border-slate-200 px-5 py-4 rounded-2xl rounded-bl-none flex items-center space-x-2 shadow-sm">
-                <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 <span className="text-[10px] text-slate-400 pl-1">Analyzing Data Lake...</span>
               </div>
             </div>
@@ -445,7 +445,7 @@ function AICopilotView({ token, user }) {
             onKeyDown={handleKeyDown}
             disabled={loading}
             placeholder="Ask AI Copilot (e.g. 'Summarize case FIR-2024-00001', 'Analyze profile Ramesh Kumar')..."
-            className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm transition-colors disabled:opacity-50"
+            className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm transition-colors disabled:opacity-50"
           />
           
           <button
@@ -462,7 +462,7 @@ function AICopilotView({ token, user }) {
           <button
             onClick={() => handleSendMessage()}
             disabled={loading || !inputText.trim()}
-            className="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md shadow-indigo-100 disabled:opacity-50 transition-all transform active:scale-95"
+            className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md shadow-blue-100 disabled:opacity-50 transition-all transform active:scale-95"
             title="Send query"
           >
             <Send className="w-4 h-4" />

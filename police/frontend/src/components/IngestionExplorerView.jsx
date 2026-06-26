@@ -86,7 +86,7 @@ function IngestionExplorerView({ token, user }) {
       <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-sm">
         <div>
           <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Pillar 1: Data Ingestion Layer</span>
-          <h4 className="text-xs font-bold text-indigo-700 mt-1">Multi-Node Ingestion Explorer Console</h4>
+          <h4 className="text-xs font-bold text-blue-700 mt-1">Multi-Node Ingestion Explorer Console</h4>
         </div>
         <div className="text-[10px] font-bold text-slate-500 uppercase">State Data Lake connected</div>
       </div>
@@ -106,7 +106,7 @@ function IngestionExplorerView({ token, user }) {
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
                 className={`py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all flex items-center space-x-2 ${
-                  activeTab === t.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'
+                  activeTab === t.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'
                 }`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
@@ -129,13 +129,13 @@ function IngestionExplorerView({ token, user }) {
                   activeTab === 'cdr' ? "Search CDR logs by suspect or receiver number..." :
                   "Search RBI Fraud Registry by bank account number..."
                 }
-                className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+                className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow transition-all"
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow transition-all"
             >
               Filter Logs
             </button>
@@ -145,7 +145,7 @@ function IngestionExplorerView({ token, user }) {
 
       {loading ? (
         <div className="flex h-48 items-center justify-center">
-          <div className="animate-spin rounded-full h-7 w-7 border-t-2 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-7 w-7 border-t-2 border-b-2 border-blue-600"></div>
         </div>
       ) : (
         <div className="glass-panel p-6 rounded-2xl border border-slate-200 shadow-sm min-h-[300px]">
@@ -157,7 +157,7 @@ function IngestionExplorerView({ token, user }) {
               ) : (
                 missingPersons.map(p => (
                   <div key={p.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center space-x-4 shadow-sm">
-                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
                       <Users className="w-6 h-6" />
                     </div>
                     <div>
@@ -227,7 +227,7 @@ function IngestionExplorerView({ token, user }) {
                         <td className="p-4 text-center font-mono">{c.associated_number}</td>
                         <td className="p-4 text-center">
                           <span className={`px-2 py-0.5 rounded text-[8px] font-bold border ${
-                            c.call_type === 'Incoming' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                            c.call_type === 'Incoming' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
                           }`}>{c.call_type}</span>
                         </td>
                         <td className="p-4 text-center font-mono">{c.cell_tower_id}</td>

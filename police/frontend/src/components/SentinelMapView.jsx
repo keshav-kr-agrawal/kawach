@@ -92,7 +92,7 @@ function SentinelMapView({ token, user }) {
   };
 
   const CATEGORY_COLORS = {
-    Traffic: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+    Traffic: 'bg-blue-50 text-blue-700 border-blue-100',
     Fire: 'bg-amber-50 text-amber-700 border-amber-100',
     Violence: 'bg-rose-50 text-rose-700 border-rose-100',
     Safety: 'bg-teal-50 text-teal-700 border-teal-100'
@@ -104,7 +104,7 @@ function SentinelMapView({ token, user }) {
       <div className="p-4 bg-white border border-slate-200 rounded-2xl flex flex-col md:flex-row md:items-center justify-between shadow-sm gap-4">
         <div>
           <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Pillar 26: The Sentinel Safety Grid</span>
-          <h4 className="text-xs font-bold text-indigo-700 mt-1">Dual-Lens Geospatial Crowd & OSINT Mapping Workspace</h4>
+          <h4 className="text-xs font-bold text-blue-700 mt-1">Dual-Lens Geospatial Crowd & OSINT Mapping Workspace</h4>
         </div>
         <div className="flex space-x-2.5">
           <button
@@ -143,7 +143,7 @@ function SentinelMapView({ token, user }) {
           {/* Map header info overlays */}
           <div className="flex justify-between items-center z-10 mb-4 bg-white/90 p-3 rounded-xl border border-slate-150 shadow-xs">
             <span className="text-[10px] font-bold text-slate-700 uppercase flex items-center space-x-1.5">
-              <Activity className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
+              <Activity className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
               <span>Real-Time Geospatial Safe-Zone Overlays</span>
             </span>
             <span className="text-[9px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
@@ -207,7 +207,7 @@ function SentinelMapView({ token, user }) {
           {viewMode === 'citizen' ? (
             <div className="glass-panel p-5 rounded-3xl border border-slate-200">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-4 flex items-center space-x-2">
-                <Camera className="w-4.5 h-4.5 text-indigo-600" />
+                <Camera className="w-4.5 h-4.5 text-blue-600" />
                 <span>Snap Incident Report Console</span>
               </h4>
               <p className="text-[10px] text-slate-400 mb-4 leading-relaxed">
@@ -225,12 +225,12 @@ function SentinelMapView({ token, user }) {
                   value={newIncidentText}
                   onChange={(e) => setNewIncidentText(e.target.value)}
                   placeholder="Explain the incident (e.g. Broken streetlight, road damage, public distress)..."
-                  className="w-full bg-white border border-slate-200 rounded-xl p-3.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-inner h-24 resize-none"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-3.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-inner h-24 resize-none"
                   required
                 />
                 
                 <div className="flex justify-between items-center text-[10px] text-slate-400">
-                  <span className="flex items-center space-x-1.5 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md font-bold">
+                  <span className="flex items-center space-x-1.5 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-bold">
                     <EyeOff className="w-3 h-3" />
                     <span>Ghost Mode Enabled</span>
                   </span>
@@ -254,7 +254,7 @@ function SentinelMapView({ token, user }) {
             /* Police Panel: Patrolling Command Feed */
             <div className="glass-panel p-5 rounded-3xl border border-slate-200 flex-1 flex flex-col">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-4 flex items-center space-x-2">
-                <Shield className="w-4.5 h-4.5 text-indigo-700" />
+                <Shield className="w-4.5 h-4.5 text-blue-700" />
                 <span>patrol dispatch evaluations</span>
               </h4>
 
@@ -262,7 +262,7 @@ function SentinelMapView({ token, user }) {
                 {uploads.map(u => (
                   <div key={u.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-2.5">
                     <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-mono text-indigo-600 font-bold">{u.id}</span>
+                      <span className="text-[10px] font-mono text-blue-600 font-bold">{u.id}</span>
                       <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
                         u.threat_score > 60 ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'
                       }`}>Threat: {u.threat_score}%</span>
@@ -282,7 +282,7 @@ function SentinelMapView({ token, user }) {
           <div className="glass-panel p-5 rounded-3xl border border-slate-200 h-64 overflow-hidden flex flex-col">
             <div className="flex justify-between items-center mb-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center space-x-2">
-                <Globe className="w-4.5 h-4.5 text-indigo-600 animate-pulse" />
+                <Globe className="w-4.5 h-4.5 text-blue-600 animate-pulse" />
                 <span>OSINT Emergency Broadcast Feed</span>
               </h4>
               <button onClick={fetchNewsPins} className="p-1 hover:bg-slate-50 rounded text-slate-500">
@@ -292,7 +292,7 @@ function SentinelMapView({ token, user }) {
 
             <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
               {loading ? (
-                <div className="flex justify-center items-center py-10"><RefreshCw className="w-4 h-4 animate-spin text-indigo-600" /></div>
+                <div className="flex justify-center items-center py-10"><RefreshCw className="w-4 h-4 animate-spin text-blue-600" /></div>
               ) : newsPins.length === 0 ? (
                 <p className="text-[10px] text-slate-400 text-center py-8">No current OSINT signals verified.</p>
               ) : (

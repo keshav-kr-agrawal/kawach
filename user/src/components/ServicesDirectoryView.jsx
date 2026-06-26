@@ -9,9 +9,9 @@ export default function ServicesDirectoryView({ gpsCoords }) {
 
   // Hand-Verified Core Emergency Lifelines (Direct Top Section)
   const emergencyLifelines = [
-    { name: 'Police Control Room', phone: '112', icon: Shield, color: '#007aff', details: 'Direct emergency police assistance', verified: true },
-    { name: 'Ambulance Helpline', phone: '108', icon: HeartPulse, color: '#ff3b30', details: 'Immediate medical dispatch', verified: true },
-    { name: 'Fire & Rescue Command', phone: '101', icon: Flame, color: '#ff9500', details: 'Hazard containment & emergency safety', verified: true }
+    { name: 'Police Control Room', phone: '112', icon: Shield, color: '#3B82F6', details: 'Direct emergency police assistance', verified: true },
+    { name: 'Ambulance Helpline', phone: '108', icon: HeartPulse, color: '#E11D48', details: 'Immediate medical dispatch', verified: true },
+    { name: 'Fire & Rescue Command', phone: '101', icon: Flame, color: '#F59E0B', details: 'Hazard containment & emergency safety', verified: true }
   ];
 
   // Hand-verified mock database
@@ -27,7 +27,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       phone: '112',
       address: '8th Block, Koramangala, Bengaluru',
       icon: Shield,
-      color: '#007aff',
+      color: '#3B82F6',
       verified: true
     },
     {
@@ -41,7 +41,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       phone: '108',
       address: 'Sarjapur Road, John Nagar, Bengaluru',
       icon: HeartPulse,
-      color: '#ff3b30',
+      color: '#E11D48',
       verified: true
     },
     {
@@ -55,7 +55,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       phone: '101',
       address: 'Sector 4, HSR Layout, Bengaluru',
       icon: Flame,
-      color: '#ff9500',
+      color: '#F59E0B',
       verified: true
     },
     {
@@ -69,7 +69,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       phone: '1912',
       address: '5th Block, Koramangala, Bengaluru',
       icon: Zap,
-      color: '#ffcc00',
+      color: '#F59E0B',
       verified: true
     },
     {
@@ -83,7 +83,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       phone: '1078',
       address: 'Yelahanka, Bengaluru Outskirts',
       icon: AlertTriangle,
-      color: '#5856d6',
+      color: '#818cf8',
       verified: true
     },
     {
@@ -97,7 +97,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       phone: '1916',
       address: '2nd Stage, Indiranagar, Bengaluru',
       icon: Droplet,
-      color: '#5ac8fa',
+      color: '#3B82F6',
       verified: true
     },
     {
@@ -111,7 +111,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       phone: '+919900019100',
       address: 'Bannerghatta Road, Bengaluru',
       icon: HeartPulse,
-      color: '#ff3b30',
+      color: '#E11D48',
       verified: true
     },
     {
@@ -125,7 +125,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       phone: '+918045612340',
       address: '100ft Road, Indiranagar, Bengaluru',
       icon: Shield,
-      color: '#007aff',
+      color: '#3B82F6',
       verified: true
     },
     {
@@ -139,7 +139,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       phone: '+919888800221',
       address: '4th Block, Koramangala, Bengaluru',
       icon: Truck,
-      color: '#8e8e93',
+      color: '#64748B',
       verified: true
     },
     {
@@ -153,7 +153,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       phone: '+919777123456',
       address: 'Ejipura Main Road, Bengaluru',
       icon: Droplet,
-      color: '#5ac8fa',
+      color: '#3B82F6',
       verified: true
     },
     {
@@ -167,7 +167,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       phone: '+919666677777',
       address: 'Outer Ring Road, Bellandur',
       icon: Truck,
-      color: '#8e8e93',
+      color: '#64748B',
       verified: true
     }
   ];
@@ -207,7 +207,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
   return (
     <div className="view-container" style={{ 
       padding: '20px 16px 100px', 
-      backgroundColor: '#f2f2f2',
+      backgroundColor: '#fafafa', // Soft Off-White
       boxSizing: 'border-box',
       height: 'calc(100vh - 84px)',
       overflowY: 'auto'
@@ -215,10 +215,10 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       
       {/* View Header */}
       <div style={{ marginBottom: '16px' }}>
-        <h1 style={{ margin: 0, fontSize: '20px', fontFamily: 'Outfit', fontWeight: '850', color: '#000000' }}>
+        <h1 style={{ margin: 0, fontSize: '20px', fontFamily: 'Outfit', fontWeight: '850', color: '#09090B' }}>
           Community & Helplines
         </h1>
-        <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#666666', fontWeight: '500' }}>
+        <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#64748B', fontWeight: '500' }}>
           Hand-verified support stations and utility lines to assist you instantly.
         </p>
       </div>
@@ -232,7 +232,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
         marginBottom: '20px',
         border: '1px solid #e5e5e5'
       }}>
-        <h2 style={{ margin: '0 0 10px 0', fontSize: '11px', color: '#ff3b30', fontWeight: '800', letterSpacing: '0.05em' }}>
+        <h2 style={{ margin: '0 0 10px 0', fontSize: '11px', color: '#E11D48', fontWeight: '800', letterSpacing: '0.05em' }}>
           🚨 EMERGENCY HELPLINES
         </h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -267,12 +267,12 @@ export default function ServicesDirectoryView({ gpsCoords }) {
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '750', color: '#000000' }}>
+                      <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '750', color: '#09090B' }}>
                         {lifeline.name} ({lifeline.phone})
                       </h3>
-                      <CheckCircle size={12} fill="#007aff" stroke="#ffffff" />
+                      <CheckCircle size={12} fill="#3B82F6" stroke="#ffffff" />
                     </div>
-                    <p style={{ margin: 0, fontSize: '10px', color: '#777777', fontWeight: '500' }}>
+                    <p style={{ margin: 0, fontSize: '10px', color: '#64748B', fontWeight: '500' }}>
                       {lifeline.details}
                     </p>
                   </div>
@@ -281,17 +281,17 @@ export default function ServicesDirectoryView({ gpsCoords }) {
                 <button
                   onClick={() => handleCallSimulation(lifeline)}
                   style={{
-                    background: '#fffc00',
-                    border: '1px solid #e5e5e5',
+                    background: '#ffd900', // Safety Yellow
+                    border: '1px solid #ffd900',
                     borderRadius: '10px',
-                    width: '32px',
-                    height: '32px',
+                    width: '36px',
+                    height: '36px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#000000',
+                    color: '#09090B',
                     cursor: 'pointer',
-                    boxShadow: '0 2px 6px rgba(255, 252, 0, 0.15)'
+                    boxShadow: '0 2px 6px rgba(255, 217, 0, 0.15)'
                   }}
                 >
                   <Phone size={14} strokeWidth={2.5} />
@@ -314,16 +314,17 @@ export default function ServicesDirectoryView({ gpsCoords }) {
           onClick={() => setActiveSector('government')}
           style={{
             flex: 1,
-            padding: '10px',
+            padding: '12px 10px',
             borderRadius: '12px',
             border: 'none',
             fontSize: '12px',
             fontWeight: '700',
             cursor: 'pointer',
-            backgroundColor: activeSector === 'government' ? '#fffc00' : 'transparent',
-            color: '#000000',
+            backgroundColor: activeSector === 'government' ? '#ffd900' : 'transparent',
+            color: '#09090B',
             transition: 'all 0.2s ease',
-            boxShadow: activeSector === 'government' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'
+            boxShadow: activeSector === 'government' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+            minHeight: '44px'
           }}
         >
           Government Services
@@ -332,32 +333,33 @@ export default function ServicesDirectoryView({ gpsCoords }) {
           onClick={() => setActiveSector('private')}
           style={{
             flex: 1,
-            padding: '10px',
+            padding: '12px 10px',
             borderRadius: '12px',
             border: 'none',
             fontSize: '12px',
             fontWeight: '700',
             cursor: 'pointer',
-            backgroundColor: activeSector === 'private' ? '#fffc00' : 'transparent',
-            color: '#000000',
+            backgroundColor: activeSector === 'private' ? '#ffd900' : 'transparent',
+            color: '#09090B',
             transition: 'all 0.2s ease',
-            boxShadow: activeSector === 'private' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'
+            boxShadow: activeSector === 'private' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+            minHeight: '44px'
           }}
         >
           Private Assistance
         </button>
       </div>
 
-      {/* Category Slider - FIX CATEGORY HIDING BUG BY USING flexShrink & PADDING OFFSET */}
+      {/* Category Slider */}
       <div style={{ 
         display: 'flex', 
         gap: '8px', 
         overflowX: 'auto', 
-        paddingBottom: '16px', // added extra bottom padding to clear the horizontal scroll bar track completely
+        paddingBottom: '16px',
         marginBottom: '8px',
         scrollbarWidth: 'none',
         WebkitOverflowScrolling: 'touch',
-        minHeight: '48px' // ensured enough height budget for category buttons
+        minHeight: '48px'
       }}>
         {categories.map((cat) => (
           <button
@@ -372,11 +374,12 @@ export default function ServicesDirectoryView({ gpsCoords }) {
               whiteSpace: 'nowrap',
               cursor: 'pointer',
               backgroundColor: selectedCategory === cat ? '#ffffff' : '#f8f8f8',
-              borderColor: selectedCategory === cat ? '#fffc00' : '#e5e5e5',
-              color: '#000000',
+              borderColor: selectedCategory === cat ? '#ffd900' : '#e5e5e5',
+              color: '#09090B',
               boxShadow: selectedCategory === cat ? '0 2px 6px rgba(0,0,0,0.04)' : 'none',
-              flexShrink: 0, // CRITICAL FIX: prevents horizontal compression of button dimensions
-              height: '34px',
+              flexShrink: 0,
+              height: '38px',
+              minHeight: '38px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -395,24 +398,25 @@ export default function ServicesDirectoryView({ gpsCoords }) {
         marginBottom: '12px',
         fontSize: '11px'
       }}>
-        <span style={{ color: '#666666', fontWeight: '500' }}>
+        <span style={{ color: '#64748B', fontWeight: '500' }}>
           {sortedServices.length} verified listings
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: '#666666', fontWeight: '500' }}>Sort by:</span>
+          <span style={{ color: '#64748B', fontWeight: '500' }}>Sort by:</span>
           <select 
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             style={{
               background: '#ffffff',
-              color: '#000000',
+              color: '#09090B',
               border: '1px solid #e5e5e5',
-              padding: '4px 8px',
+              padding: '6px 8px',
               borderRadius: '8px',
               outline: 'none',
               fontFamily: 'Outfit, sans-serif',
               fontWeight: '600',
-              fontSize: '11px'
+              fontSize: '11px',
+              minHeight: '32px'
             }}
           >
             <option value="proximity">Proximity</option>
@@ -422,7 +426,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
         </div>
       </div>
 
-      {/* Services List (Pristine White cards, soft shadows) */}
+      {/* Services List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {sortedServices.length > 0 ? (
           sortedServices.map((service) => {
@@ -464,7 +468,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
                       margin: 0,
                       fontSize: '13px',
                       fontWeight: '750',
-                      color: '#000000',
+                      color: '#09090B',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'
@@ -474,7 +478,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
                     {service.verified && (
                       <span style={{
                         fontSize: '9px',
-                        color: '#007aff',
+                        color: '#3B82F6',
                         backgroundColor: '#e3f2fd',
                         padding: '1px 6px',
                         borderRadius: '6px',
@@ -490,7 +494,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
                   <p style={{
                     margin: '2px 0 4px 0',
                     fontSize: '10px',
-                    color: '#666666',
+                    color: '#64748B',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -501,12 +505,12 @@ export default function ServicesDirectoryView({ gpsCoords }) {
                   
                   {/* Metadata tags */}
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '9px', fontWeight: '600' }}>
-                    <span style={{ color: '#007aff' }}>
+                    <span style={{ color: '#3B82F6' }}>
                       📍 {service.distance} km
                     </span>
                     <span style={{ color: '#e5e5e5' }}>|</span>
-                    <span style={{ color: '#ff9500', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Star size={9} fill="#ff9500" stroke="none" /> {service.rating}
+                    <span style={{ color: '#F59E0B', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                      <Star size={9} fill="#F59E0B" stroke="none" /> {service.rating}
                     </span>
                     <span style={{ color: '#e5e5e5' }}>|</span>
                     <span style={{ color: '#22c55e' }}>
@@ -515,21 +519,23 @@ export default function ServicesDirectoryView({ gpsCoords }) {
                   </div>
                 </div>
 
-                {/* Call Action Icon */}
+                {/* Call Action Button */}
                 <button
                   onClick={() => handleCallSimulation(service)}
                   style={{
-                    background: '#fffc00',
+                    background: '#ffd900', // Safety Yellow
                     border: 'none',
                     borderRadius: '10px',
-                    width: '32px',
-                    height: '32px',
+                    width: '36px',
+                    height: '36px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#000000',
+                    color: '#09090B',
                     cursor: 'pointer',
-                    boxShadow: '0 2px 6px rgba(255, 252, 0, 0.15)'
+                    boxShadow: '0 2px 6px rgba(255, 217, 0, 0.15)',
+                    minHeight: '36px',
+                    minWidth: '36px'
                   }}
                 >
                   <Phone size={14} strokeWidth={2.5} />
@@ -541,7 +547,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
           <div style={{
             padding: '40px 20px',
             textAlign: 'center',
-            color: '#999999',
+            color: '#64748B',
             fontSize: '13px'
           }}>
             No emergency services match the chosen filter.
@@ -564,21 +570,21 @@ export default function ServicesDirectoryView({ gpsCoords }) {
           alignItems: 'center',
           justifyContent: 'center',
           padding: '24px',
-          color: '#000000'
+          color: '#09090B'
         }}>
           {/* Dialing Circle */}
           <div style={{
             width: '90px',
             height: '90px',
             borderRadius: '50%',
-            backgroundColor: 'rgba(255, 252, 0, 0.25)',
-            border: '3px solid #fffc00',
+            backgroundColor: 'rgba(255, 217, 0, 0.25)',
+            border: '3px solid #ffd900',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#000000',
+            color: '#09090B',
             marginBottom: '20px',
-            boxShadow: '0 0 20px rgba(255, 252, 0, 0.3)'
+            boxShadow: '0 0 20px rgba(255, 217, 0, 0.3)'
           }} className="pulse-red">
             <Phone size={36} strokeWidth={2.5} />
           </div>
@@ -586,20 +592,20 @@ export default function ServicesDirectoryView({ gpsCoords }) {
           <h2 style={{ fontSize: '18px', margin: '0 0 6px 0', fontFamily: 'Outfit', fontWeight: '850', textAlign: 'center' }}>
             {callModal.name}
           </h2>
-          <span style={{ fontSize: '12px', color: '#007aff', fontWeight: '700', letterSpacing: '0.05em' }}>
+          <span style={{ fontSize: '12px', color: '#3B82F6', fontWeight: '700', letterSpacing: '0.05em' }}>
             CONNECTING: {callModal.phone}
           </span>
           
           {/* Comforting Human privacy assurance */}
           <p style={{
             fontSize: '11px',
-            color: '#555555',
+            color: '#64748B',
             margin: '12px 0 0 0',
             textAlign: 'center',
             maxWidth: '240px',
             lineHeight: 1.4,
             fontWeight: '600',
-            backgroundColor: '#f2f2f2',
+            backgroundColor: '#f8fafc',
             padding: '10px 14px',
             borderRadius: '12px',
             border: '1px solid #e5e5e5'
@@ -614,12 +620,13 @@ export default function ServicesDirectoryView({ gpsCoords }) {
               padding: '12px 32px',
               borderRadius: '24px',
               border: 'none',
-              backgroundColor: '#ff3b30',
+              backgroundColor: '#E11D48', // Soft Crimson
               color: '#ffffff',
               fontWeight: '700',
               cursor: 'pointer',
               fontSize: '13px',
-              boxShadow: '0 4px 15px rgba(255, 59, 48, 0.2)'
+              boxShadow: '0 4px 15px rgba(225, 29, 72, 0.2)',
+              minHeight: '44px'
             }}
           >
             End Call

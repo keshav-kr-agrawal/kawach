@@ -90,7 +90,7 @@ function FaceAnalyticsView({ token, user }) {
         <div className="glass-panel p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-[340px]">
           <div>
             <div className="flex items-center space-x-2.5 mb-5">
-              <Camera className="w-5 h-5 text-indigo-600" />
+              <Camera className="w-5 h-5 text-blue-600" />
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Face Recognition Matcher</h3>
             </div>
             <p className="text-[10px] text-slate-400 mb-4">Provide a camera crop of a suspect or missing person to search the unified state registries:</p>
@@ -101,7 +101,7 @@ function FaceAnalyticsView({ token, user }) {
                 <select
                   value={selectedPhoto}
                   onChange={(e) => { setSelectedPhoto(e.target.value); setMatchResult(null); setUploadedImage(null); setFeedbackMsg(''); }}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
                 >
                   <option value="suspect1">Suspect Crop (Ramesh Kumar - Watchlist)</option>
                   <option value="suspect2">Suspect Crop (Zia Ahmed - Watchlist)</option>
@@ -114,7 +114,7 @@ function FaceAnalyticsView({ token, user }) {
           <button
             onClick={() => handleRunMatch(selectedPhoto)}
             disabled={scanning}
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-100 disabled:opacity-50 transition-all flex items-center justify-center space-x-2"
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-100 disabled:opacity-50 transition-all flex items-center justify-center space-x-2"
           >
             <Search className="w-3.5 h-3.5" />
             <span>{scanning ? "Comparing Face Signatures..." : "Run Face Match"}</span>
@@ -128,13 +128,13 @@ function FaceAnalyticsView({ token, user }) {
               <img src={uploadedImage} alt="Uploaded face" className="max-h-40 rounded-lg object-contain shadow-sm" />
               <button 
                 onClick={() => handleRunMatch('suspect1')}
-                className="mt-4 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 shadow"
+                className="mt-4 px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 shadow"
               >
                 Match Uploaded Face
               </button>
             </div>
           ) : (
-            <label className="w-full h-full border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors p-6">
+            <label className="w-full h-full border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors p-6">
               <Camera className="w-8 h-8 text-slate-400 mb-3" />
               <span className="text-xs font-semibold text-slate-700">Upload Face Photo</span>
               <span className="text-[10px] text-slate-400 mt-1">Supports clear front portraits</span>
@@ -154,8 +154,8 @@ function FaceAnalyticsView({ token, user }) {
 
         {scanning && (
           <div className="glass-panel p-6 rounded-2xl border border-slate-200 flex flex-col items-center justify-center h-full text-center space-y-4 shadow-sm">
-            <div className="relative w-20 h-20 rounded-full flex items-center justify-center border-4 border-indigo-50 border-t-indigo-600 animate-spin">
-              <User className="w-8 h-8 text-indigo-400 absolute" />
+            <div className="relative w-20 h-20 rounded-full flex items-center justify-center border-4 border-blue-50 border-t-blue-600 animate-spin">
+              <User className="w-8 h-8 text-blue-400 absolute" />
             </div>
             <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Matching Facial Vector Nodes</h4>
             <p className="text-[11px] text-slate-400 max-w-[280px] leading-relaxed">Mapping facial landmarks, eye coordinates, and jaw registration angles against 2,000+ offender profiles and missing person registries.</p>

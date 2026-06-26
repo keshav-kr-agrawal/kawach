@@ -53,7 +53,7 @@ function DistrictAnalyticsView({ token, user }) {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -64,7 +64,7 @@ function DistrictAnalyticsView({ token, user }) {
       <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-sm">
         <div>
           <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Pillar 15: District Performance Analytics</span>
-          <h4 className="text-xs font-bold text-indigo-700 mt-1">SHO & SP Command KPI Workspace</h4>
+          <h4 className="text-xs font-bold text-blue-700 mt-1">SHO & SP Command KPI Workspace</h4>
         </div>
         <div className="text-[10px] font-bold text-slate-500 uppercase">Operational Cleared</div>
       </div>
@@ -90,11 +90,11 @@ function DistrictAnalyticsView({ token, user }) {
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Patrol Effectiveness Index</span>
             <h3 className="text-2xl font-extrabold text-slate-900">{kpis.patrol_effectiveness}</h3>
-            <p className="text-[9px] text-indigo-600 font-bold flex items-center space-x-1">
+            <p className="text-[9px] text-blue-600 font-bold flex items-center space-x-1">
               <span>Optimized beat distribution</span>
             </p>
           </div>
-          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
             <TrendingUp className="w-5 h-5" />
           </div>
         </div>
@@ -119,7 +119,7 @@ function DistrictAnalyticsView({ token, user }) {
         {/* Clearance rate bar chart */}
         <div className="glass-panel p-6 rounded-2xl">
           <div className="flex items-center space-x-2.5 mb-5">
-            <BarChart3 className="w-4.5 h-4.5 text-indigo-600" />
+            <BarChart3 className="w-4.5 h-4.5 text-blue-600" />
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Clearance Rate by Police Station</h4>
           </div>
 
@@ -139,7 +139,7 @@ function DistrictAnalyticsView({ token, user }) {
         {/* Response time line chart */}
         <div className="glass-panel p-6 rounded-2xl">
           <div className="flex items-center space-x-2.5 mb-5">
-            <Clock className="w-4.5 h-4.5 text-indigo-600" />
+            <Clock className="w-4.5 h-4.5 text-blue-600" />
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Average Response Time (Last 30 Days)</h4>
           </div>
 

@@ -138,7 +138,7 @@ function AlertsView({ token, user }) {
 
       {loading ? (
         <div className="flex h-40 items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -202,7 +202,7 @@ function AlertsView({ token, user }) {
                 {/* XAI Expanding Accordion Section */}
                 {isExpanded && (
                   <div className="mt-4 pt-4 border-t border-slate-200/50 bg-white/60 p-4 rounded-xl space-y-2 animate-slide-down">
-                    <div className="flex items-center space-x-2 text-indigo-700">
+                    <div className="flex items-center space-x-2 text-blue-700">
                       <Brain className="w-4 h-4" />
                       <span className="text-xs font-bold uppercase tracking-wider">Explainable AI (XAI) Report</span>
                     </div>
@@ -218,7 +218,7 @@ function AlertsView({ token, user }) {
                     </div>
 
                     <p className="text-[11px] text-slate-600 leading-relaxed mt-2 font-medium">
-                      <strong className="text-indigo-900">AI Rationale:</strong> {rationale.text}
+                      <strong className="text-blue-900">AI Rationale:</strong> {rationale.text}
                     </p>
                     <span className="text-[8px] text-slate-400 block mt-1">
                       * Compliance Verification: Generated in accordance with Section 65B IEA audit-trail regulations.
@@ -231,14 +231,14 @@ function AlertsView({ token, user }) {
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleSimulateDispatch(alert.id, 'SMS', alert.district)}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-500 text-slate-700 hover:text-indigo-600 rounded-lg text-[10px] font-bold shadow-sm transition-all"
+                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-blue-500 text-slate-700 hover:text-blue-600 rounded-lg text-[10px] font-bold shadow-sm transition-all"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>Send SMS Broadcast</span>
                     </button>
                     <button
                       onClick={() => handleSimulateDispatch(alert.id, 'Email', alert.district)}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-500 text-slate-700 hover:text-indigo-600 rounded-lg text-[10px] font-bold shadow-sm transition-all"
+                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-blue-500 text-slate-700 hover:text-blue-600 rounded-lg text-[10px] font-bold shadow-sm transition-all"
                     >
                       <Mail className="w-3.5 h-3.5" />
                       <span>Send Email Alert</span>
@@ -246,7 +246,7 @@ function AlertsView({ token, user }) {
                   </div>
                   
                   {dispatchStatus[alert.id] && (
-                    <span className="text-[10px] font-bold text-indigo-700 animate-fade-in bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1">
+                    <span className="text-[10px] font-bold text-blue-700 animate-fade-in bg-blue-50 border border-blue-100 rounded-lg px-2.5 py-1">
                       {dispatchStatus[alert.id]}
                     </span>
                   )}

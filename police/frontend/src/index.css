@@ -27,7 +27,7 @@
 
 /* Glowing replacement for clean high-contrast text styles */
 .glow-text-lavender {
-  @apply text-indigo-600 font-bold;
+  @apply text-blue-600 font-bold;
 }
 
 .glow-text-gold {

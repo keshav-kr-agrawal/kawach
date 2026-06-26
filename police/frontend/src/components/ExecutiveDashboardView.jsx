@@ -39,7 +39,7 @@ function ExecutiveDashboardView({ token, user }) {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -50,7 +50,7 @@ function ExecutiveDashboardView({ token, user }) {
       <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-sm">
         <div>
           <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Pillar 17: DGP/SP Executive Console</span>
-          <h4 className="text-xs font-bold text-indigo-700 mt-1">Statewide Crime & Resource Command Platform</h4>
+          <h4 className="text-xs font-bold text-blue-700 mt-1">Statewide Crime & Resource Command Platform</h4>
         </div>
         <div className="text-[10px] font-bold text-slate-500 uppercase">Executive Security Cleared</div>
       </div>
@@ -63,7 +63,7 @@ function ExecutiveDashboardView({ token, user }) {
             <h3 className="text-3xl font-extrabold text-slate-900 mt-1.5">{executiveSummary?.total_backlog.toLocaleString()}</h3>
             <p className="text-[10px] text-slate-400 mt-1">Cases in active investigation</p>
           </div>
-          <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
+          <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
             <ShieldAlert className="w-6 h-6" />
           </div>
         </div>
@@ -94,9 +94,9 @@ function ExecutiveDashboardView({ token, user }) {
           <div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Pending Match Reviews</span>
             <h3 className="text-3xl font-extrabold text-slate-900 mt-1.5">{executiveSummary?.pending_resolutions}</h3>
-            <p className="text-[10px] text-indigo-600 font-semibold mt-1">Duplicates awaiting validation</p>
+            <p className="text-[10px] text-blue-600 font-semibold mt-1">Duplicates awaiting validation</p>
           </div>
-          <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
+          <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
             <CheckCircle2 className="w-6 h-6" />
           </div>
         </div>

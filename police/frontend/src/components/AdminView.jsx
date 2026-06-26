@@ -82,7 +82,7 @@ function AdminView({ token, user }) {
           onClick={() => setActiveTab('merges')}
           className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
             activeTab === 'merges'
-              ? 'bg-indigo-600 text-white shadow-sm'
+              ? 'bg-blue-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-50'
           }`}
         >
@@ -93,7 +93,7 @@ function AdminView({ token, user }) {
           onClick={() => setActiveTab('audit')}
           className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
             activeTab === 'audit'
-              ? 'bg-indigo-600 text-white shadow-sm'
+              ? 'bg-blue-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-50'
           }`}
         >
@@ -118,7 +118,7 @@ function AdminView({ token, user }) {
       <div className="glass-panel p-6 rounded-2xl min-h-[400px]">
         {loading && (
           <div className="flex items-center justify-center py-20 text-xs text-slate-400 space-x-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" />
+            <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
             <span>Syncing Admin data...</span>
           </div>
         )}
@@ -168,7 +168,7 @@ function AdminView({ token, user }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Left: Offender 1 */}
                       <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl relative">
-                        <div className="absolute top-4 right-4 text-[9px] font-extrabold text-indigo-600 uppercase tracking-wider">Primary Record</div>
+                        <div className="absolute top-4 right-4 text-[9px] font-extrabold text-blue-600 uppercase tracking-wider">Primary Record</div>
                         <h4 className="text-xs font-bold text-slate-800">{m.offender1.name}</h4>
                         <span className="text-[9px] font-mono text-slate-400 block mt-0.5">{m.offender1.id}</span>
                         
@@ -233,7 +233,7 @@ function AdminView({ token, user }) {
                         <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
                           log.action.includes('MERGE') ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
                           log.action.includes('EXPORT') ? 'bg-amber-50 text-amber-700 border border-amber-100' :
-                          log.action.includes('LOGIN') ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' :
+                          log.action.includes('LOGIN') ? 'bg-blue-50 text-blue-700 border border-blue-100' :
                           'bg-slate-50 text-slate-700 border border-slate-200'
                         }`}>
                           {log.action.replace('_', ' ')}

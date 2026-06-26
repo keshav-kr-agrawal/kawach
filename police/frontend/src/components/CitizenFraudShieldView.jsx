@@ -166,7 +166,7 @@ function CitizenFraudShieldView({ token, user }) {
           <button
             onClick={() => setSubModule('registry')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              subModule === 'registry' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+              subModule === 'registry' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
             NCRP Fraud Threat Scanner
@@ -174,7 +174,7 @@ function CitizenFraudShieldView({ token, user }) {
           <button
             onClick={() => setSubModule('deepfake')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              subModule === 'deepfake' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+              subModule === 'deepfake' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
             Audio Spoofing & Deepfake Shield
@@ -186,7 +186,7 @@ function CitizenFraudShieldView({ token, user }) {
             {/* Scanner card */}
             <div className="glass-panel p-6 rounded-2xl shadow-sm border border-slate-200">
               <div className="flex items-center space-x-2.5 mb-5">
-                <Shield className="w-5 h-5 text-indigo-600" />
+                <Shield className="w-5 h-5 text-blue-600" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">AI Cyber Threat Scanner</h3>
               </div>
 
@@ -196,7 +196,7 @@ function CitizenFraudShieldView({ token, user }) {
                     key={t}
                     onClick={() => { setScanType(t); setScanResult(null); }}
                     className={`py-2.5 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
-                      scanType === t ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'
+                      scanType === t ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     {t === 'upi' ? 'UPI / Bank Account' : t === 'phone' ? 'Phone Number' : 'Web URL Link'}
@@ -216,13 +216,13 @@ function CitizenFraudShieldView({ token, user }) {
                       scanType === 'upi' ? "Enter suspect UPI ID or Account (e.g. payment@upi)..." :
                       "Enter suspected video link / website (e.g. meet.zoom-court.in)..."
                     }
-                    className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+                    className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
                   />
                 </div>
                 <button
                   onClick={() => handleScan()}
                   disabled={scanning || !scanValue.trim()}
-                  className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-100 disabled:opacity-50 transition-all shrink-0"
+                  className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-100 disabled:opacity-50 transition-all shrink-0"
                 >
                   {scanning ? "Scanning..." : "Run Threat Scan"}
                 </button>
@@ -256,7 +256,7 @@ function CitizenFraudShieldView({ token, user }) {
                   <div className="space-y-2">
                     {scanResult.actions.map((act, index) => (
                       <div key={index} className="flex items-start space-x-2.5 text-xs text-slate-600">
-                        <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                         <span>{act}</span>
                       </div>
                     ))}
@@ -315,7 +315,7 @@ function CitizenFraudShieldView({ token, user }) {
           /* Deepfake Call Impersonation Shield (Pillar 29) */
           <div className="glass-panel p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
             <div className="flex items-center space-x-2.5">
-              <ShieldAlert className="w-5 h-5 text-indigo-600 animate-pulse" />
+              <ShieldAlert className="w-5 h-5 text-blue-600 animate-pulse" />
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">CBI Call Deepfake Analyzer</h3>
                 <p className="text-[10px] text-slate-400 mt-0.5 font-semibold">Checks CBI/Police video call stream audio for synthetic voice clones.</p>
@@ -323,21 +323,21 @@ function CitizenFraudShieldView({ token, user }) {
             </div>
 
             {audioFileUploaded ? (
-              <div className="p-5 border border-indigo-100 bg-indigo-50/20 rounded-xl text-center space-y-4">
+              <div className="p-5 border border-blue-100 bg-blue-50/20 rounded-xl text-center space-y-4">
                 <div className="flex items-center justify-center space-x-2">
-                  <Music className="w-6 h-6 text-indigo-600 animate-bounce" />
+                  <Music className="w-6 h-6 text-blue-600 animate-bounce" />
                   <span className="text-xs font-bold text-slate-700 font-mono">cbi_video_call_capture.mp4</span>
                 </div>
                 <button
                   onClick={handleRunDeepfakeScan}
                   disabled={deepfakeScanning}
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow"
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow"
                 >
                   {deepfakeScanning ? "Running Spectrogram Analysis..." : "Verify Audio Spoofing"}
                 </button>
               </div>
             ) : (
-              <label className="border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-colors text-center">
+              <label className="border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-colors text-center">
                 <Upload className="w-8 h-8 text-slate-400 mb-3" />
                 <span className="text-xs font-semibold text-slate-700">Upload Screen Recording / Call Audio</span>
                 <span className="text-[10px] text-slate-400 mt-1">Accepts mp4, mov, wav records up to 10MB</span>
@@ -347,7 +347,7 @@ function CitizenFraudShieldView({ token, user }) {
 
             {deepfakeScanning && (
               <div className="flex flex-col items-center py-6 text-center space-y-3">
-                <div className="animate-spin rounded-full h-7 w-7 border-t-2 border-b-2 border-indigo-600" />
+                <div className="animate-spin rounded-full h-7 w-7 border-t-2 border-b-2 border-blue-600" />
                 <span className="text-xs text-slate-500 font-semibold animate-pulse">Running synthetic acoustic alignment check...</span>
               </div>
             )}

@@ -1,15 +1,31 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Map, Phone, Camera, MessageSquare, Compass } from 'lucide-react';
 
-export default function BottomNav({ activeTab, setActiveTab }) {
+export default function BottomNav() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const tabs = [
-    { id: 'map', label: 'Map', icon: Map },
-    { id: 'services', label: 'Services', icon: Phone },
-    { id: 'camera', label: 'Camera', icon: Camera },
-    { id: 'alerts', label: 'Chat', icon: MessageSquare },
-    { id: 'reels', label: 'Feed', icon: Compass }
+    { id: 'map', label: 'Map', icon: Map, path: '/user/map' },
+    { id: 'services', label: 'Services', icon: Phone, path: '/user/services' },
+    { id: 'camera', label: 'Camera', icon: Camera, path: '/user/camera' },
+    { id: 'chat', label: 'Chat', icon: MessageSquare, path: '/user/chat' },
+    { id: 'feed', label: 'Feed', icon: Compass, path: '/user/feed' }
   ];
 
+  // Determine active tab ID based on route
+  const getActiveTabId = () => {
+    const path = location.pathname;
+    if (path.startsWith('/user/map')) return 'map';
+    if (path.startsWith('/user/services')) return 'services';
+    if (path.startsWith('/user/camera')) return 'camera';
+    if (path.startsWith('/user/chat')) return 'chat';
+    if (path.startsWith('/user/feed')) return 'feed';
+    return '';
+  };
+
+  const activeTab = getActiveTabId();
   const activeIndex = tabs.findIndex(t => t.id === activeTab);
 
   return (
@@ -20,7 +36,7 @@ export default function BottomNav({ activeTab, setActiveTab }) {
       right: 0,
       height: 'calc(70px + env(safe-area-inset-bottom))',
       zIndex: 1000,
-      background: '#fffc00', // Snapchat Yellow entire bar
+      background: '#ffd900', // Sophisticated Safety Yellow (#FFD900)
       boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.08)',
       borderTop: '1px solid rgba(0, 0, 0, 0.06)',
       overflow: 'visible'
@@ -55,14 +71,14 @@ export default function BottomNav({ activeTab, setActiveTab }) {
         )}
 
         {/* Navigation tabs */}
-        {tabs.map((tab, idx) => {
+        {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
 
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => navigate(tab.path)}
               style={{
                 background: 'none',
                 border: 'none',
@@ -95,8 +111,8 @@ export default function BottomNav({ activeTab, setActiveTab }) {
                 <Icon 
                   size={22} 
                   strokeWidth={isActive ? 2.5 : 2} 
-                  fill={isActive ? '#000000' : 'none'} 
-                  color={isActive ? '#000000' : 'rgba(0, 0, 0, 0.6)'}
+                  fill={isActive ? '#09090b' : 'none'} 
+                  color={isActive ? '#09090b' : 'rgba(9, 9, 11, 0.6)'}
                   style={{
                     transition: 'color 0.3s ease, fill 0.3s ease'
                   }}
@@ -111,7 +127,7 @@ export default function BottomNav({ activeTab, setActiveTab }) {
                 opacity: isActive ? 1 : 0.6,
                 fontFamily: 'Outfit, sans-serif',
                 letterSpacing: '0.01em',
-                color: '#000000',
+                color: '#09090b',
                 transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                 transform: isActive ? 'translateY(-1px) scale(1.06)' : 'translateY(0) scale(1)'
               }}>

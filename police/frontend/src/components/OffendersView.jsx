@@ -66,7 +66,7 @@ function OffendersView({ token, user }) {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -82,7 +82,7 @@ function OffendersView({ token, user }) {
       <div className="glass-panel p-6 rounded-2xl xl:col-span-2 flex flex-col h-[450px] xl:h-full overflow-hidden">
         <div className="flex items-between justify-between mb-6 flex-wrap gap-4">
           <div className="flex items-center space-x-2">
-            <Users className="w-5 h-5 text-indigo-600" />
+            <Users className="w-5 h-5 text-blue-600" />
             <h4 className="text-sm font-bold uppercase tracking-wider text-slate-800">Repeat Offender Registry</h4>
           </div>
           
@@ -93,7 +93,7 @@ function OffendersView({ token, user }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name or ID..."
-              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
             />
           </div>
         </div>
@@ -113,7 +113,7 @@ function OffendersView({ token, user }) {
             <tbody className="divide-y divide-slate-100">
               {filteredList.map(o => (
                 <tr key={o.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-4 font-mono font-bold text-indigo-600">{o.id}</td>
+                  <td className="p-4 font-mono font-bold text-blue-600">{o.id}</td>
                   <td className="p-4 text-slate-900 font-semibold">{o.name}</td>
                   <td className="p-4 text-center text-slate-700 font-medium">{o.num_prior_offenses}</td>
                   <td className="p-4 text-center">
@@ -129,7 +129,7 @@ function OffendersView({ token, user }) {
                   <td className="p-4 text-right">
                     <button
                       onClick={() => handleSelectOffender(o.id)}
-                      className="p-1.5 hover:bg-indigo-50 rounded-lg text-indigo-600 transition-colors"
+                      className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600 transition-colors"
                       title="View Profile Details"
                     >
                       <Eye className="w-4 h-4" />
@@ -168,7 +168,7 @@ function OffendersView({ token, user }) {
             </div>
 
             {/* Explainable AI Risk Score & Rationale */}
-            <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-3">
+            <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-xl space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Explainable AI Risk Profile</span>
                 <span className={`px-2.5 py-0.5 rounded font-bold text-[11px] border ${
@@ -196,7 +196,7 @@ function OffendersView({ token, user }) {
               <div className="space-y-3.5 pl-3 border-l-2 border-slate-200">
                 {selectedOffender.firs.map(f => (
                   <div key={f.id} className="relative">
-                    <div className="absolute -left-[18px] top-1.5 w-2.5 h-2.5 rounded-full bg-indigo-600 border-2 border-white"></div>
+                    <div className="absolute -left-[18px] top-1.5 w-2.5 h-2.5 rounded-full bg-blue-600 border-2 border-white"></div>
                     <div className="text-xs font-bold text-slate-800">{f.crime_type}</div>
                     <div className="text-[10px] text-slate-500 mt-0.5">{f.ipc_section} • {f.date_filed}</div>
                     <span className="text-[9px] px-2 py-0.5 bg-slate-100 rounded text-slate-600 font-bold mt-1.5 inline-block">{f.status}</span>
