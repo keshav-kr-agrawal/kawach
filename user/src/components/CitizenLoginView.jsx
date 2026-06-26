@@ -1,32 +1,75 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Lock, User, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
+import { Shield, Lock, Mail, ArrowRight, ArrowLeft, Sparkles, UserPlus, LogIn } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 
 export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
-  const [username, setUsername] = useState('');
-  const [pin, setPin] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setMessage('');
     setLoading(true);
 
-    setTimeout(() => {
-      if (username.trim() && pin.trim()) {
-        onLoginSuccess();
+    if (!email.trim() || !password.trim()) {
+      setError('Please fill in all fields.');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      if (isSignUp) {
+        // Handle Supabase Registration
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: email.trim(),
+          password: password,
+        });
+
+        if (signUpError) throw signUpError;
+
+        if (data?.user && data?.session === null) {
+          setMessage('Account created! Please check your email for verification, or sign in if email confirmation is disabled.');
+        } else if (data?.session) {
+          onLoginSuccess(data.session.access_token);
+        }
       } else {
-        setError('Please enter a username and security PIN.');
-        setLoading(false);
+        // Handle Supabase Sign In
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: password,
+        });
+
+        if (signInError) throw signInError;
+
+        if (data?.session) {
+          onLoginSuccess(data.session.access_token);
+        }
       }
-    }, 800);
+    } catch (err) {
+      console.error('[SUPABASE AUTH ERROR]', err);
+      setError(err.message || 'Authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAutofill = () => {
-    setUsername('citizen_user');
-    setPin('123456');
+    setEmail('citizen@kawach.com');
+    setPassword('security123');
     setError('');
+    setMessage('');
   };
 
   return (
@@ -60,9 +103,11 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
             <div className="w-12 h-12 bg-yellow-50 border border-yellow-100 rounded-2xl flex items-center justify-center text-yellow-600 mb-4 shadow-2xs">
               <Shield className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 font-outfit">Citizen Access</h2>
+            <h2 className="text-2xl font-black text-slate-900 font-outfit">
+              {isSignUp ? 'Create Account' : 'Citizen Access'}
+            </h2>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
-              Sentinel Decoupled Intranet
+              {isSignUp ? 'Join Sentinel Incident Network' : 'Sentinel Decoupled Intranet'}
             </p>
           </div>
 
@@ -76,33 +121,40 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
             </motion.div>
           )}
 
+          {message && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-3.5 bg-green-50 border border-green-100 rounded-xl text-green-700 text-xs text-center font-bold mb-5"
+            >
+              {message}
+            </motion.div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-                Citizen Username
+                Email Address
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-3.5 text-slate-400">
-                  <User className="w-4 h-4" />
+                  <Mail className="w-4 h-4" />
                 </span>
                 <input 
-                  type="text" 
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter citizen username..."
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-yellow-400 focus:bg-white font-semibold shadow-2xs transition-all"
                   style={{ minHeight: '44px' }}
                   required
                 />
               </div>
-              <p className="text-[9px] text-slate-400 font-bold mt-1.5 px-1">
-                Mock account: <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-600">citizen_user</code>
-              </p>
             </div>
 
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-                Security PIN
+                Security Password
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-3.5 text-slate-400">
@@ -110,17 +162,37 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
                 </span>
                 <input 
                   type="password" 
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  placeholder="Enter security PIN..."
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Min 6 characters..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-yellow-400 focus:bg-white font-semibold shadow-2xs transition-all"
                   style={{ minHeight: '44px' }}
                   required
                 />
               </div>
-              <p className="text-[9px] text-slate-400 font-bold mt-1.5 px-1">
-                Mock passcode: <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-600">123456</code>
-              </p>
+            </div>
+
+            {/* Toggle Sign In / Sign Up */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError('');
+                  setMessage('');
+                }}
+                className="text-[11px] text-slate-500 hover:text-slate-800 font-bold transition-colors"
+              >
+                {isSignUp ? (
+                  <span className="flex items-center justify-center gap-1">
+                    <LogIn className="w-3.5 h-3.5" /> Already have an account? Sign In
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-1">
+                    <UserPlus className="w-3.5 h-3.5" /> Need an account? Sign Up
+                  </span>
+                )}
+              </button>
             </div>
 
             <div className="flex gap-3.5 pt-2">
@@ -135,10 +207,11 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
               <button 
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-3.5 px-4 bg-[#ffd900] border border-yellow-500 hover:bg-[#ffe54c] text-slate-950 font-black rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm shadow-yellow-100/50 uppercase tracking-wide font-outfit"
+                className="flex-2 py-3.5 px-4 bg-[#ffd900] border border-yellow-500 hover:bg-[#ffe54c] text-slate-950 font-black rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm shadow-yellow-100/50 uppercase tracking-wide font-outfit"
                 style={{ minHeight: '44px' }}
               >
-                {loading ? 'Authenticating...' : 'Access Portal'} <ArrowRight className="w-3.5 h-3.5" />
+                {loading ? 'Processing...' : (isSignUp ? 'Register' : 'Access Portal')} 
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </form>
@@ -148,7 +221,7 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
 
       {/* Bottom Legal Notice */}
       <footer className="relative z-10 text-center py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-        🔐 All data traffic is hashed on-device using rotary sha-256 protocols.
+        🔐 Authenticated securely via Supabase cryptographic protocols.
       </footer>
     </div>
   );

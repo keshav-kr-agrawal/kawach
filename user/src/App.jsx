@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { supabase } from './supabaseClient';
 import BottomNav from './components/BottomNav';
 import SnapMapView from './components/SnapMapView';
 import ServicesDirectoryView from './components/ServicesDirectoryView';
@@ -169,8 +170,29 @@ export default function App() {
   const location = useLocation();
   const [gpsCoords, setGpsCoords] = useState([12.9285, 77.6245]); // Defaults to Koramangala, Bengaluru
   const [userReports, setUserReports] = useState([]);
-  const [citizenToken, setCitizenToken] = useState(sessionStorage.getItem('citizen_token') || '');
+  const [citizenToken, setCitizenToken] = useState('');
   const [bookmarkedLawIds, setBookmarkedLawIds] = useState(['fc-1']); // default pre-seed bookmark
+
+  // Fetch session on startup and listen to auth state changes
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setCitizenToken(session.access_token);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setCitizenToken(session.access_token);
+      } else {
+        setCitizenToken('');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleToggleBookmark = (lawId) => {
     setBookmarkedLawIds((prev) => 
@@ -191,7 +213,6 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get('token');
     if (tokenFromUrl) {
-      sessionStorage.setItem('citizen_token', tokenFromUrl);
       setCitizenToken(tokenFromUrl);
       // Clean query params
       window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
@@ -217,26 +238,139 @@ export default function App() {
     }
   }, []);
 
-  const handleNewUpload = (newReport) => {
+  // Helper to format timestamps nicely in Snapchat relative format
+  const formatRelativeTime = (timestampString) => {
+    if (!timestampString) return 'Just now';
+    try {
+      const date = new Date(timestampString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return `${diffDays}d ago`;
+    } catch (e) {
+      return 'Just now';
+    }
+  };
+
+  // Fetch all reports from Supabase on load
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('citizen_reports')
+          .select('*')
+          .order('timestamp', { ascending: false });
+
+        if (error) {
+          console.warn('[SUPABASE] Table "citizen_reports" might not be created yet. Please run the SQL setup script. Error:', error.message);
+          return;
+        }
+
+        if (data) {
+          // Map database snake_case to frontend camelCase expected by all views
+          const mappedReports = data.map((item) => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            category: item.category,
+            uploaderUuid: item.uploader_uuid,
+            status: item.status,
+            lat: item.lat,
+            lng: item.lng,
+            videoUrl: item.video_url,
+            emergencyOverride: item.emergency_override,
+            trimStart: item.trim_start,
+            trimEnd: item.trim_end,
+            views: item.views || 0,
+            timestamp: formatRelativeTime(item.timestamp)
+          }));
+          setUserReports(mappedReports);
+          console.log('[SUPABASE] Loaded reports successfully:', mappedReports.length, 'records found');
+        }
+      } catch (err) {
+        console.error('[SUPABASE] Exception during load:', err);
+      }
+    };
+
+    fetchReports();
+  }, []);
+
+  const handleNewUpload = async (newReport) => {
     const reportWithFlags = { ...newReport, flagsCount: 0 };
+    
+    // 1. Optimistic local state update for zero latency feel
     setUserReports((prev) => [reportWithFlags, ...prev]);
 
+    // 2. Save the report to Supabase database
+    try {
+      const { error } = await supabase
+        .from('citizen_reports')
+        .insert([{
+          id: newReport.id,
+          title: newReport.title,
+          description: newReport.description,
+          category: newReport.category,
+          uploader_uuid: newReport.uploaderUuid,
+          status: newReport.status,
+          lat: newReport.lat,
+          lng: newReport.lng,
+          video_url: newReport.videoUrl,
+          emergency_override: newReport.emergencyOverride,
+          trim_start: newReport.trimStart,
+          trim_end: newReport.trimEnd,
+          views: newReport.views || 0,
+          timestamp: new Date().toISOString()
+        }]);
+
+      if (error) {
+        console.error('[SUPABASE] Error saving new report to database:', error.message);
+      } else {
+        console.log('[SUPABASE] Report successfully saved to cloud database!');
+      }
+    } catch (err) {
+      console.error('[SUPABASE] Exception during insert:', err);
+    }
+
+    // 3. Sync the simulated AI processing pipeline to database
     if (!newReport.emergencyOverride) {
-      simulateWorkflowProgress(reportWithFlags, (updatedReport) => {
+      simulateWorkflowProgress(reportWithFlags, async (updatedReport) => {
         setUserReports((prev) => 
           prev.map((r) => r.id === updatedReport.id ? { ...updatedReport, flagsCount: r.flagsCount } : r)
         );
+        
+        try {
+          await supabase
+            .from('citizen_reports')
+            .update({ status: updatedReport.status })
+            .eq('id', updatedReport.id);
+        } catch (err) {
+          console.error('[SUPABASE] Error syncing workflow status:', err);
+        }
       });
     } else {
-      setTimeout(() => {
+      setTimeout(async () => {
         setUserReports((prev) => 
           prev.map((r) => r.id === newReport.id ? { ...r, status: VIDEO_STATUS.AI_CHECK_2 } : r)
         );
+        try {
+          await supabase
+            .from('citizen_reports')
+            .update({ status: VIDEO_STATUS.AI_CHECK_2 })
+            .eq('id', newReport.id);
+        } catch (err) {
+          console.error('[SUPABASE] Error syncing emergency status:', err);
+        }
       }, 5000);
     }
   };
 
-  const handleReportVideo = (videoId) => {
+  const handleReportVideo = async (videoId) => {
     setUserReports((prev) => {
       return prev.map((r) => {
         if (r.id === videoId) {
@@ -248,18 +382,34 @@ export default function App() {
             nextStatus = VIDEO_STATUS.REPORTED_SUSPICIOUS;
             console.log(`[MODERATION] Video ${videoId} flagged as fake ${nextFlags} times. Shifting to REPORTED_SUSPICIOUS.`);
             
-            setTimeout(() => {
+            setTimeout(async () => {
+              const finalStatus = Math.random() > 0.4 ? VIDEO_STATUS.PUBLIC_APPROVED : VIDEO_STATUS.REJECTED;
               setUserReports((currentList) => 
                 currentList.map((item) => {
                   if (item.id === videoId) {
-                    const finalStatus = Math.random() > 0.4 ? VIDEO_STATUS.PUBLIC_APPROVED : VIDEO_STATUS.REJECTED;
                     return { ...item, status: finalStatus, flagsCount: 0 };
                   }
                   return item;
                 })
               );
+
+              try {
+                await supabase
+                  .from('citizen_reports')
+                  .update({ status: finalStatus })
+                  .eq('id', videoId);
+              } catch (err) {
+                console.error('[SUPABASE] Error syncing final moderation status:', err);
+              }
             }, 6000);
           }
+          
+          // Sync immediate flag status to database
+          supabase
+            .from('citizen_reports')
+            .update({ status: nextStatus })
+            .eq('id', videoId)
+            .catch((err) => console.error('[SUPABASE] Error syncing flag status:', err));
           
           return { ...r, flagsCount: nextFlags, status: nextStatus };
         }
@@ -278,9 +428,8 @@ export default function App() {
         path="/user/login" 
         element={
           <CitizenLoginView 
-            onLoginSuccess={() => {
-              sessionStorage.setItem('citizen_token', 'mock_jwt_token_123');
-              setCitizenToken('mock_jwt_token_123');
+            onLoginSuccess={(token) => {
+              setCitizenToken(token);
               navigate('/user/map');
             }}
             onBackToHome={() => { window.location.href = 'http://localhost:5173/'; }}
@@ -343,8 +492,8 @@ export default function App() {
               bookmarkedLaws={ALL_FLASHCARDS.filter(c => bookmarkedLawIds.includes(c.id))}
               userReports={userReports}
               onRemoveBookmark={handleToggleBookmark}
-              onSignOut={() => {
-                sessionStorage.removeItem('citizen_token');
+              onSignOut={async () => {
+                await supabase.auth.signOut();
                 setCitizenToken('');
                 window.location.href = 'http://localhost:5173/';
               }}
