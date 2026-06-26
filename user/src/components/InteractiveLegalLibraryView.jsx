@@ -358,14 +358,14 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
 
                     {/* Back of Card (Flipped Y-180) */}
                     <div 
-                      className="absolute inset-0 w-full h-full bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between backface-hidden shadow-xl text-white transform rotate-y-180"
+                      className="absolute inset-0 w-full h-full bg-yellow-50 border border-yellow-100 rounded-3xl p-6 flex flex-col justify-between backface-hidden shadow-xl text-slate-800 transform rotate-y-180"
                       onClick={(e) => {
                         e.stopPropagation();
                       }}
                     >
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                          <span className="px-2.5 py-0.5 bg-yellow-500/20 border border-yellow-500/40 rounded-full text-[9px] font-bold text-yellow-300 uppercase tracking-wide">
+                          <span className="px-2.5 py-0.5 bg-yellow-100 border border-yellow-250 rounded-full text-[9px] font-bold text-yellow-800 uppercase tracking-wide">
                             {card.backTitle}
                           </span>
                           <button
@@ -375,8 +375,8 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
                             }}
                             className={`p-2 rounded-lg border transition-colors ${
                               isBookmarked 
-                                ? 'bg-yellow-500/30 border-yellow-500/40 text-yellow-300' 
-                                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-300'
+                                ? 'bg-yellow-200 border-yellow-300 text-yellow-800' 
+                                : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'
                             }`}
                             style={{ minWidth: '36px', minHeight: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                           >
@@ -385,21 +385,21 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
                         </div>
                         
                         <div className="space-y-2">
-                          <p className="text-slate-300 text-[11px] font-medium leading-relaxed">
+                          <p className="text-slate-600 text-[11px] font-semibold leading-relaxed">
                             {card.backContent}
                           </p>
-                          <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-3">
-                            <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">
+                          <div className="bg-white border border-yellow-100 rounded-xl p-3 shadow-2xs">
+                            <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wider block mb-1">
                               Action to Take
                             </span>
-                            <p className="text-slate-200 text-[10px] leading-relaxed font-semibold">
+                            <p className="text-slate-700 text-[10px] leading-relaxed font-semibold">
                               {card.action}
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                      <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
                         Tap card to flip back
                       </div>
                     </div>
@@ -412,14 +412,14 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
         </section>
 
         {/* 3. ASK AI FLOATING LEGAL ORB */}
-        <section className="bg-slate-900 border border-slate-800 rounded-3xl p-5 text-white shadow-lg relative overflow-hidden">
+        <section className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs relative overflow-hidden">
           <div className="absolute -left-12 -bottom-12 w-28 h-28 bg-yellow-500/5 rounded-full blur-2xl pointer-events-none" />
           
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 bg-yellow-500/20 rounded-lg flex items-center justify-center border border-yellow-400/30">
-              <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
+            <div className="w-7 h-7 bg-yellow-50 rounded-lg flex items-center justify-center border border-yellow-100">
+              <Sparkles className="w-4 h-4 text-yellow-600 animate-pulse" />
             </div>
-            <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
               Ask AI Legal Copilot
             </h3>
           </div>
@@ -430,12 +430,12 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="e.g. Can police seize my vehicle at night?"
-              className="w-full bg-slate-950/60 border border-slate-800 rounded-xl pl-4 pr-12 py-3.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-yellow-400 font-semibold"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-12 py-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-yellow-400 font-semibold shadow-2xs"
               style={{ minHeight: '44px' }}
             />
             <button 
               type="submit" 
-              className="absolute right-2 top-2 p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+              className="absolute right-2 top-2 p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-700 transition-colors"
               style={{ minHeight: '36px', minWidth: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <Search className="w-4 h-4" />
@@ -443,8 +443,8 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
           </form>
 
           {aiLoading && (
-            <div className="py-4 text-center text-xs text-slate-300 font-semibold flex items-center justify-center gap-2">
-              <span className="w-3.5 h-3.5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+            <div className="py-4 text-center text-xs text-slate-500 font-semibold flex items-center justify-center gap-2">
+              <span className="w-3.5 h-3.5 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
               Scanning legal database nodes...
             </div>
           )}
@@ -455,20 +455,20 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="bg-slate-950/50 border border-slate-850 rounded-2xl p-4 mt-3 space-y-3"
+                className="bg-yellow-50/50 border border-yellow-100 rounded-2xl p-4 mt-3 space-y-3"
               >
                 <div>
-                  <span className="text-[9px] font-bold text-yellow-400 uppercase tracking-wider">Verified Citation</span>
-                  <h4 className="font-extrabold text-sm">{aiAnswer.title}</h4>
-                  <p className="text-slate-300 text-[11px] mt-1.5 leading-relaxed font-semibold">{aiAnswer.details}</p>
+                  <span className="text-[9px] font-bold text-yellow-800 uppercase tracking-wider">Verified Citation</span>
+                  <h4 className="font-extrabold text-sm text-slate-900">{aiAnswer.title}</h4>
+                  <p className="text-slate-600 text-[11px] mt-1.5 leading-relaxed font-semibold">{aiAnswer.details}</p>
                 </div>
-                <div className="bg-slate-900/60 border border-slate-800 p-3 rounded-xl">
-                  <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">Your action</span>
-                  <p className="text-slate-200 text-[10px] leading-relaxed font-semibold">{aiAnswer.action}</p>
+                <div className="bg-white border border-slate-100 p-3 rounded-xl shadow-2xs">
+                  <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wider block mb-1">Your action</span>
+                  <p className="text-slate-700 text-[10px] leading-relaxed font-semibold">{aiAnswer.action}</p>
                 </div>
                 <div className="flex gap-2.5 pt-1">
                   {aiAnswer.citations.map((cite, i) => (
-                    <span key={i} className="px-2 py-0.5 bg-slate-900 border border-slate-800 rounded-md text-[8px] font-bold text-yellow-400">
+                    <span key={i} className="px-2 py-0.5 bg-yellow-100 border border-yellow-200 rounded-md text-[8px] font-bold text-yellow-800">
                       🔖 {cite}
                     </span>
                   ))}

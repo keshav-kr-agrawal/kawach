@@ -39,7 +39,8 @@ body {
 /* Scoped Mobile PWA mock frame */
 body.in-app {
   display: flex;
-  place-items: center;
+  justify-content: center;
+  align-items: center;
   background: #f2f2f2;
   overflow: hidden;
   user-select: none;

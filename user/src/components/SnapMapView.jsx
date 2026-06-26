@@ -124,7 +124,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
         distance: 'Within 50m',
         status: r.status,
         views: r.views || 0,
-        avatarGradient: 'linear-gradient(135deg, #eab308 0%, #ff9500 100%)',
+        avatarGradient: 'linear-gradient(135deg, #ffd900 0%, #ff9500 100%)',
         feedType: r.category || 'General Alert',
         videoUrl: r.videoUrl,
         trimStart: r.trimStart,
@@ -223,7 +223,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
               width: '32px',
               height: '32px',
               borderRadius: '50%',
-              backgroundColor: '#eab308',
+              backgroundColor: '#ffd900',
               border: '1.5px solid #000000',
               display: 'flex',
               alignItems: 'center',
@@ -268,7 +268,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
           </button>
           
           <div style={{
-            backgroundColor: 'rgba(234, 179, 8, 0.2)',
+            backgroundColor: 'rgba(255, 217, 0, 0.2)',
             color: '#000000',
             padding: '4px 8px',
             borderRadius: '10px',
@@ -277,7 +277,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
             display: 'flex',
             alignItems: 'center',
             gap: '3px',
-            border: '1px solid rgba(234, 179, 8, 0.5)'
+            border: '1px solid rgba(255, 217, 0, 0.5)'
           }}>
             <Radio size={10} style={{ color: '#ff3b30' }} />
             <span>LIVE</span>
@@ -456,7 +456,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
                   border: '1px solid rgba(255,255,255,0.2)',
                   borderRadius: '20px',
                   padding: '4px 12px',
-                  color: '#eab308',
+                  color: '#ffd900',
                   fontSize: '9px',
                   fontWeight: '805',
                   letterSpacing: '0.05em',
@@ -581,7 +581,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
                     <div style={{
                       width: `${videoPlayProgress}%`,
                       height: '100%',
-                      backgroundColor: '#eab308',
+                      backgroundColor: '#ffd900',
                       borderRadius: '2px',
                       transition: 'width 0.1s linear'
                     }} />
@@ -618,7 +618,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
                       onClick={() => { setPlayingVideo(true); setPlayProgress(0); }}
                       style={{
                         zIndex: 2,
-                        background: '#eab308',
+                        background: '#ffd900',
                         border: 'none',
                         borderRadius: '50%',
                         width: '64px',
@@ -628,7 +628,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
                         justifyContent: 'center',
                         color: '#000000',
                         cursor: 'pointer',
-                        boxShadow: '0 4px 15px rgba(234,179,8,0.4)'
+                        boxShadow: '0 4px 15px rgba(255,217,0,0.4)'
                       }}
                     >
                       <Play size={28} style={{ marginLeft: '4px' }} fill="#000000" />
@@ -648,7 +648,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
                     <div style={{
                       width: `${playProgress}%`,
                       height: '100%',
-                      backgroundColor: '#eab308',
+                      backgroundColor: '#ffd900',
                       transition: 'width 1s linear'
                     }} />
                   </div>

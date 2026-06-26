@@ -303,7 +303,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255,255,255,0.15)'
           }}>
-            <ShieldCheck size={16} style={{ color: '#eab308' }} />
+            <ShieldCheck size={16} style={{ color: '#ffd900' }} />
             <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '0.05em', color: '#ffffff', fontFamily: 'Outfit' }}>
               SECURE CAMERA UNIT
             </span>
@@ -386,7 +386,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#eab308' }}>
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffd900' }}>
                   [Playback Sandbox active]
                 </div>
               )}
@@ -417,7 +417,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                     step="0.1"
                     value={trimStart}
                     onChange={(e) => handleStartTrimChange(e.target.value)}
-                    style={{ flex: 1, accentColor: '#eab308' }}
+                    style={{ flex: 1, accentColor: '#ffd900' }}
                   />
                 </div>
                 
@@ -430,7 +430,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                     step="0.1"
                     value={trimEnd}
                     onChange={(e) => handleEndTrimChange(e.target.value)}
-                    style={{ flex: 1, accentColor: '#eab308' }}
+                    style={{ flex: 1, accentColor: '#ffd900' }}
                   />
                 </div>
               </div>
@@ -537,7 +537,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                   type="checkbox"
                   checked={saveLocalCopy}
                   onChange={(e) => setSaveLocalCopy(e.target.checked)}
-                  style={{ accentColor: '#eab308', width: '18px', height: '18px', cursor: 'pointer' }}
+                  style={{ accentColor: '#ffd900', width: '18px', height: '18px', cursor: 'pointer' }}
                 />
               </div>
             </div>
@@ -574,12 +574,12 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                   padding: '10px',
                   borderRadius: '12px',
                   border: 'none',
-                  backgroundColor: emergencyOverride ? '#ff3b30' : '#eab308',
+                  backgroundColor: emergencyOverride ? '#ff3b30' : '#ffd900',
                   color: '#000000',
                   fontWeight: '800',
                   fontSize: '12px',
                   cursor: 'pointer',
-                  boxShadow: `0 4px 12px ${emergencyOverride ? 'rgba(255, 59, 48, 0.2)' : 'rgba(234, 179, 8, 0.25)'}`,
+                  boxShadow: `0 4px 12px ${emergencyOverride ? 'rgba(255, 59, 48, 0.2)' : 'rgba(255, 217, 0, 0.25)'}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -623,12 +623,12 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                   width: '64px',
                   height: '64px',
                   borderRadius: '50%',
-                  backgroundColor: 'rgba(234, 179, 8, 0.1)',
-                  border: '1px solid rgba(234, 179, 8, 0.4)',
+                  backgroundColor: 'rgba(255, 217, 0, 0.1)',
+                  border: '1px solid rgba(255, 217, 0, 0.4)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#eab308',
+                  color: '#ffd900',
                   marginBottom: '16px'
                 }}>
                   <Camera size={28} />
@@ -696,7 +696,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                     width: '76px',
                     height: '76px',
                     borderRadius: '50%',
-                    backgroundColor: '#eab308',
+                    backgroundColor: '#ffd900',
                     border: '6px solid #ffffff',
                     cursor: 'pointer',
                     boxShadow: '0 4px 15px rgba(0,0,0,0.3)',

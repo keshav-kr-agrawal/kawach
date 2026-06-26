@@ -180,7 +180,7 @@ export default function App() {
 
   // Handle body styling scope for PWA mock and query parameter check
   useEffect(() => {
-    const isCitizenApp = location.pathname.startsWith('/user') && location.pathname !== '/user/login';
+    const isCitizenApp = location.pathname.startsWith('/user');
     if (isCitizenApp) {
       document.body.classList.add('in-app');
     } else {

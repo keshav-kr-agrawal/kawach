@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Shield, EyeOff, Bookmark, Activity, ArrowLeft, ToggleLeft, ToggleRight, Award } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Shield, EyeOff, Bookmark, Activity, ArrowLeft, Award } from 'lucide-react';
 
 export default function UserProfileView({ onBack, bookmarkedLaws = [], userReports = [], onRemoveBookmark, onSignOut }) {
   const [ghostMode, setGhostMode] = useState(true);
@@ -23,7 +24,8 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
   ];
 
   return (
-    <div className="subview-container select-text">
+    <div className="subview-container select-text relative">
+      <div className="absolute top-0 inset-x-0 h-48 bg-gradient-to-b from-yellow-500/5 to-transparent pointer-events-none z-0" />
       
       {/* Header */}
       <div className="sticky top-0 bg-white border-b border-slate-200/80 px-4 py-4 flex items-center justify-between z-30 shadow-xs">
@@ -46,10 +48,10 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
         </span>
       </div>
 
-      <div className="p-4 space-y-6 pb-24">
+      <div className="p-4 space-y-6 pb-24 relative z-10">
 
         {/* 1. CIVIC TRUST SCORE CIRCULAR RADIAL */}
-        <section className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs flex items-center gap-6">
+        <section className="bg-white/90 backdrop-blur-md border border-slate-200/60 rounded-3xl p-5 shadow-xs flex items-center gap-6 hover:border-yellow-250 transition-all duration-300">
           <div className="relative w-24 h-24 flex-shrink-0 flex items-center justify-center">
             {/* SVG Circular Ring */}
             <svg className="w-full h-full transform -rotate-90">
@@ -94,7 +96,7 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
         </section>
 
         {/* 2. GHOST MODE INTERACTIVE TOGGLE */}
-        <section className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs">
+        <section className="bg-white/90 backdrop-blur-md border border-slate-200/60 rounded-3xl p-5 shadow-xs hover:border-yellow-250 transition-all duration-300">
           <div className="flex items-center justify-between gap-4 mb-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-yellow-50 border border-yellow-100 rounded-xl flex items-center justify-center text-yellow-600">
@@ -106,18 +108,23 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
               </div>
             </div>
             
-            <button 
-              onClick={() => setGhostMode(!ghostMode)}
-              className="text-slate-800 transition-transform active:scale-95"
-              title={ghostMode ? "Disable Ghost Mode" : "Enable Ghost Mode"}
-              style={{ minHeight: '44px', minWidth: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              {ghostMode ? (
-                <ToggleRight className="w-12 h-12 text-[#ffd900] stroke-1" fill="currentColor" />
-              ) : (
-                <ToggleLeft className="w-12 h-12 text-slate-300 stroke-1" />
-              )}
-            </button>
+            <div className="flex items-center">
+              <button 
+                onClick={() => setGhostMode(!ghostMode)}
+                className={`w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 relative focus:outline-none ${
+                  ghostMode ? 'bg-[#ffd900]' : 'bg-slate-200 border border-slate-300/40'
+                }`}
+                title={ghostMode ? "Disable Ghost Mode" : "Enable Ghost Mode"}
+                style={{ minHeight: '28px', minWidth: '56px' }}
+              >
+                <motion.div 
+                  className="bg-white w-5 h-5 rounded-full shadow-md absolute"
+                  layout
+                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                  animate={{ left: ghostMode ? '31px' : '3px' }}
+                />
+              </button>
+            </div>
           </div>
 
           <p className="text-slate-500 text-xs font-semibold leading-relaxed border-t border-slate-100 pt-3">

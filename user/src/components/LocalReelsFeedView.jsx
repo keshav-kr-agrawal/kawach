@@ -108,7 +108,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
         upvotes: 0,
         shares: 0,
         status: r.status,
-        avatarGradient: 'linear-gradient(135deg, #eab308 0%, #ff9500 100%)',
+        avatarGradient: 'linear-gradient(135deg, #ffd900 0%, #ff9500 100%)',
         videoUrl: r.videoUrl,
         trimStart: r.trimStart,
         trimEnd: r.trimEnd
@@ -203,7 +203,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
               width: '32px',
               height: '32px',
               borderRadius: '50%',
-              backgroundColor: '#eab308',
+              backgroundColor: '#ffd900',
               border: '1.5px solid #000000',
               display: 'flex',
               alignItems: 'center',
@@ -300,7 +300,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
             border: '1px solid rgba(255,255,255,0.2)',
             borderRadius: '20px',
             padding: '6px 14px',
-            color: '#eab308',
+            color: '#ffd900',
             fontSize: '11px',
             fontWeight: '800',
             letterSpacing: '0.05em',
@@ -399,7 +399,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
               <div style={{
                 width: `${reelsPlayProgress}%`,
                 height: '100%',
-                backgroundColor: '#eab308',
+                backgroundColor: '#ffd900',
                 borderRadius: '2px',
                 transition: 'width 0.1s linear'
               }} />
@@ -429,12 +429,12 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
                 width: '80px',
                 height: '80px',
                 borderRadius: '50%',
-                backgroundColor: 'rgba(234, 179, 8, 0.1)',
-                border: '2px solid #eab308',
+                backgroundColor: 'rgba(255, 217, 0, 0.1)',
+                border: '2px solid #ffd900',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#eab308'
+                color: '#ffd900'
               }}>
                 <ShieldAlert size={40} />
               </div>
@@ -450,7 +450,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
                 backgroundColor: 'rgba(255,255,255,0.15)',
                 padding: '4px 10px',
                 borderRadius: '12px',
-                color: isReelChecking ? '#eab308' : (activeReel.status === 'REPORTED_SUSPICIOUS' ? '#ff3b30' : '#007aff')
+                color: isReelChecking ? '#ffd900' : (activeReel.status === 'REPORTED_SUSPICIOUS' ? '#ff3b30' : '#007aff')
               }}>
                 {isReelChecking ? '🤖 AI Safety Check Active' : getStatusLabel(activeReel.status)}
               </span>
@@ -504,7 +504,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
                 onMouseUp={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
                 style={{
-                  background: upvotedList[activeReel.id] ? '#eab308' : 'rgba(0,0,0,0.5)',
+                  background: upvotedList[activeReel.id] ? '#ffd900' : 'rgba(0,0,0,0.5)',
                   border: '1px solid rgba(255,255,255,0.15)',
                   borderRadius: '50%',
                   width: '46px',
@@ -642,7 +642,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
         }}>
           {isReelChecking && (
             <div style={{
-              backgroundColor: 'rgba(234, 179, 8, 0.95)',
+              backgroundColor: 'rgba(255, 217, 0, 0.95)',
               color: '#000000',
               padding: '4px 10px',
               borderRadius: '8px',

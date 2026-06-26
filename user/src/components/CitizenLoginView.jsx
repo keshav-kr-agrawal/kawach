@@ -30,7 +30,7 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-between p-4 font-sans select-text relative">
+    <div className="min-h-full h-full bg-slate-50 flex flex-col justify-between p-4 font-sans select-text relative">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-50/40 via-slate-50 to-slate-100 pointer-events-none opacity-60 z-0" />
       
       {/* Top Back Nav */}
