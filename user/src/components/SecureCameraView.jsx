@@ -231,7 +231,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!recordedBlob) return;
 
     if (!title.trim() || !description.trim()) {
@@ -245,8 +245,46 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
 
     setUploading(true);
 
+    let finalVideoUrl = videoUrl;
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+    // Only attempt Cloudinary upload if environment variables are configured
+    if (cloudName && uploadPreset) {
+      try {
+        const formData = new FormData();
+        formData.append('file', recordedBlob);
+        formData.append('upload_preset', uploadPreset);
+        formData.append('resource_type', 'video');
+
+        const response = await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
+          {
+            method: 'POST',
+            body: formData
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          finalVideoUrl = data.secure_url;
+          console.log('[CLOUDINARY] Upload successful:', finalVideoUrl);
+        } else {
+          const errData = await response.json();
+          console.error('[CLOUDINARY] Upload failed with status:', response.status, errData);
+        }
+      } catch (err) {
+        console.error('[CLOUDINARY] Network error during upload:', err);
+      }
+    } else {
+      console.warn('[CLOUDINARY] Environment variables VITE_CLOUDINARY_CLOUD_NAME or VITE_CLOUDINARY_UPLOAD_PRESET missing. Falling back to local preview URL.');
+    }
+
     const uploaderUuid = 'anon-' + Math.random().toString(36).substring(2, 15) + '-' + Math.random().toString(36).substring(2, 15);
     const videoId = 'vid-' + Math.random().toString(36).substring(2, 10);
+
+    // Simulate a slight network delay only if we did not perform a real upload
+    const delay = cloudName && uploadPreset ? 0 : 1200;
 
     setTimeout(() => {
       const newReport = {
@@ -260,7 +298,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
         lat: gpsCoords[0], // Anchors video directly at exact current GPS location
         lng: gpsCoords[1],
         emergencyOverride: emergencyOverride,
-        videoUrl: videoUrl, // saves reference to local URL so we can play back REAL video
+        videoUrl: finalVideoUrl, // saves reference to local URL or Cloudinary URL
         trimStart: trimStart,
         trimEnd: trimEnd,
         views: 0
@@ -273,7 +311,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       setEmergencyOverride(false);
       setTitle('');
       setDescription('');
-    }, 1800);
+    }, delay);
   };
 
   return (
