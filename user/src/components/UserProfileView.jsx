@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, EyeOff, Bookmark, Activity, ArrowLeft, Award } from 'lucide-react';
+import { Shield, EyeOff, Bookmark, Activity, ArrowLeft, Award, Trash2 } from 'lucide-react';
 
-export default function UserProfileView({ onBack, bookmarkedLaws = [], userReports = [], onRemoveBookmark, onSignOut }) {
+export default function UserProfileView({ onBack, bookmarkedLaws = [], userReports = [], onRemoveBookmark, onDeleteReport, onSignOut }) {
   const [ghostMode, setGhostMode] = useState(true);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsReady(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const localUploaderUuid = localStorage.getItem('kawach_uploader_uuid') || '';
+  const myReports = userReports.filter(r => r.uploaderUuid === localUploaderUuid);
 
   // Civic Trust Score metrics calculation
-  const approvedReports = userReports.filter(r => r.status === 'PUBLIC_APPROVED').length;
-  const totalReportsCount = userReports.length;
+  const approvedReports = myReports.filter(r => r.status === 'PUBLIC_APPROVED').length;
+  const totalReportsCount = myReports.length;
   
   // Calculate a mock dynamic score based on reports history
   let trustScore = 92; // default
@@ -48,7 +57,8 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
         </span>
       </div>
 
-      <div className="p-4 space-y-6 pb-24 relative z-10">
+      {isReady ? (
+        <div className="p-4 space-y-6 pb-24 relative z-10">
 
         {/* 1. CIVIC TRUST SCORE CIRCULAR RADIAL */}
         <section className="bg-white/90 backdrop-blur-md border border-slate-200/60 rounded-3xl p-5 shadow-xs flex items-center gap-6 hover:border-yellow-250 transition-all duration-300">
@@ -193,16 +203,26 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
           </h3>
 
           <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 shadow-2xs">
-            {userReports.length > 0 ? (
-              userReports.map((report) => (
+            {myReports.length > 0 ? (
+              myReports.map((report) => (
                 <div key={report.id} className="p-3.5 flex justify-between items-center gap-3">
                   <div>
                     <h4 className="font-bold text-slate-800 text-xs">{report.title || 'Live Broadcast feed'}</h4>
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mt-0.5">Verified via GPS EXIF</span>
                   </div>
-                  <span className="px-2.5 py-0.5 bg-yellow-500/10 border border-yellow-500/35 rounded-full text-[9px] font-bold text-yellow-800 tracking-wider">
-                    {report.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 bg-yellow-500/10 border border-yellow-500/35 rounded-full text-[9px] font-bold text-yellow-800 tracking-wider">
+                      {report.status}
+                    </span>
+                    <button
+                      onClick={() => onDeleteReport(report.id)}
+                      className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                      title="Delete report"
+                      style={{ minWidth: '32px', minHeight: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))
             ) : null}
@@ -233,6 +253,11 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
         </section>
 
       </div>
+      ) : (
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-6 h-6 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
     </div>
   );
 }

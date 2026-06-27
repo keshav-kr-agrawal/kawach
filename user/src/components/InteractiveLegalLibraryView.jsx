@@ -11,6 +11,12 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
   const [flippedCardId, setFlippedCardId] = useState(null);
   const [expandedCategory, setExpandedCategory] = useState(null);
   const [simulationResult, setSimulationResult] = useState(null);
+  const [isReady, setIsReady] = useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsReady(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   // User type dropdown options mapping to issues
   const userIssues = {
@@ -218,7 +224,8 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
         </div>
       </div>
 
-      <div className="px-4 py-5 space-y-6 pb-24">
+      {isReady ? (
+        <div className="px-4 py-5 space-y-6 pb-24">
 
         {/* 1. SITUATION SIMULATOR HERO CARD */}
         <section className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs relative overflow-hidden">
@@ -550,7 +557,12 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
           </div>
         </section>
 
-      </div>
+        </div>
+      ) : (
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-6 h-6 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
     </div>
   );
 }

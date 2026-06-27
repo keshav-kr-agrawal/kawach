@@ -381,6 +381,27 @@ export default function App() {
     }
   };
 
+  const handleDeleteReport = async (reportId) => {
+    // 1. Optimistic UI update
+    setUserReports((prev) => prev.filter((r) => r.id !== reportId));
+
+    // 2. Delete from Supabase
+    try {
+      const { error } = await supabase
+        .from('citizen_reports')
+        .delete()
+        .eq('id', reportId);
+
+      if (error) {
+        console.error('[SUPABASE] Error deleting report:', error.message);
+      } else {
+        console.log('[SUPABASE] Report successfully deleted from database!');
+      }
+    } catch (err) {
+      console.error('[SUPABASE] Exception during delete:', err);
+    }
+  };
+
   const handleReportVideo = async (videoId) => {
     setUserReports((prev) => {
       return prev.map((r) => {
@@ -503,6 +524,7 @@ export default function App() {
               bookmarkedLaws={ALL_FLASHCARDS.filter(c => bookmarkedLawIds.includes(c.id))}
               userReports={userReports}
               onRemoveBookmark={handleToggleBookmark}
+              onDeleteReport={handleDeleteReport}
               onSignOut={async () => {
                 await supabase.auth.signOut();
                 setCitizenToken('');

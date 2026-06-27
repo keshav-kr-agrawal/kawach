@@ -75,7 +75,7 @@ export default function AlertsChatView() {
   };
 
   return (
-    <div className="view-container" style={{ padding: '0', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 84px)', backgroundColor: '#ffffff' }}>
+    <div className="view-container" style={{ padding: '0', display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#ffffff' }}>
       
       {/* Safety Alert Broadcast Banner */}
       <div style={{

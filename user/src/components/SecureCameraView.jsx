@@ -331,7 +331,11 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       console.warn('[CLOUDINARY] Environment variables VITE_CLOUDINARY_CLOUD_NAME or VITE_CLOUDINARY_UPLOAD_PRESET missing. Falling back to local preview URL.');
     }
 
-    const uploaderUuid = 'anon-' + Math.random().toString(36).substring(2, 15) + '-' + Math.random().toString(36).substring(2, 15);
+    let uploaderUuid = localStorage.getItem('kawach_uploader_uuid');
+    if (!uploaderUuid) {
+      uploaderUuid = 'anon-' + Math.random().toString(36).substring(2, 15) + '-' + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('kawach_uploader_uuid', uploaderUuid);
+    }
     const videoId = 'vid-' + Math.random().toString(36).substring(2, 10);
 
     // Await routing results

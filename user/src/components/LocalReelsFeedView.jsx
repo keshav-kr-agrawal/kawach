@@ -208,7 +208,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
   const isReelChecking = activeReel.status === 'AI_CHECK_1' || activeReel.status === 'AI_CHECK_2';
 
   return (
-    <div className="view-container" style={{ padding: '0', position: 'relative', height: 'calc(100vh - 84px)', overflow: 'hidden', backgroundColor: '#000000' }}>
+    <div className="view-container" style={{ padding: '0', position: 'relative', height: '100%', overflow: 'hidden', backgroundColor: '#000000' }}>
       
       {/* Absolute Header Overlay */}
       <div style={{

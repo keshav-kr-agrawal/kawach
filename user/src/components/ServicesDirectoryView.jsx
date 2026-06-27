@@ -209,7 +209,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       padding: '20px 16px 100px', 
       backgroundColor: '#fafafa', // Soft Off-White
       boxSizing: 'border-box',
-      height: 'calc(100vh - 84px)',
+      height: '100%',
       overflowY: 'auto'
     }}>
       
