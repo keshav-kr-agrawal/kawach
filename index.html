@@ -352,14 +352,26 @@
     // Initialize icons
     lucide.createIcons();
 
-    // Dynamically update localhost links to match current hostname
+    // Dynamically update localhost links to match current hostname and port environment
     document.querySelectorAll('a').forEach(link => {
       const href = link.getAttribute('href');
       if (href && href.includes('localhost')) {
         try {
           const url = new URL(href);
-          url.hostname = window.location.hostname;
-          link.setAttribute('href', url.toString());
+          if (window.location.port) {
+            // Local development: keep the target port but update the hostname
+            url.hostname = window.location.hostname;
+            link.setAttribute('href', url.toString());
+          } else {
+            // Production: strip port and make it a clean relative route redirect
+            let relativePath = '';
+            if (url.port === '5175') {
+              relativePath = url.hash ? url.hash.substring(1) : '/user';
+            } else if (url.port === '5174') {
+              relativePath = url.hash ? url.hash.substring(1) : '/police';
+            }
+            link.setAttribute('href', relativePath || '/');
+          }
         } catch (e) {
           console.warn('Failed to parse redirect link:', href);
         }

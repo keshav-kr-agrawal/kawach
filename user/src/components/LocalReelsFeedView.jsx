@@ -210,9 +210,9 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
   return (
     <div className="view-container" style={{ padding: '0', position: 'relative', height: '100%', overflow: 'hidden', backgroundColor: '#000000' }}>
       
-      {/* Absolute Header Overlay */}
+      {/* Absolute Header Overlay (Hidden because of layout level TopBar) */}
       <div style={{
-        position: 'absolute',
+        display: 'none',
         top: '20px',
         left: '20px',
         right: '20px',

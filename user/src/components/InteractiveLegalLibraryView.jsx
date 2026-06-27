@@ -14,8 +14,7 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
   const [isReady, setIsReady] = useState(false);
 
   React.useEffect(() => {
-    const timer = setTimeout(() => setIsReady(true), 50);
-    return () => clearTimeout(timer);
+    setIsReady(true);
   }, []);
 
   // User type dropdown options mapping to issues
@@ -203,8 +202,8 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
   return (
     <div className="subview-container select-text">
       
-      {/* Header Overlay */}
-      <div className="sticky top-0 bg-white border-b border-slate-200/80 px-4 py-4 flex items-center justify-between z-30 shadow-xs">
+      {/* Header Overlay (Hidden because of layout level TopBar) */}
+      <div className="sticky top-0 bg-white border-b border-slate-200/80 px-4 py-4 flex items-center justify-between z-30 shadow-xs" style={{ display: 'none' }}>
         <div className="flex items-center gap-3">
           <button 
             onClick={onBack} 

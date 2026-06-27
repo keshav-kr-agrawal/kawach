@@ -123,6 +123,18 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     }
   };
 
+  // Bind viewfinder stream to video element once mounted to fix black screen issue on hosted links
+  useEffect(() => {
+    if (hasCameraAccess && streamRef.current && videoRef.current) {
+      try {
+        videoRef.current.srcObject = streamRef.current;
+        videoRef.current.play().catch((err) => console.log('Viewfinder playback failed:', err));
+      } catch (e) {
+        console.warn('Failed to bind stream to viewfinder video:', e);
+      }
+    }
+  }, [hasCameraAccess]);
+
   // Recording Logic (UNLIMITED length)
   const handleStartRecording = () => {
     recordedChunks.current = [];
@@ -358,7 +370,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
         uploaderUuid: uploaderUuid,
         status: emergencyOverride 
           ? VIDEO_STATUS.PUBLIC_APPROVED 
-          : (classifierResult?.verdict === 'AI_GENERATED' ? 'AI_FLAGGED' : VIDEO_STATUS.AI_CHECK_1),
+          : (classifierResult?.verdict === 'AI_GENERATED' ? VIDEO_STATUS.REJECTED : VIDEO_STATUS.AI_CHECK_1),
         timestamp: 'Just now',
         lat: gpsCoords[0], // Anchors video directly at exact current GPS location
         lng: gpsCoords[1],

@@ -7,8 +7,7 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsReady(true), 50);
-    return () => clearTimeout(timer);
+    setIsReady(true);
   }, []);
 
   const localUploaderUuid = localStorage.getItem('kawach_uploader_uuid') || '';
@@ -36,8 +35,8 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
     <div className="subview-container select-text relative">
       <div className="absolute top-0 inset-x-0 h-48 bg-gradient-to-b from-yellow-500/5 to-transparent pointer-events-none z-0" />
       
-      {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-slate-200/80 px-4 py-4 flex items-center justify-between z-30 shadow-xs">
+      {/* Header (Hidden because of layout level TopBar) */}
+      <div className="sticky top-0 bg-white border-b border-slate-200/80 px-4 py-4 flex items-center justify-between z-30 shadow-xs" style={{ display: 'none' }}>
         <div className="flex items-center gap-3">
           <button 
             onClick={onBack} 
@@ -205,24 +204,39 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
           <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 shadow-2xs">
             {myReports.length > 0 ? (
               myReports.map((report) => (
-                <div key={report.id} className="p-3.5 flex justify-between items-center gap-3">
-                  <div>
-                    <h4 className="font-bold text-slate-800 text-xs">{report.title || 'Live Broadcast feed'}</h4>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mt-0.5">Verified via GPS EXIF</span>
+                <div key={report.id} className="p-4 flex flex-col gap-3">
+                  <div className="flex justify-between items-start gap-3">
+                    <div>
+                      <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wide">{report.title || 'Live Incident Log'}</h4>
+                      <p className="text-[10px] text-slate-500 mt-1 font-semibold leading-relaxed">{report.description || 'Anonymous reported feed'}</p>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mt-1.5">📍 Location: {report.lat?.toFixed(4)}, {report.lng?.toFixed(4)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="px-2.5 py-0.5 bg-yellow-500/10 border border-yellow-500/35 rounded-full text-[9px] font-bold text-yellow-800 tracking-wider uppercase">
+                        {report.status}
+                      </span>
+                      <button
+                        onClick={() => onDeleteReport(report.id)}
+                        className="p-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-rose-600 transition-colors"
+                        title="Delete report"
+                        style={{ minWidth: '36px', minHeight: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Trash2 className="w-4.5 h-4.5" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 bg-yellow-500/10 border border-yellow-500/35 rounded-full text-[9px] font-bold text-yellow-800 tracking-wider">
-                      {report.status}
-                    </span>
-                    <button
-                      onClick={() => onDeleteReport(report.id)}
-                      className="p-1 text-slate-400 hover:text-red-500 transition-colors"
-                      title="Delete report"
-                      style={{ minWidth: '32px', minHeight: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  {report.videoUrl && (
+                    <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 aspect-video shadow-2xs">
+                      <video 
+                        src={report.videoUrl} 
+                        controls 
+                        playsInline
+                        muted
+                        className="w-full h-full object-contain"
+                        style={{ maxHeight: '140px' }}
+                      />
+                    </div>
+                  )}
                 </div>
               ))
             ) : null}

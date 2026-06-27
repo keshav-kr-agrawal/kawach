@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { User, BookOpen, ArrowLeft } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import BottomNav from './components/BottomNav';
 import SnapMapView from './components/SnapMapView';
@@ -53,8 +54,134 @@ const ALL_FLASHCARDS = [
   }
 ];
 
+function TopBar({ onOpenProfile, onOpenLibrary }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const getPageMeta = () => {
+    const path = location.pathname;
+    if (path.startsWith('/user/map')) return { title: 'SENTINEL GHOST MAP', subtitle: 'PII-Free Safety Grid' };
+    if (path.startsWith('/user/feed')) return { title: 'LOCAL INCIDENT FEED', subtitle: 'Peer-to-Peer Broadcasts' };
+    if (path.startsWith('/user/services')) return { title: 'CIVIC DIRECTORY', subtitle: 'Verified Helplines & Contacts' };
+    if (path.startsWith('/user/chat')) return { title: 'EMERGENCY SHIELD', subtitle: 'Warnings & Live Alerts' };
+    if (path.startsWith('/user/camera')) return { title: 'SECURE CAPTURE', subtitle: 'Anonymous Incident Camera' };
+    if (path.startsWith('/user/library')) return { title: 'CITIZEN LAW LIBRARY', subtitle: 'Know Your Rights' };
+    if (path.startsWith('/user/profile')) return { title: 'CITIZEN PROFILE', subtitle: 'Sentinel Privacy Settings' };
+    return { title: 'KAWACH SENTINEL', subtitle: 'Public Threat Intelligence' };
+  };
+
+  const { title, subtitle } = getPageMeta();
+  const isProfileOrLibrary = location.pathname.includes('/profile') || location.pathname.includes('/library');
+
+  return (
+    <div className="glass-panel" style={{
+      width: '100%',
+      padding: '12px 16px',
+      borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: '#ffffff',
+      zIndex: 1000,
+      position: 'relative',
+      boxSizing: 'border-box'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {!isProfileOrLibrary ? (
+          <button 
+            onClick={onOpenProfile}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              backgroundColor: '#ffd900',
+              border: '1.5px solid #000000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+            }}
+            title="Open User Profile"
+          >
+            <User size={15} color="#000000" strokeWidth={2.5} />
+          </button>
+        ) : (
+          <button 
+            onClick={() => navigate(-1)}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '10px',
+              backgroundColor: '#f2f2f2',
+              border: '1px solid #e5e5e5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#333333'
+            }}
+            title="Go Back"
+          >
+            <ArrowLeft size={15} strokeWidth={2.5} />
+          </button>
+        )}
+        
+        <div>
+          <h3 style={{ margin: 0, fontSize: '11px', fontWeight: '900', fontFamily: 'Outfit, sans-serif', color: '#000000', letterSpacing: '0.02em' }}>
+            {title}
+          </h3>
+          <p style={{ margin: 0, fontSize: '9px', color: '#64748B', fontWeight: '600' }}>
+            {subtitle}
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {!isProfileOrLibrary && (
+          <button 
+            onClick={onOpenLibrary}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '10px',
+              backgroundColor: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#333333'
+            }}
+            title="Open Legal Library"
+          >
+            <BookOpen size={15} strokeWidth={2.5} />
+          </button>
+        )}
+        
+        <div style={{
+          backgroundColor: 'rgba(255, 217, 0, 0.15)',
+          color: '#000000',
+          padding: '4px 8px',
+          borderRadius: '10px',
+          fontSize: '9px',
+          fontWeight: '800',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '3px',
+          border: '1px solid rgba(255, 217, 0, 0.4)'
+        }}>
+          <span style={{ display: 'inline-block', width: '5px', height: '5px', backgroundColor: '#ff3b30', borderRadius: '50%' }} />
+          <span>LIVE</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function UserLayout({ userReports }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Check if we are currently on map tab
   const isMapTab = location.pathname.startsWith('/user/map');
@@ -69,6 +196,12 @@ function UserLayout({ userReports }) {
       overflow: 'hidden',
       backgroundColor: '#ffffff'
     }}>
+      {/* Persistent Dynamic Top Bar */}
+      <TopBar 
+        onOpenProfile={() => navigate('/user/profile')} 
+        onOpenLibrary={() => navigate('/user/library')} 
+      />
+
       {/* Subview Scroll Viewport */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', width: '100%', height: '100%' }}>
         <AnimatePresence mode="wait">
@@ -464,7 +597,7 @@ export default function App() {
               setCitizenToken(token);
               navigate('/user/map');
             }}
-            onBackToHome={() => { window.location.href = `${window.location.protocol}//${window.location.hostname}:5173/`; }}
+            onBackToHome={() => { window.location.href = window.location.port ? `${window.location.protocol}//${window.location.hostname}:5173/` : '/'; }}
           />
         } 
       />
@@ -528,7 +661,7 @@ export default function App() {
               onSignOut={async () => {
                 await supabase.auth.signOut();
                 setCitizenToken('');
-                window.location.href = `${window.location.protocol}//${window.location.hostname}:5173/`;
+                window.location.href = window.location.port ? `${window.location.protocol}//${window.location.hostname}:5173/` : '/';
               }}
             />
           } 

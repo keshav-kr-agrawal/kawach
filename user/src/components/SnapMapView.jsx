@@ -199,9 +199,9 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
       
-      {/* Top Header Card (White Snapchat theme) */}
+      {/* Top Header Card (Hidden because of layout level TopBar) */}
       <div className="glass-panel" style={{
-        position: 'absolute',
+        display: 'none',
         top: '20px',
         left: '20px',
         right: '20px',

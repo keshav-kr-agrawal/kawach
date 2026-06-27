@@ -213,8 +213,8 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       overflowY: 'auto'
     }}>
       
-      {/* View Header */}
-      <div style={{ marginBottom: '16px' }}>
+      {/* View Header (Hidden because of layout level TopBar) */}
+      <div style={{ display: 'none' }}>
         <h1 style={{ margin: 0, fontSize: '20px', fontFamily: 'Outfit', fontWeight: '850', color: '#09090B' }}>
           Community & Helplines
         </h1>
