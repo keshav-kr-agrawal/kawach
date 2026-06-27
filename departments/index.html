@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAWACH: Civic Departments Command Console</title>
+  <!-- Google Fonts: Outfit and Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background decorations -->
+  <div class="cyber-grid"></div>
+  <div class="glow-radial-1"></div>
+
+  <!-- Header -->
+  <header class="main-header">
+    <div class="brand">
+      <div class="brand-logo">
+        <i data-lucide="building-2"></i>
+      </div>
+      <div class="brand-text">
+        <h1>KAWACH</h1>
+        <span>MUNICIPAL & CIVIC DEPARTMENTS PLATFORM</span>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="/" class="btn-back-home"><i data-lucide="home"></i> Portal Hub</a>
+    </nav>
+  </header>
+
+  <!-- Main Portal Hub Container -->
+  <main class="console-container">
+    
+    <!-- Department Selector Screen (Initially Shown) -->
+    <div id="selection-screen" class="screen-view">
+      <div class="welcome-banner">
+        <h2>Civic Command Dispatch Gateway</h2>
+        <p>Select your municipal administration department below to access live crowdsourced safety & hazard feeds.</p>
+      </div>
+
+      <div class="dept-grid">
+        <button class="dept-card" onclick="selectDepartment('HEALTH', 'Health & Medical', 'medical')">
+          <div class="dept-icon-wrapper medical"><i data-lucide="heart-pulse"></i></div>
+          <h3>Health & Medical</h3>
+          <p>Outbreaks, health hazards, and emergency medical needs.</p>
+        </button>
+
+        <button class="dept-card" onclick="selectDepartment('ELECTRICITY', 'Electricity Board', 'electric')">
+          <div class="dept-icon-wrapper electric"><i data-lucide="zap"></i></div>
+          <h3>Electricity Board</h3>
+          <p>Sparking transformers, live hanging wires, and power blackouts.</p>
+        </button>
+
+        <button class="dept-card" onclick="selectDepartment('WATER', 'Water Supply Authority', 'water')">
+          <div class="dept-icon-wrapper water"><i data-lucide="droplet"></i></div>
+          <h3>Water & Sewage</h3>
+          <p>Broken main pipelines, sewage overflow, and open drains.</p>
+        </button>
+
+        <button class="dept-card" onclick="selectDepartment('TRAFFIC', 'Traffic Control & Roads', 'traffic')">
+          <div class="dept-icon-wrapper traffic"><i data-lucide="navigation"></i></div>
+          <h3>Traffic & Roads</h3>
+          <p>Signal failures, structural road hazards, and blockages.</p>
+        </button>
+
+        <button class="dept-card" onclick="selectDepartment('FIRE', 'Fire & Rescue Services', 'fire')">
+          <div class="dept-icon-wrapper fire"><i data-lucide="flame"></i></div>
+          <h3>Fire & Rescue</h3>
+          <p>Fires, cylinder explosions, and urgent hazard rescues.</p>
+        </button>
+
+        <button class="dept-card" onclick="selectDepartment('SANITATION', 'Sanitation & Municipal Waste', 'sanitation')">
+          <div class="dept-icon-wrapper sanitation"><i data-lucide="trash-2"></i></div>
+          <h3>Sanitation & Waste</h3>
+          <p>Litter dumps, overflowing trash bins, and public hygiene.</p>
+        </button>
+
+        <button class="dept-card" onclick="selectDepartment('ENVIRONMENT', 'Environmental Protection', 'environment')">
+          <div class="dept-icon-wrapper environment"><i data-lucide="leaf"></i></div>
+          <h3>Environment</h3>
+          <p>Illegal tree cutting, industrial dust, and water body pollution.</p>
+        </button>
+
+        <button class="dept-card" onclick="selectDepartment('CONSTRUCTION', 'Urban Construction & PWD', 'construction')">
+          <div class="dept-icon-wrapper construction"><i data-lucide="hard-hat"></i></div>
+          <h3>Construction & PWD</h3>
+          <p>Hazardous potholes, crumbling bridge walls, and open pits.</p>
+        </button>
+
+        <button class="dept-card" onclick="selectDepartment('REVENUE', 'Revenue & Administration', 'revenue')">
+          <div class="dept-icon-wrapper revenue"><i data-lucide="file-text"></i></div>
+          <h3>Revenue & Land</h3>
+          <p>Land encroachment, boundary disputes, and administrative issues.</p>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Dashboard Screen (Hidden by Default) -->
+    <div id="dashboard-screen" class="screen-view hidden">
+      
+      <!-- Back button and title -->
+      <div class="dashboard-header">
+        <button onclick="exitDashboard()" class="btn-back"><i data-lucide="arrow-left"></i> Change Department</button>
+        <div class="active-badge" id="active-dept-name">Sanitation Department</div>
+      </div>
+
+      <!-- KPI Metrics Row -->
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-content">
+            <span class="metric-label">Assigned Issues</span>
+            <h3 class="metric-val" id="stats-total">0</h3>
+          </div>
+          <div class="metric-icon blue"><i data-lucide="alert-circle"></i></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-content">
+            <span class="metric-label">Active Alerts</span>
+            <h3 class="metric-val" id="stats-active">0</h3>
+          </div>
+          <div class="metric-icon orange"><i data-lucide="activity"></i></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-content">
+            <span class="metric-label">Issues Resolved</span>
+            <h3 class="metric-val" id="stats-resolved">0</h3>
+          </div>
+          <div class="metric-icon green"><i data-lucide="check-circle-2"></i></div>
+        </div>
+      </div>
+
+      <!-- List of Assigned Reports -->
+      <div class="content-split">
+        <div class="reports-section">
+          <h3>Routed Citizens Reports</h3>
+          
+          <div id="reports-loading" class="spinner-container">
+            <div class="spinner"></div>
+            <span>Fetching live Supabase pipeline...</span>
+          </div>
+
+          <div id="reports-empty" class="empty-view hidden">
+            <i data-lucide="check-square"></i>
+            <h4>All Clear!</h4>
+            <p>No active incidents or safety alerts are currently routed to this department.</p>
+          </div>
+
+          <div id="reports-list" class="reports-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

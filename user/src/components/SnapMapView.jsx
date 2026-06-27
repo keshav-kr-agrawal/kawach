@@ -208,7 +208,6 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
         padding: '12px 16px',
         borderRadius: '20px',
         zIndex: 999,
-        display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',

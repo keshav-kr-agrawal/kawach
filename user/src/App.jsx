@@ -298,6 +298,14 @@ function RequireCitizenAuth({ token, children }) {
   return token ? children : null;
 }
 
+function CitizenAppWrapper({ children }) {
+  return (
+    <div className="max-w-md mx-auto h-screen w-full relative shadow-2xl overflow-hidden bg-slate-50 flex flex-col justify-between border-x border-slate-200 select-none">
+      {children}
+    </div>
+  );
+}
+
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -535,6 +543,29 @@ export default function App() {
     }
   };
 
+  const handleResolveReport = async (reportId) => {
+    // 1. Optimistic UI update
+    setUserReports((prev) => 
+      prev.map((r) => r.id === reportId ? { ...r, status: 'RESOLVED' } : r)
+    );
+
+    // 2. Update in Supabase
+    try {
+      const { error } = await supabase
+        .from('citizen_reports')
+        .update({ status: 'RESOLVED' })
+        .eq('id', reportId);
+
+      if (error) {
+        console.error('[SUPABASE] Error resolving report:', error.message);
+      } else {
+        console.log('[SUPABASE] Report successfully marked as resolved in database!');
+      }
+    } catch (err) {
+      console.error('[SUPABASE] Exception during resolve:', err);
+    }
+  };
+
   const handleReportVideo = async (videoId) => {
     setUserReports((prev) => {
       return prev.map((r) => {
@@ -592,13 +623,15 @@ export default function App() {
       <Route 
         path="/user/login" 
         element={
-          <CitizenLoginView 
-            onLoginSuccess={(token) => {
-              setCitizenToken(token);
-              navigate('/user/map');
-            }}
-            onBackToHome={() => { window.location.href = window.location.port ? `${window.location.protocol}//${window.location.hostname}:5173/` : '/'; }}
-          />
+          <CitizenAppWrapper>
+            <CitizenLoginView 
+              onLoginSuccess={(token) => {
+                setCitizenToken(token);
+                navigate('/user/map');
+              }}
+              onBackToHome={() => { window.location.href = window.location.port ? `${window.location.protocol}//${window.location.hostname}:5173/` : '/'; }}
+            />
+          </CitizenAppWrapper>
         } 
       />
 
@@ -607,7 +640,9 @@ export default function App() {
         path="/user" 
         element={
           <RequireCitizenAuth token={citizenToken}>
-            <UserLayout userReports={userReports} />
+            <CitizenAppWrapper>
+              <UserLayout userReports={userReports} />
+            </CitizenAppWrapper>
           </RequireCitizenAuth>
         }
       >
@@ -658,6 +693,7 @@ export default function App() {
               userReports={userReports}
               onRemoveBookmark={handleToggleBookmark}
               onDeleteReport={handleDeleteReport}
+              onResolveReport={handleResolveReport}
               onSignOut={async () => {
                 await supabase.auth.signOut();
                 setCitizenToken('');

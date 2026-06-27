@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, EyeOff, Bookmark, Activity, ArrowLeft, Award, Trash2 } from 'lucide-react';
+import { Shield, EyeOff, Bookmark, Activity, ArrowLeft, Award, Trash2, CheckCircle2 } from 'lucide-react';
 
-export default function UserProfileView({ onBack, bookmarkedLaws = [], userReports = [], onRemoveBookmark, onDeleteReport, onSignOut }) {
+export default function UserProfileView({ onBack, bookmarkedLaws = [], userReports = [], onRemoveBookmark, onDeleteReport, onResolveReport, onSignOut }) {
   const [ghostMode, setGhostMode] = useState(true);
   const [isReady, setIsReady] = useState(false);
+  const [activeTab, setActiveTab] = useState('posted'); // 'posted' or 'saved'
 
   useEffect(() => {
     setIsReady(true);
@@ -149,111 +150,147 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
           </p>
         </section>
 
-        {/* 3. BOOKMARKED LAWS SECTION */}
-        <section className="space-y-3">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1 flex items-center gap-1.5">
-            <Bookmark className="w-4 h-4 text-slate-400" /> Bookmarked Laws & Rights
-          </h3>
+        {/* Tab Selection Segments */}
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs">
+          <button
+            onClick={() => setActiveTab('posted')}
+            className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all uppercase tracking-wider text-center ${
+              activeTab === 'posted'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Posted Logs ({myReports.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('saved')}
+            className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all uppercase tracking-wider text-center ${
+              activeTab === 'saved'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Saved Laws ({bookmarkedLaws.length})
+          </button>
+        </div>
 
-          <div className="space-y-2.5">
-            {bookmarkedLaws.length > 0 ? (
-              bookmarkedLaws.map((law) => (
-                <div key={law.id} className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-2xs">
+        {/* Tab Contents */}
+        {activeTab === 'posted' ? (
+          <section className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1 flex items-center gap-1.5">
+              <Activity className="w-4 h-4 text-slate-400" /> Sentinel Activity Logs
+            </h3>
+
+            <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 shadow-2xs">
+              {myReports.length > 0 ? (
+                myReports.map((report) => (
+                  <div key={report.id} className="p-4 flex flex-col gap-3">
+                    <div className="flex justify-between items-start gap-3">
+                      <div>
+                        <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wide">{report.title || 'Live Incident Log'}</h4>
+                        <p className="text-[10px] text-slate-500 mt-1 font-semibold leading-relaxed">{report.description || 'Anonymous reported feed'}</p>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mt-1.5">📍 Location: {report.lat?.toFixed(4)}, {report.lng?.toFixed(4)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {report.status !== 'RESOLVED' ? (
+                          <button
+                            onClick={() => onResolveReport(report.id)}
+                            className="p-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-250 rounded-lg text-emerald-600 transition-colors"
+                            title="Mark as Resolved"
+                            style={{ minWidth: '36px', minHeight: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <CheckCircle2 className="w-4.5 h-4.5" />
+                          </button>
+                        ) : (
+                          <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                            Resolved
+                          </span>
+                        )}
+                        <button
+                          onClick={() => onDeleteReport(report.id)}
+                          className="p-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-rose-600 transition-colors"
+                          title="Delete report"
+                          style={{ minWidth: '36px', minHeight: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <Trash2 className="w-4.5 h-4.5" />
+                        </button>
+                      </div>
+                    </div>
+                    {report.videoUrl && (
+                      <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 aspect-video shadow-2xs">
+                        <video 
+                          src={report.videoUrl} 
+                          controls 
+                          playsInline
+                          muted
+                          className="w-full h-full object-contain"
+                          style={{ maxHeight: '140px' }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : null}
+
+              {mockActivityLog.map((log) => (
+                <div key={log.id} className="p-3.5 flex justify-between items-center gap-3">
                   <div>
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="px-2.5 py-0.5 bg-yellow-100 border border-yellow-200 rounded-full text-[9px] font-bold text-yellow-800 uppercase tracking-wide">
-                        {law.backTitle || 'Motor Vehicles Act'}
-                      </span>
-                      <button
-                        onClick={() => onRemoveBookmark(law.id)}
-                        className="text-[9px] font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wider"
-                        style={{ minHeight: '36px', padding: '0 8px' }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                    <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wide mb-1.5">
-                      {law.title}
-                    </h4>
-                    <p className="text-slate-500 text-[11px] font-semibold leading-relaxed">
-                      {law.backContent}
-                    </p>
+                    <h4 className="font-bold text-slate-800 text-xs">{log.event}</h4>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mt-0.5">{log.date}</span>
                   </div>
-                  <div className="mt-3 bg-slate-50 border border-slate-100 rounded-xl p-3">
-                    <span className="text-[8px] font-bold text-slate-800 uppercase tracking-wider block mb-0.5">Immediate Action</span>
-                    <p className="text-slate-600 text-[10px] leading-relaxed font-semibold">
-                      {law.action}
-                    </p>
-                  </div>
+                  <span className="px-2.5 py-0.5 bg-slate-100 border border-slate-200 rounded-full text-[9px] font-bold text-slate-700 tracking-wider">
+                    {log.result}
+                  </span>
                 </div>
-              ))
-            ) : (
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-6 text-center text-slate-400 text-xs font-semibold">
-                No bookmarked laws. Saved cards from the Law Library will appear here for fast offline reading.
-              </div>
-            )}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1 flex items-center gap-1.5">
+              <Bookmark className="w-4 h-4 text-slate-400" /> Bookmarked Laws & Rights
+            </h3>
 
-        {/* 4. RECENT ACTIVITY LOGS */}
-        <section className="space-y-3">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1 flex items-center gap-1.5">
-            <Activity className="w-4 h-4 text-slate-400" /> Sentinel Activity Logs
-          </h3>
-
-          <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 shadow-2xs">
-            {myReports.length > 0 ? (
-              myReports.map((report) => (
-                <div key={report.id} className="p-4 flex flex-col gap-3">
-                  <div className="flex justify-between items-start gap-3">
+            <div className="space-y-2.5">
+              {bookmarkedLaws.length > 0 ? (
+                bookmarkedLaws.map((law) => (
+                  <div key={law.id} className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-2xs">
                     <div>
-                      <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wide">{report.title || 'Live Incident Log'}</h4>
-                      <p className="text-[10px] text-slate-500 mt-1 font-semibold leading-relaxed">{report.description || 'Anonymous reported feed'}</p>
-                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mt-1.5">📍 Location: {report.lat?.toFixed(4)}, {report.lng?.toFixed(4)}</span>
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="px-2.5 py-0.5 bg-yellow-100 border border-yellow-200 rounded-full text-[9px] font-bold text-yellow-800 uppercase tracking-wide">
+                          {law.backTitle || 'Motor Vehicles Act'}
+                        </span>
+                        <button
+                          onClick={() => onRemoveBookmark(law.id)}
+                          className="text-[9px] font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wider"
+                          style={{ minHeight: '36px', padding: '0 8px' }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wide mb-1.5">
+                        {law.title}
+                      </h4>
+                      <p className="text-slate-500 text-[11px] font-semibold leading-relaxed">
+                        {law.backContent}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="px-2.5 py-0.5 bg-yellow-500/10 border border-yellow-500/35 rounded-full text-[9px] font-bold text-yellow-800 tracking-wider uppercase">
-                        {report.status}
-                      </span>
-                      <button
-                        onClick={() => onDeleteReport(report.id)}
-                        className="p-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-rose-600 transition-colors"
-                        title="Delete report"
-                        style={{ minWidth: '36px', minHeight: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        <Trash2 className="w-4.5 h-4.5" />
-                      </button>
+                    <div className="mt-3 bg-slate-50 border border-slate-100 rounded-xl p-3">
+                      <span className="text-[8px] font-bold text-slate-800 uppercase tracking-wider block mb-0.5">Immediate Action</span>
+                      <p className="text-slate-600 text-[10px] leading-relaxed font-semibold">
+                        {law.action}
+                      </p>
                     </div>
                   </div>
-                  {report.videoUrl && (
-                    <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 aspect-video shadow-2xs">
-                      <video 
-                        src={report.videoUrl} 
-                        controls 
-                        playsInline
-                        muted
-                        className="w-full h-full object-contain"
-                        style={{ maxHeight: '140px' }}
-                      />
-                    </div>
-                  )}
+                ))
+              ) : (
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-6 text-center text-slate-400 text-xs font-semibold">
+                  No bookmarked laws. Saved cards from the Law Library will appear here for fast offline reading.
                 </div>
-              ))
-            ) : null}
-
-            {mockActivityLog.map((log) => (
-              <div key={log.id} className="p-3.5 flex justify-between items-center gap-3">
-                <div>
-                  <h4 className="font-bold text-slate-800 text-xs">{log.event}</h4>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mt-0.5">{log.date}</span>
-                </div>
-                <span className="px-2.5 py-0.5 bg-slate-100 border border-slate-200 rounded-full text-[9px] font-bold text-slate-700 tracking-wider">
-                  {log.result}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* 5. SIGN OUT BUTTON */}
         <section className="pt-2">
