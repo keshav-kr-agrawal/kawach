@@ -464,7 +464,7 @@ export default function App() {
               setCitizenToken(token);
               navigate('/user/map');
             }}
-            onBackToHome={() => { window.location.href = 'http://localhost:5173/'; }}
+            onBackToHome={() => { window.location.href = `${window.location.protocol}//${window.location.hostname}:5173/`; }}
           />
         } 
       />
@@ -528,7 +528,7 @@ export default function App() {
               onSignOut={async () => {
                 await supabase.auth.signOut();
                 setCitizenToken('');
-                window.location.href = 'http://localhost:5173/';
+                window.location.href = `${window.location.protocol}//${window.location.hostname}:5173/`;
               }}
             />
           } 

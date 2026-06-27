@@ -5,7 +5,7 @@ import { Shield, Users, Radio, MessageSquare, BookOpen, Fingerprint, Lock, Arrow
 export default function LandingPageView({ onEnterCitizen }) {
   const handlePoliceRedirect = () => {
     // Redirection to the police command app on port 5174
-    window.location.href = 'http://localhost:5174';
+    window.location.href = `${window.location.protocol}//${window.location.hostname}:5174`;
   };
 
   return (
@@ -26,7 +26,7 @@ export default function LandingPageView({ onEnterCitizen }) {
         </div>
         <div className="flex items-center gap-3">
           <a 
-            href="http://localhost:5173/" 
+            href={`${window.location.protocol}//${window.location.hostname}:5173/`} 
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition-all shadow-2xs"
           >
             ← Portal Hub

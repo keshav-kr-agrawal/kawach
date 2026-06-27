@@ -351,6 +351,20 @@
   <script>
     // Initialize icons
     lucide.createIcons();
+
+    // Dynamically update localhost links to match current hostname
+    document.querySelectorAll('a').forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && href.includes('localhost')) {
+        try {
+          const url = new URL(href);
+          url.hostname = window.location.hostname;
+          link.setAttribute('href', url.toString());
+        } catch (e) {
+          console.warn('Failed to parse redirect link:', href);
+        }
+      }
+    });
   </script>
 </body>
 </html>
