@@ -1,0 +1,21 @@
+# Exclude large downloaded model weights from git (downloaded at Docker build time)
+weights/final_*
+
+# Exclude Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Exclude uploads dir contents
+uploads/*
+!uploads/.gitkeep
+
+# Exclude virtual environments
+venv/
+.venv/
+env/
+
+# Test files
+test_sample.mp4

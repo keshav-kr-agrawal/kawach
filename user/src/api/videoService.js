@@ -8,6 +8,7 @@
 
 export const VIDEO_STATUS = {
   AI_CHECK_1: 'AI_CHECK_1',
+  DEPT_ROUTING: 'DEPT_ROUTING',
   COHORT_TEST: 'COHORT_TEST',
   REPORTED_SUSPICIOUS: 'REPORTED_SUSPICIOUS',
   AI_CHECK_2: 'AI_CHECK_2',
@@ -19,6 +20,8 @@ export const getStatusLabel = (status) => {
   switch (status) {
     case VIDEO_STATUS.AI_CHECK_1:
       return '🤖 Initial AI Deepfake & Safety Scan';
+    case VIDEO_STATUS.DEPT_ROUTING:
+      return '🗂️ Zero-Shot AI Civic Dept Routing';
     case VIDEO_STATUS.COHORT_TEST:
       return '👥 Cohort Test (Local Radius Verification)';
     case VIDEO_STATUS.REPORTED_SUSPICIOUS:
@@ -38,6 +41,8 @@ export const getStatusColor = (status) => {
   switch (status) {
     case VIDEO_STATUS.AI_CHECK_1:
       return '#0ea5e9'; // soothing sky blue
+    case VIDEO_STATUS.DEPT_ROUTING:
+      return '#8b5cf6'; // premium violet
     case VIDEO_STATUS.COHORT_TEST:
       return '#3b82f6'; // blue
     case VIDEO_STATUS.REPORTED_SUSPICIOUS:
@@ -59,6 +64,9 @@ export const simulateWorkflowProgress = (video, onUpdate) => {
 
   const interval = setInterval(() => {
     if (currentStatus === VIDEO_STATUS.AI_CHECK_1) {
+      currentStatus = VIDEO_STATUS.DEPT_ROUTING;
+      onUpdate({ ...video, status: currentStatus });
+    } else if (currentStatus === VIDEO_STATUS.DEPT_ROUTING) {
       currentStatus = VIDEO_STATUS.COHORT_TEST;
       onUpdate({ ...video, status: currentStatus });
     } else if (currentStatus === VIDEO_STATUS.COHORT_TEST) {
@@ -80,3 +88,4 @@ export const simulateWorkflowProgress = (video, onUpdate) => {
 
   return () => clearInterval(interval);
 };
+

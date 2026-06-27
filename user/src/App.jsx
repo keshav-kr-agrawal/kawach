@@ -288,7 +288,11 @@ export default function App() {
             trimStart: item.trim_start,
             trimEnd: item.trim_end,
             views: item.views || 0,
-            timestamp: formatRelativeTime(item.timestamp)
+            timestamp: formatRelativeTime(item.timestamp),
+            routedDepartment: item.routed_department,
+            routingPriority: item.routing_priority,
+            routingReason: item.routing_reason,
+            escalationRequired: item.escalation_required
           }));
           setUserReports(mappedReports);
           console.log('[SUPABASE] Loaded reports successfully:', mappedReports.length, 'records found');
@@ -306,6 +310,9 @@ export default function App() {
     
     // 1. Optimistic local state update for zero latency feel
     setUserReports((prev) => [reportWithFlags, ...prev]);
+
+    // Automatically navigate back to the proximity feed
+    navigate('/user/feed');
 
     // 2. Save the report to Supabase database
     try {
@@ -325,7 +332,11 @@ export default function App() {
           trim_start: newReport.trimStart,
           trim_end: newReport.trimEnd,
           views: newReport.views || 0,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          routed_department: newReport.routedDepartment || null,
+          routing_priority: newReport.routingPriority || null,
+          routing_reason: newReport.routingReason || null,
+          escalation_required: newReport.escalationRequired || false
         }]);
 
       if (error) {

@@ -2,6 +2,32 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ArrowUp, Share2, AlertOctagon, Radio, ChevronUp, ChevronDown, ShieldAlert, BookOpen, User, Volume2, VolumeX } from 'lucide-react';
 import { getStatusLabel } from '../api/videoService';
 
+const getDepartmentEmoji = (dept) => {
+  switch (dept) {
+    case 'POLICE': return '🚔';
+    case 'TRAFFIC': return '🚦';
+    case 'WATER': return '💧';
+    case 'ELECTRICITY': return '⚡';
+    case 'SANITATION': return '🧹';
+    case 'FIRE': return '🔥';
+    case 'HEALTH': return '🏥';
+    case 'CONSTRUCTION': return '🏗️';
+    case 'ENVIRONMENT': return '🌿';
+    case 'REVENUE': return '📋';
+    default: return '🏢';
+  }
+};
+
+const getPriorityColor = (prio) => {
+  switch (prio) {
+    case 'CRITICAL': return '#ef4444';
+    case 'HIGH': return '#f97316';
+    case 'NORMAL': return '#3b82f6';
+    case 'LOW': return '#10b981';
+    default: return '#6b7280';
+  }
+};
+
 export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVideo, onOpenProfile, onOpenLibrary }) {
   const [currentReelIndex, setCurrentReelIndex] = useState(0);
   const [upvotedList, setUpvotedList] = useState({});
@@ -97,7 +123,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
   const allReelsRaw = [
     ...reels,
     ...userReports
-      .filter(r => r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2')
+      .filter(r => r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'DEPT_ROUTING' || r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2')
       .map(r => ({
         id: r.id,
         title: r.title,
@@ -111,7 +137,11 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
         avatarGradient: 'linear-gradient(135deg, #ffd900 0%, #ff9500 100%)',
         videoUrl: r.videoUrl,
         trimStart: r.trimStart,
-        trimEnd: r.trimEnd
+        trimEnd: r.trimEnd,
+        routedDepartment: r.routedDepartment,
+        routingPriority: r.routingPriority,
+        routingReason: r.routingReason,
+        escalationRequired: r.escalationRequired
       }))
   ];
 
@@ -655,6 +685,44 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
               boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
             }}>
               🤖 AI SAFETY VERIFICATION ACTIVE
+            </div>
+          )}
+          {activeReel.routedDepartment && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+              marginBottom: '8px',
+              backgroundColor: 'rgba(0, 0, 0, 0.65)',
+              backdropFilter: 'blur(4px)',
+              padding: '8px 12px',
+              borderRadius: '12px',
+              borderLeft: `4px solid ${getPriorityColor(activeReel.routingPriority)}`,
+              pointerEvents: 'auto',
+              maxWidth: '280px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '12px' }}>{getDepartmentEmoji(activeReel.routedDepartment)}</span>
+                <span style={{ fontSize: '11px', fontWeight: '850', color: '#ffd900', fontFamily: 'Outfit' }}>
+                  {activeReel.routedDepartment}
+                </span>
+                <span style={{
+                  fontSize: '8px',
+                  fontWeight: '900',
+                  padding: '2px 6px',
+                  borderRadius: '6px',
+                  backgroundColor: getPriorityColor(activeReel.routingPriority),
+                  color: '#ffffff',
+                  marginLeft: 'auto'
+                }}>
+                  {activeReel.routingPriority}
+                </span>
+              </div>
+              {activeReel.routingReason && (
+                <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: '500', lineHeight: '1.2' }}>
+                  {activeReel.routingReason}
+                </span>
+              )}
             </div>
           )}
           <h2 style={{ fontSize: '15px', margin: '0 0 4px 0', fontFamily: 'Outfit', fontWeight: '800' }}>

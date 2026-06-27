@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, RefreshCw, ShieldCheck, Upload, Trash2, Video, Zap, FileText } from 'lucide-react';
 import { VIDEO_STATUS } from '../api/videoService';
+import { routeReport } from '../api/routingService';
+
 
 export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
   const [hasCameraAccess, setHasCameraAccess] = useState(false);
@@ -24,9 +26,46 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
   const [cameraError, setCameraError] = useState(null);
   const [saveLocalCopy, setSaveLocalCopy] = useState(true);
 
+  // AI Classifier Integration state
+  const [classifierResult, setClassifierResult] = useState(null);
+  const [isClassifying, setIsClassifying] = useState(false);
+  const [classificationError, setClassificationError] = useState(null);
+
   const videoRef = useRef(null);
   const reviewVideoRef = useRef(null);
   const streamRef = useRef(null);
+
+  const runClassification = async (blob) => {
+    if (!blob) return;
+    setIsClassifying(true);
+    setClassificationError(null);
+    setClassifierResult(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', blob, 'recorded_video.mp4');
+
+      const apiUrl = import.meta.env.VITE_CLASSIFIER_API_URL || 'http://localhost:8001/classify';
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setClassifierResult(data);
+        console.log('[AI Classifier] Verdict:', data);
+      } else {
+        const errText = await response.text();
+        console.warn('Classifier failed:', errText);
+        setClassificationError('Server returned error');
+      }
+    } catch (err) {
+      console.warn('Failed to reach classifier service:', err);
+      setClassificationError('Classifier offline');
+    } finally {
+      setIsClassifying(false);
+    }
+  };
   const mediaRecorderRef = useRef(null);
   const recordedChunks = useRef([]);
   const timerRef = useRef(null);
@@ -135,6 +174,9 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
         
         // Auto-initialize trim boundaries
         setTrimStart(0);
+
+        // Run AI classification
+        runClassification(blob);
       };
 
       mediaRecorder.start();
@@ -164,6 +206,9 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       setTrimStart(0);
       setTrimEnd(Math.min(15, recordTime));
       setVideoDuration(recordTime);
+
+      // Run AI classification
+      runClassification(mockBlob);
     }
 
     setIsRecording(false);
@@ -205,6 +250,9 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     setDescription('');
     setTrimStart(0);
     setTrimEnd(0);
+    setClassifierResult(null);
+    setIsClassifying(false);
+    setClassificationError(null);
     startCamera();
   };
 
@@ -245,6 +293,9 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
 
     setUploading(true);
 
+    // Dispatch zero-shot civic department routing in parallel with upload
+    const routingPromise = routeReport(title.trim(), description.trim(), category);
+
     let finalVideoUrl = videoUrl;
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -283,6 +334,14 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     const uploaderUuid = 'anon-' + Math.random().toString(36).substring(2, 15) + '-' + Math.random().toString(36).substring(2, 15);
     const videoId = 'vid-' + Math.random().toString(36).substring(2, 10);
 
+    // Await routing results
+    let routingResult = null;
+    try {
+      routingResult = await routingPromise;
+    } catch (err) {
+      console.warn('[ROUTING] Failed to resolve routed department:', err);
+    }
+
     // Simulate a slight network delay only if we did not perform a real upload
     const delay = cloudName && uploadPreset ? 0 : 1200;
 
@@ -293,7 +352,9 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
         description: description.trim(),
         category: category,
         uploaderUuid: uploaderUuid,
-        status: emergencyOverride ? VIDEO_STATUS.PUBLIC_APPROVED : VIDEO_STATUS.AI_CHECK_1,
+        status: emergencyOverride 
+          ? VIDEO_STATUS.PUBLIC_APPROVED 
+          : (classifierResult?.verdict === 'AI_GENERATED' ? 'AI_FLAGGED' : VIDEO_STATUS.AI_CHECK_1),
         timestamp: 'Just now',
         lat: gpsCoords[0], // Anchors video directly at exact current GPS location
         lng: gpsCoords[1],
@@ -301,7 +362,13 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
         videoUrl: finalVideoUrl, // saves reference to local URL or Cloudinary URL
         trimStart: trimStart,
         trimEnd: trimEnd,
-        views: 0
+        views: 0,
+        classifierResult: classifierResult,
+        // Dynamic Civic Routing Metadata
+        routedDepartment: routingResult?.department || 'SANITATION',
+        routingPriority: routingResult?.priority || 'NORMAL',
+        routingReason: routingResult?.routing_reason || 'Routed via general municipal alert heuristic.',
+        escalationRequired: routingResult?.escalation_required || false
       };
 
       onUploadComplete(newReport);
@@ -311,6 +378,9 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       setEmergencyOverride(false);
       setTitle('');
       setDescription('');
+      setClassifierResult(null);
+      setIsClassifying(false);
+      setClassificationError(null);
     }, delay);
   };
 
@@ -426,6 +496,119 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
               ) : (
                 <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffd900' }}>
                   [Playback Sandbox active]
+                </div>
+              )}
+            </div>
+
+            {/* AI Classifier Result Badge */}
+            <div style={{ marginBottom: '12px' }}>
+              {isClassifying && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '12px',
+                  borderRadius: '16px',
+                  backgroundColor: '#f8fafc',
+                  border: '1px dashed #3b82f6',
+                  color: '#2563eb',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  fontFamily: 'Outfit'
+                }}>
+                  <Zap size={16} className="animate-spin text-blue-500" />
+                  <span>AI Layer: Scanning video integrity...</span>
+                </div>
+              )}
+
+              {classificationError && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 16px',
+                  borderRadius: '16px',
+                  backgroundColor: '#fffbeb',
+                  border: '1px solid #fef3c7',
+                  color: '#d97706',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  fontFamily: 'Outfit'
+                }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    ⚠️ AI Integrity Offline ({classificationError})
+                  </span>
+                  <button 
+                    onClick={() => runClassification(recordedBlob)}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      backgroundColor: '#d97706',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '10px',
+                      fontWeight: '800',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {classifierResult && (
+                <div style={{
+                  padding: '14px 16px',
+                  borderRadius: '16px',
+                  fontFamily: 'Outfit',
+                  border: '1px solid',
+                  transition: 'all 0.3s ease',
+                  backgroundColor: 
+                    classifierResult.verdict === 'AUTHENTIC' ? '#ecfdf5' :
+                    classifierResult.verdict === 'AI_GENERATED' ? '#fef2f2' : '#fffbeb',
+                  borderColor: 
+                    classifierResult.verdict === 'AUTHENTIC' ? '#10b981' :
+                    classifierResult.verdict === 'AI_GENERATED' ? '#ef4444' : '#f59e0b',
+                  color: 
+                    classifierResult.verdict === 'AUTHENTIC' ? '#065f46' :
+                    classifierResult.verdict === 'AI_GENERATED' ? '#991b1b' : '#92400e',
+                  boxShadow: 
+                    classifierResult.verdict === 'AUTHENTIC' ? '0 4px 12px rgba(16, 185, 129, 0.1)' :
+                    classifierResult.verdict === 'AI_GENERATED' ? '0 4px 12px rgba(239, 68, 68, 0.15)' : '0 4px 12px rgba(245, 158, 11, 0.1)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <Zap size={16} style={{ 
+                      fill: 'currentColor',
+                      color: classifierResult.verdict === 'AUTHENTIC' ? '#10b981' :
+                             classifierResult.verdict === 'AI_GENERATED' ? '#ef4444' : '#f59e0b'
+                    }} />
+                    <span style={{ fontSize: '13px', fontWeight: '800', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+                      {classifierResult.verdict === 'AUTHENTIC' && 'AUTHENTIC — Real Video'}
+                      {classifierResult.verdict === 'AI_GENERATED' && 'AI-GENERATED — Deepfake Detected'}
+                      {classifierResult.verdict === 'INCONCLUSIVE' && 'INCONCLUSIVE — Manual Review Needed'}
+                    </span>
+                  </div>
+
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '1fr 1fr', 
+                    gap: '6px 12px', 
+                    fontSize: '11px', 
+                    opacity: 0.9,
+                    borderTop: '1px solid rgba(0,0,0,0.06)',
+                    paddingTop: '8px',
+                    fontWeight: '600'
+                  }}>
+                    <div>Fake Probability: <span style={{ fontWeight: '800' }}>{(classifierResult.fake_probability * 100).toFixed(1)}%</span></div>
+                    <div>Confidence: <span style={{ fontWeight: '800' }}>{classifierResult.confidence_level}</span></div>
+                    <div>Faces Detected: <span style={{ fontWeight: '800' }}>{classifierResult.faces_detected}</span></div>
+                    <div>Frames Scanned: <span style={{ fontWeight: '800' }}>{classifierResult.frames_analyzed}</span></div>
+                  </div>
+                  <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Inference: {classifierResult.processing_time_ms.toFixed(0)}ms</span>
+                    <span>Ensemble: {classifierResult.model_count} weight models</span>
+                  </div>
                 </div>
               )}
             </div>
