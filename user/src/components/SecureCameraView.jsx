@@ -44,7 +44,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       const formData = new FormData();
       formData.append('file', blob, 'recorded_video.mp4');
 
-      const apiUrl = import.meta.env.VITE_CLASSIFIER_API_URL || 'http://localhost:8001/classify';
+      const apiUrl = import.meta.env.VITE_CLASSIFIER_API_URL || 'http://localhost:8000/classify';
       const response = await fetch(apiUrl, {
         method: 'POST',
         body: formData,

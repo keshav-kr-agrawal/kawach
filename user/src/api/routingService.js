@@ -4,7 +4,7 @@
  */
 
 export async function routeReport(title, description, category) {
-  const apiUrl = import.meta.env.VITE_CLASSIFIER_API_URL || 'http://localhost:8001/classify';
+  const apiUrl = import.meta.env.VITE_CLASSIFIER_API_URL || 'http://localhost:8000/classify';
   const routeUrl = apiUrl.replace('/classify', '/route');
   
   console.log('[Routing Service] Dispatching to URL:', routeUrl);
