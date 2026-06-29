@@ -15,7 +15,14 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
   const localUploaderUuid = localStorage.getItem('kawach_uploader_uuid') || '';
   const myReports = userReports.filter(r => r.uploaderUuid === localUploaderUuid || r.id.startsWith('c-'));
   
-  const likedIds = JSON.parse(localStorage.getItem('kawach_liked_reports') || '[]');
+  const likedIds = (() => {
+    try {
+      const stored = localStorage.getItem('kawach_liked_reports');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  })();
   const myLikedReports = userReports.filter(r => likedIds.includes(r.id));
 
   // Civic Trust Score metrics calculation
