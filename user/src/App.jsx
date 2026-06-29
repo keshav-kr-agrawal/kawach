@@ -543,7 +543,19 @@ export default function App() {
             routedDepartment: item.routed_department,
             routingPriority: item.routing_priority,
             routingReason: item.routing_reason,
-            escalationRequired: item.escalation_required
+            escalationRequired: item.escalation_required,
+            aiVerdict: item.ai_verdict,
+            fakeProb: item.fake_prob,
+            confidenceLevel: item.confidence_level,
+            facesDetected: item.faces_detected,
+            subCategory: item.sub_category,
+            estimatedResolutionDays: item.estimated_resolution_days,
+            trustScore: item.trust_score,
+            civicUrgencyScore: item.civic_urgency_score,
+            sceneDetected: item.scene_detected,
+            detectedIssues: item.detected_issues,
+            temporalConsistency: item.temporal_consistency,
+            dominantClass: item.dominant_class
           }));
           setUserReports(mappedReports);
           console.log('[SUPABASE] Loaded reports successfully:', mappedReports.length, 'records found');
@@ -588,7 +600,19 @@ export default function App() {
           routed_department: newReport.routedDepartment || null,
           routing_priority: newReport.routingPriority || null,
           routing_reason: newReport.routingReason || null,
-          escalation_required: newReport.escalationRequired || false
+          escalation_required: newReport.escalationRequired || false,
+          ai_verdict: newReport.aiVerdict || null,
+          fake_prob: newReport.fakeProb ?? null,
+          confidence_level: newReport.confidenceLevel || null,
+          faces_detected: newReport.facesDetected ?? null,
+          sub_category: newReport.subCategory || null,
+          estimated_resolution_days: newReport.estimatedResolutionDays ?? null,
+          trust_score: newReport.trustScore ?? null,
+          civic_urgency_score: newReport.civicUrgencyScore ?? null,
+          scene_detected: newReport.sceneDetected ?? null,
+          detected_issues: newReport.detectedIssues || null,
+          temporal_consistency: newReport.temporalConsistency ?? null,
+          dominant_class: newReport.dominantClass || null
         }]);
 
       if (error) {

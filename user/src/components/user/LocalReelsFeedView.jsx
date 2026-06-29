@@ -319,21 +319,35 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           <div style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '4px',
+            gap: '5px',
             marginBottom: '8px',
-            backgroundColor: 'rgba(0, 0, 0, 0.65)',
-            backdropFilter: 'blur(4px)',
-            padding: '8px 12px',
+            backgroundColor: 'rgba(0, 0, 0, 0.70)',
+            backdropFilter: 'blur(6px)',
+            padding: '10px 12px',
             borderRadius: '12px',
             borderLeft: `4px solid ${getPriorityColor(reel.routingPriority)}`,
             pointerEvents: 'auto',
-            maxWidth: '280px'
+            maxWidth: '290px'
           }}>
+            {/* Dept + priority row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '12px' }}>{getDepartmentEmoji(reel.routedDepartment)}</span>
               <span style={{ fontSize: '11px', fontWeight: '850', color: '#ffd900', fontFamily: 'Outfit' }}>
                 {reel.routedDepartment}
               </span>
+              {reel.subCategory && (
+                <span style={{
+                  fontSize: '8px',
+                  fontWeight: '700',
+                  padding: '2px 6px',
+                  borderRadius: '20px',
+                  backgroundColor: 'rgba(255,217,0,0.18)',
+                  color: '#ffd900',
+                  border: '1px solid rgba(255,217,0,0.35)'
+                }}>
+                  {reel.subCategory.replace(/_/g, ' ')}
+                </span>
+              )}
               <span style={{
                 fontSize: '8px',
                 fontWeight: '900',
@@ -346,11 +360,70 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
                 {reel.routingPriority}
               </span>
             </div>
+
+            {/* Routing reason */}
             {reel.routingReason && (
-              <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: '500', lineHeight: '1.2' }}>
+              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.80)', fontWeight: '500', lineHeight: '1.2' }}>
                 {reel.routingReason}
               </span>
             )}
+
+            {/* Detected scene issues chips */}
+            {Array.isArray(reel.detectedIssues) && reel.detectedIssues.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                {reel.detectedIssues.slice(0, 3).map((issue, i) => (
+                  <span key={i} style={{
+                    fontSize: '8px',
+                    fontWeight: '700',
+                    padding: '2px 7px',
+                    borderRadius: '20px',
+                    backgroundColor: 'rgba(16,185,129,0.20)',
+                    color: '#6ee7b7',
+                    border: '1px solid rgba(16,185,129,0.35)'
+                  }}>
+                    {issue}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Trust score bar + ETA row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {typeof reel.trustScore === 'number' && reel.trustScore > 0 && (
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: 'rgba(255,255,255,0.6)', marginBottom: '2px' }}>
+                    <span>Trust</span>
+                    <span style={{
+                      color: reel.trustScore >= 70 ? '#6ee7b7' : reel.trustScore >= 40 ? '#fbbf24' : '#f87171',
+                      fontWeight: '800'
+                    }}>
+                      {reel.trustScore.toFixed(0)}
+                    </span>
+                  </div>
+                  <div style={{ height: '4px', borderRadius: '2px', backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${Math.min(100, reel.trustScore)}%`,
+                      borderRadius: '2px',
+                      backgroundColor: reel.trustScore >= 70 ? '#10b981' : reel.trustScore >= 40 ? '#f59e0b' : '#ef4444'
+                    }} />
+                  </div>
+                </div>
+              )}
+              {reel.estimatedResolutionDays && (
+                <span style={{
+                  fontSize: '8px',
+                  fontWeight: '800',
+                  padding: '2px 7px',
+                  borderRadius: '20px',
+                  backgroundColor: 'rgba(255,255,255,0.10)',
+                  color: 'rgba(255,255,255,0.75)',
+                  whiteSpace: 'nowrap'
+                }}>
+                  ~{reel.estimatedResolutionDays}d ETA
+                </span>
+              )}
+            </div>
           </div>
         )}
         <h2 style={{ fontSize: '14px', margin: '0 0 4px 0', fontFamily: 'Outfit', fontWeight: '800' }}>
@@ -404,7 +477,15 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
       trimEnd: r.trimEnd,
       routedDepartment: r.routedDepartment,
       routingPriority: r.routingPriority,
-      routingReason: r.routingReason
+      routingReason: r.routingReason,
+      subCategory: r.subCategory,
+      estimatedResolutionDays: r.estimatedResolutionDays,
+      trustScore: r.trustScore,
+      civicUrgencyScore: r.civicUrgencyScore,
+      sceneDetected: r.sceneDetected,
+      detectedIssues: r.detectedIssues,
+      temporalConsistency: r.temporalConsistency,
+      dominantClass: r.dominantClass
     }));
 
   const toggleUpvote = (id) => {

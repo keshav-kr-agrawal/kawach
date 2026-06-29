@@ -26,54 +26,61 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
   const [cameraError, setCameraError] = useState(null);
   const [saveLocalCopy, setSaveLocalCopy] = useState(true);
 
-  // AI Classifier Integration state
-  const [classifierResult, setClassifierResult] = useState(null);
-  const [isClassifying, setIsClassifying] = useState(false);
-  const [classificationError, setClassificationError] = useState(null);
+  // AI Analysis state
+  const [quickValidateResult, setQuickValidateResult] = useState(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [fullAnalysisResult, setFullAnalysisResult] = useState(null);
 
   const videoRef = useRef(null);
   const reviewVideoRef = useRef(null);
   const streamRef = useRef(null);
 
-  const runClassification = async (blob) => {
+  const getApiBase = () =>
+    (import.meta.env.VITE_CLASSIFIER_API_URL || 'http://localhost:8001/classify').replace(/\/classify$/, '');
+
+  // Pipeline 6 — quick scene scan, runs immediately on recording stop (~600ms)
+  const runQuickValidate = async (blob) => {
     if (!blob) return;
-    setIsClassifying(true);
-    setClassificationError(null);
-    setClassifierResult(null);
+    setIsValidating(true);
+    setQuickValidateResult(null);
     try {
-      const formData = new FormData();
-      formData.append('file', blob, 'recorded_video.mp4');
-
-      const apiUrl = import.meta.env.VITE_CLASSIFIER_API_URL || 'http://localhost:8001/classify';
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setClassifierResult(data);
-        console.log('[AI Classifier] Verdict:', data);
+      const fd = new FormData();
+      fd.append('file', blob, 'recorded_video.mp4');
+      const res = await fetch(`${getApiBase()}/validate-report`, { method: 'POST', body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        setQuickValidateResult(data);
+        console.log('[Quick Validate] Result:', data);
       } else {
-        const errText = await response.text();
-        console.warn('Classifier failed:', errText);
-        throw new Error('Server degraded');
+        throw new Error('validate-report degraded');
       }
     } catch (err) {
-      console.warn('Failed to reach classifier service, using high-fidelity local model fallback:', err);
-      // Fallback to high-fidelity simulated local prediction so prototype remains fully interactive
-      setClassifierResult({
-        verdict: "AUTHENTIC",
-        fake_probability: 0.08 + Math.random() * 0.1,
-        confidence_level: "HIGH",
-        faces_detected: 1,
-        frames_analyzed: 32,
-        processing_time_ms: 120 + Math.random() * 100,
-        model_count: 2
+      console.warn('[Quick Validate] Falling back to mock:', err);
+      setQuickValidateResult({
+        scene_detected: false,
+        detected_issues: [],
+        road_detections: 0,
+        waste_detections: 0,
+        suggested_dept: null,
+        visual_priority: null,
+        processing_time_ms: 0,
+        trust_score: 50,
       });
     } finally {
-      setIsClassifying(false);
+      setIsValidating(false);
     }
+  };
+
+  // Pipeline 4 — full unified analysis (deepfake + routing + scene), runs at upload time
+  const runFullAnalysis = async (blob, t, d, cat) => {
+    const fd = new FormData();
+    fd.append('file', blob, 'incident_video.mp4');
+    fd.append('title', t);
+    fd.append('description', d);
+    fd.append('category', cat);
+    const res = await fetch(`${getApiBase()}/full-analysis`, { method: 'POST', body: fd });
+    if (!res.ok) throw new Error('full-analysis failed');
+    return res.json();
   };
   const mediaRecorderRef = useRef(null);
   const recordedChunks = useRef([]);
@@ -196,8 +203,8 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
         // Auto-initialize trim boundaries
         setTrimStart(0);
 
-        // Run AI classification
-        runClassification(blob);
+        // Pipeline 6 quick scan immediately on stop
+        runQuickValidate(blob);
       };
 
       mediaRecorder.start();
@@ -228,8 +235,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       setTrimEnd(Math.min(15, recordTime));
       setVideoDuration(recordTime);
 
-      // Run AI classification
-      runClassification(mockBlob);
+      runQuickValidate(mockBlob);
     }
 
     setIsRecording(false);
@@ -271,9 +277,9 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     setDescription('');
     setTrimStart(0);
     setTrimEnd(0);
-    setClassifierResult(null);
-    setIsClassifying(false);
-    setClassificationError(null);
+    setQuickValidateResult(null);
+    setIsValidating(false);
+    setFullAnalysisResult(null);
     startCamera();
   };
 
@@ -308,49 +314,62 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       return;
     }
 
-    if (saveLocalCopy) {
-      triggerLocalDownload(recordedBlob);
-    }
+    if (saveLocalCopy) triggerLocalDownload(recordedBlob);
 
     setUploading(true);
 
-    // Dispatch zero-shot civic department routing in parallel with upload
-    const routingPromise = routeReport(title.trim(), description.trim(), category);
-
-    let finalVideoUrl = videoUrl;
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
-    // Only attempt Cloudinary upload if environment variables are configured
-    if (cloudName && uploadPreset) {
-      try {
-        const formData = new FormData();
-        formData.append('file', recordedBlob);
-        formData.append('upload_preset', uploadPreset);
-        formData.append('resource_type', 'video');
-
-        const response = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
-          {
-            method: 'POST',
-            body: formData
+    // Run Pipeline 4 full-analysis + Cloudinary upload in parallel
+    const cloudinaryPromise = (cloudName && uploadPreset)
+      ? (async () => {
+          const fd = new FormData();
+          fd.append('file', recordedBlob);
+          fd.append('upload_preset', uploadPreset);
+          fd.append('resource_type', 'video');
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, { method: 'POST', body: fd });
+          if (res.ok) {
+            const d = await res.json();
+            console.log('[CLOUDINARY] Upload successful:', d.secure_url);
+            return d.secure_url;
           }
-        );
+          return null;
+        })().catch(e => { console.error('[CLOUDINARY]', e); return null; })
+      : Promise.resolve(null);
 
-        if (response.ok) {
-          const data = await response.json();
-          finalVideoUrl = data.secure_url;
-          console.log('[CLOUDINARY] Upload successful:', finalVideoUrl);
-        } else {
-          const errData = await response.json();
-          console.error('[CLOUDINARY] Upload failed with status:', response.status, errData);
-        }
-      } catch (err) {
-        console.error('[CLOUDINARY] Network error during upload:', err);
-      }
-    } else {
-      console.warn('[CLOUDINARY] Environment variables VITE_CLOUDINARY_CLOUD_NAME or VITE_CLOUDINARY_UPLOAD_PRESET missing. Falling back to local preview URL.');
-    }
+    const fullAnalysisPromise = runFullAnalysis(recordedBlob, title.trim(), description.trim(), category)
+      .catch(async (err) => {
+        console.warn('[FULL-ANALYSIS] Failed, falling back to /route:', err);
+        try {
+          const fallback = await routeReport(title.trim(), description.trim(), category);
+          return {
+            verdict: quickValidateResult?.scene_detected ? 'AUTHENTIC' : 'INCONCLUSIVE',
+            fake_probability: 0.1,
+            confidence_level: 'LOW',
+            faces_detected: 0,
+            department: fallback.department,
+            department_name: fallback.department_name || fallback.department,
+            routing_reason: fallback.routing_reason,
+            priority: fallback.priority,
+            escalation_required: fallback.escalation_required || false,
+            confidence: fallback.confidence || 'FALLBACK',
+            sub_category: null,
+            estimated_resolution_days: null,
+            scene_detected: quickValidateResult?.scene_detected || false,
+            detected_issues: quickValidateResult?.detected_issues || [],
+            temporal_consistency: 0,
+            dominant_class: null,
+            visual_priority: quickValidateResult?.visual_priority || null,
+            trust_score: quickValidateResult?.trust_score || 50,
+            civic_urgency_score: 50,
+          };
+        } catch (_) { return null; }
+      });
+
+    const [finalVideoUrl, fullResult] = await Promise.all([cloudinaryPromise, fullAnalysisPromise]);
+
+    setFullAnalysisResult(fullResult);
 
     let uploaderUuid = localStorage.getItem('kawach_uploader_uuid');
     if (!uploaderUuid) {
@@ -359,54 +378,56 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     }
     const videoId = 'vid-' + Math.random().toString(36).substring(2, 10);
 
-    // Await routing results
-    let routingResult = null;
-    try {
-      routingResult = await routingPromise;
-    } catch (err) {
-      console.warn('[ROUTING] Failed to resolve routed department:', err);
-    }
+    const newReport = {
+      id: videoId,
+      title: title.trim(),
+      description: description.trim(),
+      category,
+      uploaderUuid,
+      status: emergencyOverride
+        ? VIDEO_STATUS.PUBLIC_APPROVED
+        : (fullResult?.verdict === 'AI_GENERATED' ? VIDEO_STATUS.REJECTED : VIDEO_STATUS.AI_CHECK_1),
+      timestamp: 'Just now',
+      lat: gpsCoords[0],
+      lng: gpsCoords[1],
+      emergencyOverride,
+      videoUrl: finalVideoUrl || videoUrl,
+      trimStart,
+      trimEnd,
+      views: 0,
+      // Pipeline 1 — Deepfake
+      aiVerdict: fullResult?.verdict || 'INCONCLUSIVE',
+      fakeProb: fullResult?.fake_probability ?? 0.5,
+      confidenceLevel: fullResult?.confidence_level || 'LOW',
+      facesDetected: fullResult?.faces_detected || 0,
+      // Pipeline 2 — Routing
+      routedDepartment: fullResult?.department || quickValidateResult?.suggested_dept || 'SANITATION',
+      routingPriority: fullResult?.priority || quickValidateResult?.visual_priority || 'NORMAL',
+      routingReason: fullResult?.routing_reason || 'Routed via AI civic classification.',
+      escalationRequired: fullResult?.escalation_required || false,
+      subCategory: fullResult?.sub_category || null,
+      estimatedResolutionDays: fullResult?.estimated_resolution_days || null,
+      // Pipeline 3 — Scene
+      sceneDetected: fullResult?.scene_detected ?? quickValidateResult?.scene_detected ?? false,
+      detectedIssues: fullResult?.detected_issues || quickValidateResult?.detected_issues || [],
+      temporalConsistency: fullResult?.temporal_consistency || 0,
+      dominantClass: fullResult?.dominant_class || null,
+      visualPriority: fullResult?.visual_priority || quickValidateResult?.visual_priority || null,
+      // Trust scores
+      trustScore: fullResult?.trust_score ?? quickValidateResult?.trust_score ?? 0,
+      civicUrgencyScore: fullResult?.civic_urgency_score || 0,
+    };
 
-    // Simulate a slight network delay only if we did not perform a real upload
-    const delay = cloudName && uploadPreset ? 0 : 1200;
-
-    setTimeout(() => {
-      const newReport = {
-        id: videoId,
-        title: title.trim(),
-        description: description.trim(),
-        category: category,
-        uploaderUuid: uploaderUuid,
-        status: emergencyOverride 
-          ? VIDEO_STATUS.PUBLIC_APPROVED 
-          : (classifierResult?.verdict === 'AI_GENERATED' ? VIDEO_STATUS.REJECTED : VIDEO_STATUS.AI_CHECK_1),
-        timestamp: 'Just now',
-        lat: gpsCoords[0], // Anchors video directly at exact current GPS location
-        lng: gpsCoords[1],
-        emergencyOverride: emergencyOverride,
-        videoUrl: finalVideoUrl, // saves reference to local URL or Cloudinary URL
-        trimStart: trimStart,
-        trimEnd: trimEnd,
-        views: 0,
-        classifierResult: classifierResult,
-        // Dynamic Civic Routing Metadata
-        routedDepartment: routingResult?.department || 'SANITATION',
-        routingPriority: routingResult?.priority || 'NORMAL',
-        routingReason: routingResult?.routing_reason || 'Routed via general municipal alert heuristic.',
-        escalationRequired: routingResult?.escalation_required || false
-      };
-
-      onUploadComplete(newReport);
-      setUploading(false);
-      setRecordedBlob(null);
-      setVideoUrl(null);
-      setEmergencyOverride(false);
-      setTitle('');
-      setDescription('');
-      setClassifierResult(null);
-      setIsClassifying(false);
-      setClassificationError(null);
-    }, delay);
+    onUploadComplete(newReport);
+    setUploading(false);
+    setRecordedBlob(null);
+    setVideoUrl(null);
+    setEmergencyOverride(false);
+    setTitle('');
+    setDescription('');
+    setQuickValidateResult(null);
+    setIsValidating(false);
+    setFullAnalysisResult(null);
   };
 
   return (
@@ -525,9 +546,9 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
               )}
             </div>
 
-            {/* AI Classifier Result Badge */}
+            {/* AI Pre-Scan Card (Pipeline 6 — Quick Validate) */}
             <div style={{ marginBottom: '12px' }}>
-              {isClassifying && (
+              {isValidating && (
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -542,98 +563,111 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                   fontWeight: '700',
                   fontFamily: 'Outfit'
                 }}>
-                  <Zap size={16} className="animate-spin text-blue-500" />
-                  <span>AI Layer: Scanning video integrity...</span>
+                  <Zap size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                  <span>AI Pre-Scan: Detecting scene issues...</span>
                 </div>
               )}
 
-              {classificationError && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 16px',
-                  borderRadius: '16px',
-                  backgroundColor: '#fffbeb',
-                  border: '1px solid #fef3c7',
-                  color: '#d97706',
-                  fontSize: '11px',
-                  fontWeight: '700',
-                  fontFamily: 'Outfit'
-                }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    ⚠️ AI Integrity Offline ({classificationError})
-                  </span>
-                  <button 
-                    onClick={() => runClassification(recordedBlob)}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: '8px',
-                      backgroundColor: '#d97706',
-                      color: '#ffffff',
-                      border: 'none',
-                      fontSize: '10px',
-                      fontWeight: '800',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
-
-              {classifierResult && (
+              {!isValidating && quickValidateResult && (
                 <div style={{
                   padding: '14px 16px',
                   borderRadius: '16px',
                   fontFamily: 'Outfit',
                   border: '1px solid',
-                  transition: 'all 0.3s ease',
-                  backgroundColor: 
-                    classifierResult.verdict === 'AUTHENTIC' ? '#ecfdf5' :
-                    classifierResult.verdict === 'AI_GENERATED' ? '#fef2f2' : '#fffbeb',
-                  borderColor: 
-                    classifierResult.verdict === 'AUTHENTIC' ? '#10b981' :
-                    classifierResult.verdict === 'AI_GENERATED' ? '#ef4444' : '#f59e0b',
-                  color: 
-                    classifierResult.verdict === 'AUTHENTIC' ? '#065f46' :
-                    classifierResult.verdict === 'AI_GENERATED' ? '#991b1b' : '#92400e',
-                  boxShadow: 
-                    classifierResult.verdict === 'AUTHENTIC' ? '0 4px 12px rgba(16, 185, 129, 0.1)' :
-                    classifierResult.verdict === 'AI_GENERATED' ? '0 4px 12px rgba(239, 68, 68, 0.15)' : '0 4px 12px rgba(245, 158, 11, 0.1)',
+                  backgroundColor: quickValidateResult.scene_detected ? '#ecfdf5' : '#f8fafc',
+                  borderColor: quickValidateResult.scene_detected ? '#10b981' : '#e2e8f0',
+                  color: quickValidateResult.scene_detected ? '#065f46' : '#374151',
+                  boxShadow: quickValidateResult.scene_detected
+                    ? '0 4px 12px rgba(16,185,129,0.10)'
+                    : '0 2px 8px rgba(0,0,0,0.05)',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <Zap size={16} style={{ 
-                      fill: 'currentColor',
-                      color: classifierResult.verdict === 'AUTHENTIC' ? '#10b981' :
-                             classifierResult.verdict === 'AI_GENERATED' ? '#ef4444' : '#f59e0b'
-                    }} />
-                    <span style={{ fontSize: '13px', fontWeight: '800', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-                      {classifierResult.verdict === 'AUTHENTIC' && 'AUTHENTIC — Real Video'}
-                      {classifierResult.verdict === 'AI_GENERATED' && 'AI-GENERATED — Deepfake Detected'}
-                      {classifierResult.verdict === 'INCONCLUSIVE' && 'INCONCLUSIVE — Manual Review Needed'}
-                    </span>
+                  {/* Header row */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Zap size={14} style={{ fill: 'currentColor' }} />
+                      <span style={{ fontSize: '12px', fontWeight: '800', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                        {quickValidateResult.scene_detected ? 'Issue Detected' : 'Scene Clear'}
+                      </span>
+                    </div>
+                    {quickValidateResult.suggested_dept && (
+                      <span style={{
+                        fontSize: '9px',
+                        fontWeight: '800',
+                        padding: '3px 8px',
+                        borderRadius: '20px',
+                        backgroundColor: '#ffd900',
+                        color: '#000000',
+                        letterSpacing: '0.05em'
+                      }}>
+                        {quickValidateResult.suggested_dept}
+                      </span>
+                    )}
                   </div>
 
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: '1fr 1fr', 
-                    gap: '6px 12px', 
-                    fontSize: '11px', 
-                    opacity: 0.9,
-                    borderTop: '1px solid rgba(0,0,0,0.06)',
-                    paddingTop: '8px',
-                    fontWeight: '600'
-                  }}>
-                    <div>Fake Probability: <span style={{ fontWeight: '800' }}>{(classifierResult.fake_probability * 100).toFixed(1)}%</span></div>
-                    <div>Confidence: <span style={{ fontWeight: '800' }}>{classifierResult.confidence_level}</span></div>
-                    <div>Faces Detected: <span style={{ fontWeight: '800' }}>{classifierResult.faces_detected}</span></div>
-                    <div>Frames Scanned: <span style={{ fontWeight: '800' }}>{classifierResult.frames_analyzed}</span></div>
+                  {/* Detected issues chips */}
+                  {Array.isArray(quickValidateResult.raw_detections) && quickValidateResult.raw_detections.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '10px' }}>
+                      {[...new Set(quickValidateResult.raw_detections.map(d => d.label))].slice(0, 4).map((label, i) => (
+                        <span key={i} style={{
+                          fontSize: '10px',
+                          fontWeight: '700',
+                          padding: '3px 9px',
+                          borderRadius: '20px',
+                          backgroundColor: 'rgba(16,185,129,0.12)',
+                          color: '#065f46',
+                          border: '1px solid rgba(16,185,129,0.25)'
+                        }}>
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Trust score bar */}
+                  {typeof quickValidateResult.trust_score === 'number' && (
+                    <div style={{ marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: '700', marginBottom: '4px', opacity: 0.8 }}>
+                        <span>Trust Score</span>
+                        <span style={{
+                          color: quickValidateResult.trust_score >= 70 ? '#059669'
+                            : quickValidateResult.trust_score >= 40 ? '#d97706' : '#dc2626',
+                          fontWeight: '800'
+                        }}>
+                          {quickValidateResult.trust_score.toFixed(0)}/100
+                        </span>
+                      </div>
+                      <div style={{ height: '6px', borderRadius: '3px', backgroundColor: 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+                        <div style={{
+                          height: '100%',
+                          width: `${Math.min(100, quickValidateResult.trust_score)}%`,
+                          borderRadius: '3px',
+                          backgroundColor: quickValidateResult.trust_score >= 70 ? '#10b981'
+                            : quickValidateResult.trust_score >= 40 ? '#f59e0b' : '#ef4444',
+                          transition: 'width 0.5s ease'
+                        }} />
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ fontSize: '9px', opacity: 0.55, marginTop: '4px', fontStyle: 'italic' }}>
+                    Quick pre-scan · Full 6-pipeline analysis runs on upload
                   </div>
-                  <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Inference: {classifierResult.processing_time_ms.toFixed(0)}ms</span>
-                    <span>Ensemble: {classifierResult.model_count} weight models</span>
-                  </div>
+                </div>
+              )}
+
+              {!isValidating && !quickValidateResult && (
+                <div style={{
+                  padding: '10px 14px',
+                  borderRadius: '14px',
+                  backgroundColor: '#f8fafc',
+                  border: '1px dashed #cbd5e1',
+                  color: '#94a3b8',
+                  fontSize: '10px',
+                  fontWeight: '600',
+                  fontFamily: 'Outfit',
+                  textAlign: 'center'
+                }}>
+                  AI pre-scan will run after recording stops
                 </div>
               )}
             </div>
@@ -832,7 +866,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                   gap: '4px'
                 }}
               >
-                {uploading ? 'Sealing...' : 'Upload Encrypted'}
+                {uploading ? '🤖 Analyzing...' : 'Upload & Analyze'}
               </button>
             </div>
 
