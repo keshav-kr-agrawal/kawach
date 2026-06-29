@@ -1,0 +1,28 @@
+Community Hero - Hyperlocal Problem Solver
+
+Background
+
+
+Communities frequently face issues such as potholes, water leakages, damaged streetlights, waste management concerns, and public infrastructure challenges. Reporting these issues is often fragmented, difficult to track, and lacks transparency.
+
+Challenge
+
+
+Build a platform that enables citizens to identify, report, validate, track, and resolve community issues through collaboration, data, and intelligent automation.
+The solution should encourage transparency, accountability, and community participation.
+
+Example Features:
+
+
+Image and video-based issue reporting
+AI-powered issue categorization
+Geo-location and mapping
+Community verification
+Real-time issue tracking
+Impact dashboards
+Predictive insights
+Gamification for citizen engagement
+
+Evaluation Focus
+
+The solution should demonstrate how AI can help communities address local challenges more efficiently through improved reporting, verification, tracking, and resolution of issues.

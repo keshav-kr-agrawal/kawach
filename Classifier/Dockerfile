@@ -3,8 +3,8 @@ FROM python:3.10-slim
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 
-# Install system dependencies for OpenCV
-# Note: libgl1-mesa-glx was removed in Debian Trixie, replaced by libgl1
+# Install system dependencies for OpenCV + libGL
+# Note: libgl1-mesa-glx removed in Debian Trixie, replaced by libgl1
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libsm6 \
@@ -31,13 +31,14 @@ COPY --chown=user requirements.txt .
 RUN pip install --no-cache-dir --user -U pip && \
     pip install --no-cache-dir --user torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
-# Install rest of dependencies
+# Install rest of dependencies (includes ultralytics, transformers, safetensors)
 RUN pip install --no-cache-dir --user -r requirements.txt
 
-# Copy app code
+# Copy app code (weights/config files included, large blobs downloaded next)
 COPY --chown=user . .
 
-# Download weights during build so startup is instant
+# Download all model weights at build time for instant cold starts
+# This includes: EfficientNet deepfake, YOLO road damage, DistilBERT, TrashNet
 RUN python download_weights.py
 
 # Hugging Face Spaces required port

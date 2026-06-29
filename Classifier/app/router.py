@@ -62,7 +62,7 @@ KEYWORD_MAPPING = [
         "escalation": True
     },
     {
-        "keywords": ["pothole", "construction", "bridge", "crack", "road damage", "digging", "building collapse", "pwd"],
+        "keywords": ["pothole", "construction", "bridge", "crack", "road damage", "digging", "building collapse", "pwd", "streetlight", "lamp post"],
         "dept": "CONSTRUCTION",
         "name": "Urban Construction & PWD",
         "priority": "NORMAL",
@@ -87,38 +87,53 @@ KEYWORD_MAPPING = [
     }
 ]
 
-def keyword_fallback_route(title: str, description: str, category: str) -> Dict[str, Any]:
+def keyword_fallback_route(title: str, description: str, category: str, priority_validator=None) -> Dict[str, Any]:
     text = f"{title} {description} {category}".lower()
-    
-    # Try to find matching keywords
+
+    matched_item = None
     for item in KEYWORD_MAPPING:
         for kw in item["keywords"]:
             if kw in text:
-                return {
-                    "department": item["dept"],
-                    "department_name": item["name"],
-                    "routing_reason": item["reason"],
-                    "priority": item["priority"],
-                    "escalation_required": item["escalation"],
-                    "confidence": "FALLBACK"
-                }
-                
-    # Default fallback if nothing matches
+                matched_item = item
+                break
+        if matched_item:
+            break
+
+    if not matched_item:
+        matched_item = {
+            "dept": "SANITATION",
+            "name": "Sanitation & Municipal Waste",
+            "reason": "Default civic category routing based on general alert patterns.",
+            "priority": "NORMAL",
+            "escalation": False,
+        }
+
+    base_priority = matched_item["priority"]
+
+    # ── DistilBERT priority validation ──
+    validation = {"final_priority": base_priority, "distilbert_priority": None,
+                  "upgraded": False, "distilbert_confidence": 0.0}
+    if priority_validator:
+        validation = priority_validator.validate(title, description, base_priority)
+
     return {
-        "department": "SANITATION",
-        "department_name": "Sanitation & Municipal Waste",
-        "routing_reason": "Default civic category routing based on general alert patterns.",
-        "priority": "NORMAL",
-        "escalation_required": False,
-        "confidence": "FALLBACK"
+        "department": matched_item["dept"],
+        "department_name": matched_item["name"],
+        "routing_reason": matched_item["reason"],
+        "priority": validation["final_priority"],
+        "escalation_required": matched_item["escalation"],
+        "confidence": "FALLBACK",
+        "distilbert_priority": validation.get("distilbert_priority"),
+        "priority_upgraded": validation.get("upgraded", False),
+        "distilbert_confidence": validation.get("distilbert_confidence", 0.0),
     }
 
-def route_report_text(title: str, description: str, category: str) -> Dict[str, Any]:
+def route_report_text(title: str, description: str, category: str, priority_validator=None) -> Dict[str, Any]:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         print("[ROUTER] No GEMINI_API_KEY found. Using keyword fallback.")
-        return keyword_fallback_route(title, description, category)
-        
+        return keyword_fallback_route(title, description, category, priority_validator)
+
     try:
         genai.configure(api_key=api_key)
         # Using gemini-1.5-flash as it is extremely fast and perfect for text classification
@@ -136,11 +151,11 @@ Available Departments to route to:
 1. POLICE: Violence, theft, assault, kidnapping, physical danger, illegal activities, crime.
 2. TRAFFIC: Road accidents, signals broken, traffic jams, vehicle rash driving, blocked roads.
 3. WATER: Sewage overflow, pipe bursts, clean water leak, flooded streets, no water supply.
-4. ELECTRICITY: Sparking wires, hanging cables, power outage, transformer damage.
-5. SANITATION: Garbage dumps, stench, trash piling, animal carcass, drain blockages.
+4. ELECTRICITY: Sparking wires, hanging cables, power outage, transformer damage, broken streetlights.
+5. SANITATION: Garbage dumps, stench, trash piling, animal carcass, drain blockages, littering.
 6. FIRE: Building on fire, chemical/gas leak, fire danger.
 7. HEALTH: Epidemic, disease outbreak, medical negligence, unhygienic conditions.
-8. CONSTRUCTION: Potholes, damaged bridge/road, illegal construction, unsafe buildings.
+8. CONSTRUCTION: Potholes, damaged bridge/road, illegal construction, unsafe buildings, cracked roads.
 9. ENVIRONMENT: Heavy smoke, industrial waste dump, illegal cutting of trees, lake/river pollution.
 10. REVENUE: Civic administrative corruption, bribery, land encroachment, boundary disputes.
 
@@ -186,15 +201,28 @@ JSON response:
                     break
             if not matched:
                 raise ValueError(f"Invalid department parsed: {dept}")
+        
+        gemini_priority = data.get("priority", "NORMAL").upper()
+        if gemini_priority not in ["CRITICAL", "HIGH", "NORMAL", "LOW"]:
+            gemini_priority = "NORMAL"
+
+        # ── DistilBERT priority validation ──
+        validation = {"final_priority": gemini_priority, "distilbert_priority": None,
+                      "upgraded": False, "distilbert_confidence": 0.0}
+        if priority_validator:
+            validation = priority_validator.validate(title, description, gemini_priority)
                 
         return {
             "department": dept,
             "department_name": allowed_depts[dept],
             "routing_reason": data.get("routing_reason", "Routed via automated zero-shot AI dispatch."),
-            "priority": data.get("priority", "NORMAL").upper() if data.get("priority") in ["CRITICAL", "HIGH", "NORMAL", "LOW"] else "NORMAL",
+            "priority": validation["final_priority"],
             "escalation_required": bool(data.get("escalation_required", False)),
-            "confidence": "AI"
+            "confidence": "AI",
+            "distilbert_priority": validation.get("distilbert_priority"),
+            "priority_upgraded": validation.get("upgraded", False),
+            "distilbert_confidence": validation.get("distilbert_confidence", 0.0),
         }
     except Exception as e:
         print(f"[ROUTER] Gemini routing failed: {e}. Falling back to keyword model.")
-        return keyword_fallback_route(title, description, category)
+        return keyword_fallback_route(title, description, category, priority_validator)

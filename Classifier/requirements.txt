@@ -11,3 +11,7 @@ numpy
 pillow
 aiofiles
 google-generativeai
+# Pipeline 3 — Scene Detection
+ultralytics>=8.0.0
+transformers>=4.40.0
+safetensors

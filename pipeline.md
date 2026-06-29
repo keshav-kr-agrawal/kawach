@@ -1,8 +1,8 @@
 # KAWACH — Full System Architecture & Pipeline Reference
 
 > **Project:** KAWACH — AI-Driven Community Incident Reporting App (India)
-> **Last Updated:** June 2026
-> **Status:** Production-Ready ✅
+> **Last Updated:** June 2026 · v2.0
+> **Status:** Production-Ready ✅ — 4 AI Pipelines Live
 
 ---
 
@@ -17,13 +17,15 @@
    - [Supabase (Database)](#35-supabase--database)
 4. [Pipeline 1 — Deepfake Detection](#4-pipeline-1--deepfake-detection)
 5. [Pipeline 2 — Civic Department Routing](#5-pipeline-2--civic-department-routing)
-6. [End-to-End Report Submission Flow](#6-end-to-end-report-submission-flow)
-7. [Video Status State Machine](#7-video-status-state-machine)
-8. [Database Schema Reference](#8-database-schema-reference)
-9. [API Endpoint Reference](#9-api-endpoint-reference)
-10. [Environment Variables Reference](#10-environment-variables-reference)
-11. [Department Routing Logic](#11-department-routing-logic)
-12. [Deployment Checklist](#12-deployment-checklist)
+6. [Pipeline 3 — Scene Visual Issue Detection ⭐ NEW](#6-pipeline-3--scene-visual-issue-detection)
+7. [Pipeline 4 — Unified Full Analysis ⭐ NEW](#7-pipeline-4--unified-full-analysis)
+8. [End-to-End Report Submission Flow](#8-end-to-end-report-submission-flow)
+9. [Video Status State Machine](#9-video-status-state-machine)
+10. [Database Schema Reference](#10-database-schema-reference)
+11. [API Endpoint Reference](#11-api-endpoint-reference)
+12. [Environment Variables Reference](#12-environment-variables-reference)
+13. [Department Routing Logic](#13-department-routing-logic)
+14. [Deployment Checklist](#14-deployment-checklist)
 
 ---
 
@@ -31,8 +33,10 @@
 
 KAWACH is a civic incident reporting Progressive Web App (PWA) that allows Indian citizens to:
 - Record and report incidents (crime, infrastructure damage, environmental hazards, etc.)
-- Automatically verify the video for AI manipulation (deepfake detection)
-- Automatically route the report to the correct government department using AI
+- **[Pipeline 1]** Automatically verify the video for AI manipulation (deepfake detection)
+- **[Pipeline 2]** Automatically route the report to the correct government department (Gemini + DistilBERT dual-model consensus)
+- **[Pipeline 3 — NEW]** Visually detect civic issues in video frames (pothole, road cracks, waste/garbage)
+- **[Pipeline 4 — NEW]** Run all three pipelines in one unified call for maximum efficiency
 - View reports from nearby citizens on a live proximity feed
 
 The system is entirely **serverless** and built on PaaS/SaaS platforms — no dedicated backend server needed.
@@ -43,34 +47,39 @@ The system is entirely **serverless** and built on PaaS/SaaS platforms — no de
       ▼
 [Vercel Frontend (React PWA)]
       │
-      ├──► [Cloudinary] ──────────► (Video Storage & Delivery CDN)
+      ├──► [Cloudinary] ──────────────► (Video Storage & Delivery CDN)
       │
-      ├──► [HuggingFace /classify] ► (Pipeline 1: Deepfake Detection)
-      │         └──► [EfficientNet-B7 + MTCNN ensemble]
+      ├──► [HuggingFace /classify] ───► (Pipeline 1: EfficientNet-B7 + MTCNN deepfake)
       │
-      ├──► [HuggingFace /route] ───► (Pipeline 2: Civic Routing)
-      │         └──► [Google Gemini 1.5-flash + Keyword Fallback]
+      ├──► [HuggingFace /route] ──────► (Pipeline 2: Gemini LLM + DistilBERT priority)
       │
-      └──► [Supabase PostgreSQL] ──► (Persistent Report Storage)
+      ├──► [HuggingFace /analyze-scene]► (Pipeline 3: YOLO road damage + TrashNet waste)
+      │
+      ├──► [HuggingFace /full-analysis]► (Pipeline 4: All 3 in one call)
+      │
+      └──► [Supabase PostgreSQL] ──────► (Persistent Report Storage)
 ```
 
 ---
 
 ## 2. Tech Stack at a Glance
 
-| Layer               | Technology                     | Purpose                                  |
-|---------------------|--------------------------------|------------------------------------------|
-| Frontend            | React + Vite (JSX)             | PWA Citizen App UI                       |
-| UI Styling          | CSS-in-JS (inline styles)      | Dark-mode premium civic design           |
-| Frontend Host       | Vercel                         | Global CDN, HTTPS, CI/CD                 |
-| Video Upload        | Cloudinary                     | Secure video upload, CDN delivery        |
-| AI Microservice     | Hugging Face Spaces            | FastAPI server for 2 AI pipelines        |
-| Deepfake Model      | EfficientNet-B7 + MTCNN        | Frame-level face forensics               |
-| LLM Dispatcher      | Google Gemini 1.5-flash        | Zero-shot civic department routing       |
-| Database            | Supabase (PostgreSQL)          | Report persistence with RLS              |
-| State Management    | React useState/useEffect       | Local optimistic UI state                |
-| Router Framework    | React Router v6                | Multi-page navigation                    |
-| Animation           | Framer Motion                  | Page transitions, micro-animations       |
+| Layer               | Technology                     | Purpose                                        |
+|---------------------|--------------------------------|------------------------------------------------|
+| Frontend            | React + Vite (JSX)             | PWA Citizen App UI                             |
+| UI Styling          | CSS-in-JS (inline styles)      | Dark-mode premium civic design                 |
+| Frontend Host       | Vercel                         | Global CDN, HTTPS, CI/CD                       |
+| Video Upload        | Cloudinary                     | Secure video upload, CDN delivery              |
+| AI Microservice     | Hugging Face Spaces            | FastAPI server for 4 AI pipelines              |
+| Deepfake Model      | EfficientNet-B7 + MTCNN        | Frame-level face forensics (Pipeline 1)        |
+| LLM Dispatcher      | Google Gemini 1.5-flash        | Zero-shot civic department routing (Pipeline 2)|
+| Priority Validator  | DistilBERT (civic fine-tuned)  | Dual-model priority consensus (Pipeline 2)     |
+| Road Damage Model   | YOLO12s (RDD2022)              | Pothole & crack visual detection (Pipeline 3)  |
+| Waste Classifier    | TrashNet SigLIP                | Garbage & waste detection (Pipeline 3)         |
+| Database            | Supabase (PostgreSQL)          | Report persistence with RLS                    |
+| State Management    | React useState/useEffect       | Local optimistic UI state                      |
+| Router Framework    | React Router v6                | Multi-page navigation                          |
+| Animation           | Framer Motion                  | Page transitions, micro-animations             |
 
 ---
 

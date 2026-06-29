@@ -1,21 +1,36 @@
-# Exclude large downloaded model weights from git (downloaded at Docker build time)
+# Exclude large model weight binaries (downloaded at Docker build time)
 weights/final_*
+weights/yolo12s_RDD2022_best.pt
+weights/priority_classifier/model.safetensors
+weights/trash_net/model.safetensors
 
-# Exclude Python cache
+# Keep config/tokenizer small files (committed to git)
+!weights/priority_classifier/config.json
+!weights/priority_classifier/tokenizer.json
+!weights/priority_classifier/tokenizer_config.json
+!weights/priority_classifier/vocab.txt
+!weights/priority_classifier/special_tokens_map.json
+!weights/trash_net/config.json
+!weights/trash_net/preprocessor_config.json
+
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
 
-# Exclude uploads dir contents
+# Uploads dir contents
 uploads/*
 !uploads/.gitkeep
 
-# Exclude virtual environments
+# Virtual environments
 venv/
 .venv/
 env/
+
+# Temp directories
+temp/
 
 # Test files
 test_sample.mp4
