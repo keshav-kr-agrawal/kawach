@@ -38,6 +38,7 @@ import SentinelMapView from './components/department/police/SentinelMapView';
 import DistrictAnalyticsView from './components/department/police/DistrictAnalyticsView';
 import CCTVAnalyticsSimulator from './components/department/police/CCTVAnalyticsSimulator';
 import SentinelCitizenApp from './components/department/police/SentinelCitizenApp';
+import ExecutiveDashboardView from './components/department/police/ExecutiveDashboardView';
 
 // General & wrapper department views
 import MultiDepartmentView from './components/department/MultiDepartmentView';
