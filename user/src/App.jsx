@@ -371,8 +371,21 @@ export default function App() {
   const [userReports, setUserReports] = useState([]);
   const [citizenToken, setCitizenToken] = useState('');
   const [isLoadingSession, setIsLoadingSession] = useState(true);
-  const [officialToken, setOfficialToken] = useState(localStorage.getItem('token') || '');
-  const [officialUser, setOfficialUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
+  const [officialToken, setOfficialToken] = useState(() => {
+    try {
+      return localStorage.getItem('token') || '';
+    } catch (e) {
+      return '';
+    }
+  });
+  const [officialUser, setOfficialUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  });
 
   const handleOfficialLogout = () => {
     localStorage.removeItem('token');

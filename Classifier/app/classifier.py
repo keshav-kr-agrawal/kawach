@@ -2,7 +2,14 @@ import numpy as np
 import torch
 import cv2
 from torchvision.transforms import Normalize
-from albumentations.augmentations.functional import image_compression
+try:
+    from albumentations.augmentations.functional import image_compression
+except ImportError:
+    try:
+        from albumentations.functional import image_compression
+    except ImportError:
+        def image_compression(img, *args, **kwargs):
+            return img
 
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]

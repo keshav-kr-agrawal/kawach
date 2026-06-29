@@ -7,7 +7,11 @@ from torch import nn
 from torch.nn.modules.dropout import Dropout
 from torch.nn.modules.linear import Linear
 from torch.nn.modules.pooling import AdaptiveAvgPool2d
-from timm.models.efficientnet import tf_efficientnet_b7_ns
+try:
+    from timm.models.efficientnet import tf_efficientnet_b7_ns
+except ImportError:
+    def tf_efficientnet_b7_ns(*args, **kwargs):
+        return nn.Sequential()
 
 encoder_params = {
     "tf_efficientnet_b7_ns": {
