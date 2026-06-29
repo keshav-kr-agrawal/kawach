@@ -1,5 +1,5 @@
-const supabaseUrl = 'https://jlqelkrfeksixxfkulwf.supabase.co';
-const supabaseAnonKey = 'sb_publishable_tG7DDMyStV7t-zrEbRKtrA_hFnPJQIb';
+const supabaseUrl = localStorage.getItem('VITE_SUPABASE_URL') || 'https://jlqelkrfeksixxfkulwf.supabase.co';
+const supabaseAnonKey = localStorage.getItem('VITE_SUPABASE_ANON_KEY') || 'sb_publishable_tG7DDMyStV7t-zrEbRKtrA_hFnPJQIb';
 
 // Initialize Supabase Client
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);

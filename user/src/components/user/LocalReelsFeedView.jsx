@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowUp, Share2, AlertOctagon, Radio, ChevronUp, ChevronDown, ShieldAlert, BookOpen, User, Volume2, VolumeX } from 'lucide-react';
-import { getStatusLabel } from '../api/videoService';
+import { getStatusLabel } from '../../api/videoService';
 
 const getDepartmentEmoji = (dept) => {
   switch (dept) {

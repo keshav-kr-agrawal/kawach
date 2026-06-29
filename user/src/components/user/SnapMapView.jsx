@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import { X, Play, ShieldAlert, Award, Radio, Eye, AlertOctagon, BookOpen, User, Volume2, VolumeX } from 'lucide-react';
-import { getStatusLabel, getStatusColor } from '../api/videoService';
+import { getStatusLabel, getStatusColor } from '../../api/videoService';
 
 // Fix Leaflet default marker icons in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;

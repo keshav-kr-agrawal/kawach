@@ -1,18 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { User, BookOpen, ArrowLeft } from 'lucide-react';
+import { User, BookOpen, ArrowLeft, Shield } from 'lucide-react';
 import { supabase } from './supabaseClient';
-import BottomNav from './components/BottomNav';
-import SnapMapView from './components/SnapMapView';
-import ServicesDirectoryView from './components/ServicesDirectoryView';
-import SecureCameraView from './components/SecureCameraView';
-import AlertsChatView from './components/AlertsChatView';
-import LocalReelsFeedView from './components/LocalReelsFeedView';
+
+// Citizen components
+import BottomNav from './components/user/BottomNav';
+import SnapMapView from './components/user/SnapMapView';
+import ServicesDirectoryView from './components/user/ServicesDirectoryView';
+import SecureCameraView from './components/user/SecureCameraView';
+import AlertsChatView from './components/user/AlertsChatView';
+import LocalReelsFeedView from './components/user/LocalReelsFeedView';
 import LandingPageView from './components/LandingPageView';
 import CitizenLoginView from './components/CitizenLoginView';
-import InteractiveLegalLibraryView from './components/InteractiveLegalLibraryView';
-import UserProfileView from './components/UserProfileView';
+import InteractiveLegalLibraryView from './components/user/InteractiveLegalLibraryView';
+import UserProfileView from './components/user/UserProfileView';
+
+// Police & Department components
+import PoliceAppLayout from './components/department/police/PoliceAppLayout';
+import DashboardView from './components/department/police/DashboardView';
+import GeoMapView from './components/department/police/GeoMapView';
+import NetworkView from './components/department/police/NetworkView';
+import OffendersView from './components/department/police/OffendersView';
+import SocioEconomicView from './components/department/police/SocioEconomicView';
+import PredictiveView from './components/department/police/PredictiveView';
+import AlertsView from './components/department/police/AlertsView';
+import InvestigationsView from './components/department/police/InvestigationsView';
+import AICopilotView from './components/department/police/AICopilotView';
+import ReportsView from './components/department/police/ReportsView';
+import CitizenFraudShieldView from './components/department/police/CitizenFraudShieldView';
+import CounterfeitScannerView from './components/department/police/CounterfeitScannerView';
+import FaceAnalyticsView from './components/department/police/FaceAnalyticsView';
+import DistrictPerformanceView from './components/department/police/DistrictPerformanceView';
+import MobileFieldSimulatorView from './components/department/police/MobileFieldSimulatorView';
+import IngestionExplorerView from './components/department/police/IngestionExplorerView';
+import SentinelMapView from './components/department/police/SentinelMapView';
+import DistrictAnalyticsView from './components/department/police/DistrictAnalyticsView';
+import CCTVAnalyticsSimulator from './components/department/police/CCTVAnalyticsSimulator';
+import SentinelCitizenApp from './components/department/police/SentinelCitizenApp';
+
+// General & wrapper department views
+import MultiDepartmentView from './components/department/MultiDepartmentView';
+import FireDashboardView from './components/department/fire/FireDashboardView';
+import HealthDashboardView from './components/department/health/HealthDashboardView';
+import DisasterDashboardView from './components/department/disaster/DisasterDashboardView';
+import AdminView from './components/admin/AdminView';
+
 import { simulateWorkflowProgress, VIDEO_STATUS } from './api/videoService';
 
 const ALL_FLASHCARDS = [
@@ -203,7 +236,7 @@ function UserLayout({ userReports }) {
       />
 
       {/* Subview Scroll Viewport */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', width: '100%', height: '100%' }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', width: '100%' }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -288,19 +321,44 @@ function UserLayout({ userReports }) {
   );
 }
 
-function RequireCitizenAuth({ token, children }) {
+function RequireCitizenAuth({ token, isLoadingSession, children }) {
   const navigate = useNavigate();
   useEffect(() => {
-    if (!token) {
+    if (!isLoadingSession && !token) {
+      const currentHash = window.location.hash.replace('#', '');
+      if (currentHash && currentHash !== '/user/login' && currentHash !== '/') {
+        sessionStorage.setItem('redirect_path', currentHash);
+      }
       navigate('/user/login');
     }
-  }, [token, navigate]);
+  }, [token, isLoadingSession, navigate]);
+
+  if (isLoadingSession) {
+    return (
+      <div style={{ display: 'flex', height: '100dvh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', width: '100vw' }}>
+        <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #ffd900', borderTopColor: 'transparent', animation: 'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   return token ? children : null;
+}
+
+function RequirePoliceAuth({ token, children }) {
+  const location = useLocation();
+  if (!token) {
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
+  return children;
 }
 
 function CitizenAppWrapper({ children }) {
   return (
-    <div className="max-w-md mx-auto h-screen w-full relative shadow-2xl overflow-hidden bg-slate-50 flex flex-col justify-between border-x border-slate-200 select-none">
+    <div 
+      className="max-w-md mx-auto w-full relative shadow-2xl overflow-hidden bg-slate-50 flex flex-col justify-between border-x border-slate-200 select-none"
+      style={{ minHeight: '100dvh', height: '100dvh', display: 'flex', flexDirection: 'column' }}
+    >
       {children}
     </div>
   );
@@ -312,7 +370,40 @@ export default function App() {
   const [gpsCoords, setGpsCoords] = useState([12.9285, 77.6245]); // Defaults to Koramangala, Bengaluru
   const [userReports, setUserReports] = useState([]);
   const [citizenToken, setCitizenToken] = useState('');
-  const [bookmarkedLawIds, setBookmarkedLawIds] = useState(['fc-1']); // default pre-seed bookmark
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
+  const [officialToken, setOfficialToken] = useState(localStorage.getItem('token') || '');
+  const [officialUser, setOfficialUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
+
+  const handleOfficialLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setOfficialToken('');
+    setOfficialUser(null);
+    navigate('/');
+  };
+  const [bookmarkedLawIds, setBookmarkedLawIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kawach_bookmarked_laws');
+      return saved ? JSON.parse(saved) : ['fc-1'];
+    } catch (e) {
+      return ['fc-1'];
+    }
+  });
+
+  // Store dynamic Supabase URL and Anon key in localStorage for static sub-apps to read
+  useEffect(() => {
+    const defaultUrl = 'https://jlqelkrfeksixxfkulwf.supabase.co';
+    const defaultAnonKey = 'sb_publishable_tG7DDMyStV7t-zrEbRKtrA_hFnPJQIb';
+    const activeUrl = import.meta.env.VITE_SUPABASE_URL || defaultUrl;
+    const activeAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || defaultAnonKey;
+    localStorage.setItem('VITE_SUPABASE_URL', activeUrl);
+    localStorage.setItem('VITE_SUPABASE_ANON_KEY', activeAnonKey);
+  }, []);
+
+  // Sync bookmarks to localStorage
+  useEffect(() => {
+    localStorage.setItem('kawach_bookmarked_laws', JSON.stringify(bookmarkedLawIds));
+  }, [bookmarkedLawIds]);
 
   // Fetch session on startup and listen to auth state changes
   useEffect(() => {
@@ -320,6 +411,9 @@ export default function App() {
       if (session) {
         setCitizenToken(session.access_token);
       }
+      setIsLoadingSession(false);
+    }).catch(() => {
+      setIsLoadingSession(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -328,6 +422,7 @@ export default function App() {
       } else {
         setCitizenToken('');
       }
+      setIsLoadingSession(false);
     });
 
     return () => {
@@ -429,6 +524,7 @@ export default function App() {
             trimStart: item.trim_start,
             trimEnd: item.trim_end,
             views: item.views || 0,
+            upvotes: item.upvotes || 0,
             timestamp: formatRelativeTime(item.timestamp),
             routedDepartment: item.routed_department,
             routingPriority: item.routing_priority,
@@ -473,6 +569,7 @@ export default function App() {
           trim_start: newReport.trimStart,
           trim_end: newReport.trimEnd,
           views: newReport.views || 0,
+          upvotes: newReport.upvotes || 0,
           timestamp: new Date().toISOString(),
           routed_department: newReport.routedDepartment || null,
           routing_priority: newReport.routingPriority || null,
@@ -523,11 +620,14 @@ export default function App() {
   };
 
   const handleDeleteReport = async (reportId) => {
-    // 1. Optimistic UI update
-    setUserReports((prev) => prev.filter((r) => r.id !== reportId));
+    // Acknowledge mock records
+    if (reportId.startsWith('m-dept-') || reportId.startsWith('act-')) {
+      setUserReports((prev) => prev.filter((r) => r.id !== reportId));
+      return;
+    }
 
-    // 2. Delete from Supabase
     try {
+      // 1. Delete from Supabase first
       const { error } = await supabase
         .from('citizen_reports')
         .delete()
@@ -537,6 +637,8 @@ export default function App() {
         console.error('[SUPABASE] Error deleting report:', error.message);
       } else {
         console.log('[SUPABASE] Report successfully deleted from database!');
+        // 2. State Sync: Update UI ONLY after successful DB confirmation
+        setUserReports((prev) => prev.filter((r) => r.id !== reportId));
       }
     } catch (err) {
       console.error('[SUPABASE] Exception during delete:', err);
@@ -563,6 +665,47 @@ export default function App() {
       }
     } catch (err) {
       console.error('[SUPABASE] Exception during resolve:', err);
+    }
+  };
+
+  const handleUpvoteReport = async (reportId) => {
+    let liked = false;
+    let nextUpvotes = 0;
+
+    const likedList = JSON.parse(localStorage.getItem('kawach_liked_reports') || '[]');
+    if (likedList.includes(reportId)) {
+      const nextList = likedList.filter(id => id !== reportId);
+      localStorage.setItem('kawach_liked_reports', JSON.stringify(nextList));
+      liked = false;
+    } else {
+      likedList.push(reportId);
+      localStorage.setItem('kawach_liked_reports', JSON.stringify(likedList));
+      liked = true;
+    }
+
+    setUserReports((prev) => 
+      prev.map((r) => {
+        if (r.id === reportId) {
+          nextUpvotes = Math.max(0, (r.upvotes || 0) + (liked ? 1 : -1));
+          return { ...r, upvotes: nextUpvotes };
+        }
+        return r;
+      })
+    );
+
+    try {
+      const { error } = await supabase
+        .from('citizen_reports')
+        .update({ upvotes: nextUpvotes })
+        .eq('id', reportId);
+
+      if (error) {
+        console.error('[SUPABASE] Error syncing upvotes:', error.message);
+      } else {
+        console.log('[SUPABASE] Upvote successfully synced to database!');
+      }
+    } catch (err) {
+      console.error('[SUPABASE] Exception during upvote sync:', err);
     }
   };
 
@@ -617,7 +760,18 @@ export default function App() {
   return (
     <Routes>
       {/* Landing Gateway Page */}
-      <Route path="/" element={<LandingPageView onEnterCitizen={() => navigate(citizenToken ? '/user/map' : '/user/login')} />} />
+      <Route 
+        path="/" 
+        element={
+          <LandingPageView 
+            onEnterCitizen={() => navigate(citizenToken ? '/user/map' : '/user/login')} 
+            onOfficialLogin={(token, user) => {
+              setOfficialToken(token);
+              setOfficialUser(user);
+            }}
+          />
+        } 
+      />
       
       {/* Standalone Login Screen */}
       <Route 
@@ -627,9 +781,15 @@ export default function App() {
             <CitizenLoginView 
               onLoginSuccess={(token) => {
                 setCitizenToken(token);
-                navigate('/user/map');
+                const savedRedirect = sessionStorage.getItem('redirect_path');
+                if (savedRedirect) {
+                  sessionStorage.removeItem('redirect_path');
+                  navigate(savedRedirect);
+                } else {
+                  navigate('/user/map');
+                }
               }}
-              onBackToHome={() => { window.location.href = window.location.port ? `${window.location.protocol}//${window.location.hostname}:5173/` : '/'; }}
+              onBackToHome={() => navigate('/')}
             />
           </CitizenAppWrapper>
         } 
@@ -639,7 +799,7 @@ export default function App() {
       <Route 
         path="/user" 
         element={
-          <RequireCitizenAuth token={citizenToken}>
+          <RequireCitizenAuth token={citizenToken} isLoadingSession={isLoadingSession}>
             <CitizenAppWrapper>
               <UserLayout userReports={userReports} />
             </CitizenAppWrapper>
@@ -669,6 +829,7 @@ export default function App() {
               gpsCoords={gpsCoords} 
               userReports={userReports} 
               onReportVideo={handleReportVideo}
+              onUpvoteReport={handleUpvoteReport}
               onOpenProfile={() => navigate('/user/profile')}
               onOpenLibrary={() => navigate('/user/library')}
             />
@@ -697,13 +858,97 @@ export default function App() {
               onSignOut={async () => {
                 await supabase.auth.signOut();
                 setCitizenToken('');
-                window.location.href = window.location.port ? `${window.location.protocol}//${window.location.hostname}:5173/` : '/';
+                navigate('/');
               }}
             />
           } 
         />
       </Route>
-      
+
+      {/* Official Portals Routing (Latency-Free SPA Routes) */}
+      <Route 
+        path="/department/police" 
+        element={
+          <RequirePoliceAuth token={officialToken}>
+            <PoliceAppLayout user={officialUser} onLogout={handleOfficialLogout}>
+              <Outlet />
+            </PoliceAppLayout>
+          </RequirePoliceAuth>
+        }
+      >
+        <Route index element={<Navigate to="/department/police/command" replace />} />
+        <Route path="command" element={<DashboardView token={officialToken} user={officialUser} />} />
+        <Route path="dashboard" element={<ExecutiveDashboardView token={officialToken} user={officialUser} />} />
+        <Route path="map" element={<GeoMapView token={officialToken} user={officialUser} />} />
+        <Route path="sentinel" element={<SentinelMapView token={officialToken} user={officialUser} />} />
+        <Route path="sentinel-citizen" element={<SentinelCitizenApp token={officialToken} user={officialUser} />} />
+        <Route path="departments" element={<MultiDepartmentView />} />
+        <Route path="district-analytics" element={<DistrictAnalyticsView token={officialToken} user={officialUser} />} />
+        <Route path="cctv" element={<CCTVAnalyticsSimulator token={officialToken} user={officialUser} />} />
+        <Route path="graph" element={<NetworkView token={officialToken} user={officialUser} />} />
+        <Route path="offenders" element={<OffendersView token={officialToken} user={officialUser} />} />
+        <Route path="alerts" element={<AlertsView token={officialToken} user={officialUser} />} />
+        <Route path="fraudshield" element={<CitizenFraudShieldView token={officialToken} user={officialUser} />} />
+        <Route path="counterfeit" element={<CounterfeitScannerView token={officialToken} user={officialUser} />} />
+        <Route path="face" element={<FaceAnalyticsView token={officialToken} user={officialUser} />} />
+        <Route path="performance" element={<DistrictPerformanceView token={officialToken} user={officialUser} />} />
+        <Route path="mobile" element={<MobileFieldSimulatorView token={officialToken} user={officialUser} />} />
+        <Route path="ingestion" element={<IngestionExplorerView token={officialToken} user={officialUser} />} />
+        <Route path="investigations" element={<InvestigationsView token={officialToken} user={officialUser} />} />
+        <Route path="copilot" element={<AICopilotView token={officialToken} user={officialUser} />} />
+        <Route path="reports" element={<ReportsView token={officialToken} user={officialUser} />} />
+        <Route path="socio" element={<SocioEconomicView token={officialToken} user={officialUser} />} />
+        <Route path="predictive" element={<PredictiveView token={officialToken} user={officialUser} />} />
+        <Route path="admin" element={<AdminView token={officialToken} user={officialUser} />} />
+      </Route>
+
+      <Route 
+        path="/department/fire" 
+        element={
+          <RequirePoliceAuth token={officialToken}>
+            <FireDashboardView />
+          </RequirePoliceAuth>
+        } 
+      />
+      <Route 
+        path="/department/health" 
+        element={
+          <RequirePoliceAuth token={officialToken}>
+            <HealthDashboardView />
+          </RequirePoliceAuth>
+        } 
+      />
+      <Route 
+        path="/department/disaster" 
+        element={
+          <RequirePoliceAuth token={officialToken}>
+            <DisasterDashboardView />
+          </RequirePoliceAuth>
+        } 
+      />
+      <Route 
+        path="/admin" 
+        element={
+          <RequirePoliceAuth token={officialToken}>
+            <div className="p-6 bg-slate-950 min-h-screen text-slate-100 flex flex-col gap-6 select-text">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="text-xl font-black text-white uppercase tracking-wider">Super Admin God-Mode Overview</h2>
+                  <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Platform Administration Console</span>
+                </div>
+                <button
+                  onClick={handleOfficialLogout}
+                  className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+              <AdminView token={officialToken} user={officialUser} />
+            </div>
+          </RequirePoliceAuth>
+        } 
+      />
+
       {/* Fallback to landing */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

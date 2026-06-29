@@ -13,6 +13,7 @@ CREATE TABLE citizen_reports (
   trim_start double precision DEFAULT 0,
   trim_end double precision DEFAULT 0,
   views integer DEFAULT 0,
+  upvotes integer DEFAULT 0,
   timestamp timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -30,4 +31,8 @@ WITH CHECK (true);
 
 CREATE POLICY "Allow public update access" 
 ON citizen_reports FOR UPDATE 
+USING (true);
+
+CREATE POLICY "Allow public delete access" 
+ON citizen_reports FOR DELETE 
 USING (true);

@@ -23,6 +23,7 @@ import SentinelMapView from './components/SentinelMapView';
 import DistrictAnalyticsView from './components/DistrictAnalyticsView';
 import CCTVAnalyticsSimulator from './components/CCTVAnalyticsSimulator';
 import SentinelCitizenApp from './components/SentinelCitizenApp';
+import MultiDepartmentView from './components/MultiDepartmentView';
 
 function RequirePoliceAuth({ isAuthenticated, children }) {
   const location = useLocation();
@@ -196,6 +197,7 @@ function AppContent() {
     { id: 'geomap', label: 'Crime Map', icon: Map, path: '/police/map' },
     { id: 'sentinel', label: 'Sentinel Safety Map', icon: Map, path: '/police/sentinel' },
     { id: 'sentinel-citizen', label: 'Sentinel Citizen App', icon: Smartphone, path: '/police/sentinel-citizen' },
+    { id: 'departments', label: 'Civic Departments', icon: Shield, path: '/police/departments' },
     { id: 'district-analytics', label: 'District Analytics', icon: Award, path: '/police/district-analytics', minRole: 'SP' },
     { id: 'cctv-simulator', label: 'CCTV AI Simulator', icon: Camera, path: '/police/cctv', minRole: 'SP' },
     { id: 'network', label: 'Network Analysis', icon: Network, path: '/police/graph', minRole: 'SP' },
@@ -536,6 +538,7 @@ function AppContent() {
                     {/* Other standard views */}
                     <Route path="/police/sentinel" element={<SentinelMapView token={token} user={user} />} />
                     <Route path="/police/sentinel-citizen" element={<SentinelCitizenApp token={token} user={user} />} />
+                    <Route path="/police/departments" element={<MultiDepartmentView />} />
                     <Route path="/police/district-analytics" element={<DistrictAnalyticsView token={token} user={user} />} />
                     <Route path="/police/cctv" element={<CCTVAnalyticsSimulator token={token} user={user} />} />
                     <Route path="/police/graph" element={<NetworkView token={token} user={user} />} />
