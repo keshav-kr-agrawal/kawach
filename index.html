@@ -359,14 +359,61 @@
 
   </main>
 
-  <footer class="main-footer">
-    <p>© 2026 KAWACH Security Grid. Designed for Indian Law Enforcement Agencies.</p>
-    <div class="footer-links">
-      <span>Karnataka State Police</span>
-      <span>•</span>
-      <span>Zoho Datathon</span>
-      <span>•</span>
-      <span>ET Hackathon</span>
+  <footer class="main-footer" style="background: #090d16; border-top: 1px solid #1e293b; padding: 60px 40px 30px 40px; color: #94a3b8; font-family: 'Outfit', sans-serif; box-sizing: border-box; width: 100%; position: relative; z-index: 10;">
+    <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; text-align: left; margin-bottom: 50px;">
+      <!-- Column 1: Logo & Tagline -->
+      <div style="grid-column: span 2;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+          <img src="kawach.png" alt="KAWACH Logo" style="width: 60px; height: 60px; object-fit: contain;">
+          <div>
+            <h3 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 0.02em;">KAWACH</h3>
+            <span style="font-size: 10px; color: #3b82f6; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-top: 2px;">Unified Public Safety Grid</span>
+          </div>
+        </div>
+        <p style="font-size: 13px; line-height: 1.6; color: #64748b; max-width: 320px; font-weight: 500;">
+          An enterprise-grade geospatial intelligence and forensic PWA safeguarding local streets and digital communication channels.
+        </p>
+      </div>
+      
+      <!-- Column 2: System Nodes -->
+      <div>
+        <h4 style="color: #ffffff; font-size: 14px; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em;">System Nodes</h4>
+        <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 2.2;">
+          <li><a href="http://localhost:5175/#/user/login" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Citizen Sentinel PWA</a></li>
+          <li><a href="http://localhost:5175/" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Police Command Center</a></li>
+          <li><a href="http://localhost:5175/" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Civic Departments Panel</a></li>
+          <li><a href="http://localhost:5175/#/admin" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Super Admin Console</a></li>
+        </ul>
+      </div>
+
+      <!-- Column 3: Legal & Security -->
+      <div>
+        <h4 style="color: #ffffff; font-size: 14px; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em;">Compliance & Laws</h4>
+        <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 2.2;">
+          <li><a href="http://localhost:5175/#/user/library" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">BNS Rule Book</a></li>
+          <li><a href="#about" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Section 65B Admissibility</a></li>
+          <li><a href="#about" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">SHA-256 Audit Ledger</a></li>
+          <li><a href="#about" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">PII Scrubbing Protocols</a></li>
+        </ul>
+      </div>
+
+      <!-- Column 4: Contact & Node Info -->
+      <div>
+        <h4 style="color: #ffffff; font-size: 14px; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em;">System Status</h4>
+        <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 2.2; color: #64748b;">
+          <li>State Hub: <span style="color: #10b981; font-weight: 700;">ACTIVE</span></li>
+          <li>AI Space: <span style="color: #10b981; font-weight: 700;">CONNECTED</span></li>
+          <li>Ingestion Rate: <span style="color: #ffffff; font-weight: 600;">99.8%</span></li>
+          <li>Secure Tunnel: <span style="color: #3b82f6; font-weight: 700;">AES-256</span></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div style="border-top: 1px solid #1e293b; padding-top: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; font-size: 12px; font-weight: 600;">
+      <p style="margin: 0; color: #64748b;">© 2026 KAWACH Security Grid. All rights reserved.</p>
+      <div style="color: #ffffff; font-weight: 800; tracking-wide; font-size: 11px; text-transform: uppercase;">
+        Built by <span style="color: #ffd900;">CodeKrafters</span> for <span style="color: #ff9933;">In</span><span style="color: #ffffff;">d</span><span style="color: #138808;">ia</span> 🇮🇳
+      </div>
     </div>
   </footer>
 

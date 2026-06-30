@@ -367,14 +367,63 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-slate-200 py-8 text-center text-xs text-slate-400 font-semibold w-full bg-white">
-        <p className="text-slate-500">© 2026 KAWACH Security Grid. Designed for Indian Law Enforcement Agencies.</p>
-        <div className="flex items-center justify-center gap-3.5 mt-2.5 text-[10px] text-slate-400 uppercase tracking-wider">
-          <span>Karnataka State Police</span>
-          <span>•</span>
-          <span>Zoho Datathon</span>
-          <span>•</span>
-          <span>ET Hackathon</span>
+      <footer className="relative z-10 border-t border-slate-900 bg-slate-950 py-16 px-6 text-slate-400 text-xs font-semibold w-full">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10 mb-12 text-left">
+          
+          {/* Logo & Info */}
+          <div className="sm:col-span-2 space-y-4">
+            <div className="flex items-center gap-3">
+              <img src="/kawach.png" alt="KAWACH Logo" className="w-12 h-12 object-contain" />
+              <div>
+                <h3 className="text-lg font-black font-outfit text-white tracking-wide">KAWACH</h3>
+                <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest block -mt-1">Unified Public Safety Grid</span>
+              </div>
+            </div>
+            <p className="text-slate-500 text-xs leading-relaxed max-w-sm font-semibold">
+              An enterprise-grade geospatial intelligence and forensic PWA safeguarding local streets and digital communication channels.
+            </p>
+          </div>
+
+          {/* System Nodes */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">System Nodes</h4>
+            <ul className="space-y-2 text-slate-500 font-semibold">
+              <li><button onClick={() => navigate('/user/login')} className="hover:text-white transition-colors">Citizen Sentinel PWA</button></li>
+              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Police Command Center</button></li>
+              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Civic Departments Panel</button></li>
+              <li><button onClick={() => navigate('/admin')} className="hover:text-white transition-colors">Super Admin Console</button></li>
+            </ul>
+          </div>
+
+          {/* Compliance & Laws */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Compliance & Laws</h4>
+            <ul className="space-y-2 text-slate-500 font-semibold">
+              <li><button onClick={() => navigate('/user/library')} className="hover:text-white transition-colors">BNS Rule Book</button></li>
+              <li><button onClick={() => scrollToSection('about')} className="hover:text-white transition-colors">Section 65B Admissibility</button></li>
+              <li><button onClick={() => scrollToSection('about')} className="hover:text-white transition-colors">SHA-256 Audit Ledger</button></li>
+              <li><button onClick={() => scrollToSection('about')} className="hover:text-white transition-colors">PII Scrubbing Protocols</button></li>
+            </ul>
+          </div>
+
+          {/* System Status */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">System Status</h4>
+            <ul className="space-y-2 text-slate-500 font-semibold">
+              <li>State Hub: <span className="text-emerald-500 font-bold">ACTIVE</span></li>
+              <li>AI Space: <span className="text-emerald-500 font-bold">CONNECTED</span></li>
+              <li>Ingestion Rate: <span className="text-white font-bold">99.8%</span></li>
+              <li>Secure Tunnel: <span className="text-blue-500 font-bold">AES-256</span></li>
+            </ul>
+          </div>
+
+        </div>
+
+        <div className="max-w-7xl mx-auto border-t border-slate-900 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-slate-600 text-xs font-semibold">© 2026 KAWACH Security Grid. All rights reserved.</p>
+          <div className="text-white font-bold text-xs uppercase tracking-wider">
+            Built by <span className="text-yellow-400">CodeKrafters</span> for <span className="text-orange-500">In</span><span>d</span><span className="text-green-500">ia</span> 🇮🇳
+          </div>
         </div>
       </footer>
     </div>
