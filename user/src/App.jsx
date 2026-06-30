@@ -228,8 +228,8 @@ function UserLayout({ userReports }) {
         onOpenLibrary={() => navigate('/user/library')} 
       />
 
-      {/* Scrollable Middle Content (Services, Map, Feed) */}
-      <div className="flex-1 overflow-y-auto pb-20 relative w-full">
+      {/* Scrollable Middle Content — each child view manages its own scroll */}
+      <div className="flex-1 overflow-hidden relative w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -237,7 +237,7 @@ function UserLayout({ userReports }) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="w-full h-full flex flex-col overflow-hidden"
+            className="absolute inset-0 flex flex-col"
           >
             <Outlet />
           </motion.div>
@@ -307,11 +307,11 @@ function RequireCitizenAuth({ token, isLoadingSession, children }) {
   const navigate = useNavigate();
   useEffect(() => {
     if (!isLoadingSession && !token) {
-      const currentHash = window.location.hash.replace('#', '');
-      if (currentHash && currentHash !== '/user/login' && currentHash !== '/') {
-        sessionStorage.setItem('redirect_path', currentHash);
+      const currentPath = window.location.pathname;
+      if (currentPath && currentPath !== '/' && currentPath !== '/user/login') {
+        sessionStorage.setItem('redirect_path', currentPath);
       }
-      navigate('/user/login');
+      navigate('/');
     }
   }, [token, isLoadingSession, navigate]);
 
@@ -333,6 +333,37 @@ function RequirePoliceAuth({ token, children }) {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
   return children;
+}
+
+class ProfileErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error, info) {
+    console.error('[ProfileErrorBoundary] Caught render error:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-8 gap-4 bg-slate-50">
+          <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center text-2xl">⚠️</div>
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Profile Error</h3>
+          <p className="text-xs text-slate-500 text-center">Something went wrong loading your profile.</p>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="px-6 py-2.5 bg-yellow-400 text-black text-xs font-black rounded-full"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 function CitizenAppWrapper({ children }) {
@@ -867,19 +898,21 @@ export default function App() {
         <Route 
           path="profile" 
           element={
-            <UserProfileView 
-              onBack={() => navigate(-1)}
-              bookmarkedLaws={ALL_FLASHCARDS.filter(c => bookmarkedLawIds.includes(c.id))}
-              userReports={userReports}
-              onRemoveBookmark={handleToggleBookmark}
-              onDeleteReport={handleDeleteReport}
-              onResolveReport={handleResolveReport}
-              onSignOut={async () => {
-                await supabase.auth.signOut();
-                setCitizenToken('');
-                navigate('/');
-              }}
-            />
+            <ProfileErrorBoundary>
+              <UserProfileView 
+                onBack={() => navigate(-1)}
+                bookmarkedLaws={ALL_FLASHCARDS.filter(c => bookmarkedLawIds.includes(c.id))}
+                userReports={userReports}
+                onRemoveBookmark={handleToggleBookmark}
+                onDeleteReport={handleDeleteReport}
+                onResolveReport={handleResolveReport}
+                onSignOut={async () => {
+                  await supabase.auth.signOut();
+                  setCitizenToken('');
+                  navigate('/');
+                }}
+              />
+            </ProfileErrorBoundary>
           } 
         />
       </Route>

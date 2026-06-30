@@ -20,11 +20,12 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
   // Upload Form details
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('General Alert');
+  const [category, setCategory] = useState('Infrastructure');
   const [emergencyOverride, setEmergencyOverride] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [saveLocalCopy, setSaveLocalCopy] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   // AI Analysis state
   const [quickValidateResult, setQuickValidateResult] = useState(null);
@@ -205,6 +206,9 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
 
         // Pipeline 6 quick scan immediately on stop
         runQuickValidate(blob);
+
+        // Open the bottom sheet after a brief delay (let quick validate start)
+        setTimeout(() => setSheetOpen(true), 300);
       };
 
       mediaRecorder.start();
@@ -280,6 +284,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     setQuickValidateResult(null);
     setIsValidating(false);
     setFullAnalysisResult(null);
+    setSheetOpen(false);
     startCamera();
   };
 
@@ -428,6 +433,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     setQuickValidateResult(null);
     setIsValidating(false);
     setFullAnalysisResult(null);
+    setSheetOpen(false);
   };
 
   return (
@@ -503,373 +509,291 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
         alignItems: 'center',
         margin: '10px 10px 0'
       }}>
-        
         {recordedBlob ? (
-          /* ================== POST-CAPTURE REVIEW STATE (Snapchat Theme) ================== */
-          <div style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-start',
-            padding: '16px 20px',
-            zIndex: 5,
-            boxSizing: 'border-box',
-            background: '#ffffff',
-            overflowY: 'auto'
-          }} className="scroll-y">
-            
-            {/* Real Video Player preview */}
-            <div style={{
-              width: '100%',
-              height: '160px',
-              borderRadius: '16px',
-              backgroundColor: '#000000',
-              overflow: 'hidden',
-              position: 'relative',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-              marginBottom: '12px'
-            }}>
-              {videoUrl ? (
-                <video
-                  ref={reviewVideoRef}
-                  src={videoUrl}
-                  controls
-                  loop
-                  onLoadedMetadata={handleLoadedMetadata}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffd900' }}>
-                  [Playback Sandbox active]
-                </div>
-              )}
-            </div>
+          /* ================== POST-CAPTURE: VIDEO BACKGROUND + BOTTOM SHEET ================== */
+          <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#000' }}>
+            {/* Full-screen recorded video plays as background */}
+            {videoUrl ? (
+              <video
+                ref={reviewVideoRef}
+                src={videoUrl}
+                loop
+                muted
+                playsInline
+                autoPlay
+                onLoadedMetadata={handleLoadedMetadata}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <div style={{ position: 'absolute', inset: 0, backgroundColor: '#111' }} />
+            )}
 
-            {/* AI Pre-Scan Card (Pipeline 6 — Quick Validate) */}
-            <div style={{ marginBottom: '12px' }}>
-              {isValidating && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  padding: '12px',
-                  borderRadius: '16px',
-                  backgroundColor: '#f8fafc',
-                  border: '1px dashed #3b82f6',
-                  color: '#2563eb',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  fontFamily: 'Outfit'
-                }}>
-                  <Zap size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                  <span>AI Pre-Scan: Detecting scene issues...</span>
-                </div>
-              )}
+            {/* Dark gradient at bottom behind sheet */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%', background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)', pointerEvents: 'none' }} />
 
-              {!isValidating && quickValidateResult && (
-                <div style={{
-                  padding: '14px 16px',
-                  borderRadius: '16px',
-                  fontFamily: 'Outfit',
-                  border: '1px solid',
-                  backgroundColor: quickValidateResult.scene_detected ? '#ecfdf5' : '#f8fafc',
-                  borderColor: quickValidateResult.scene_detected ? '#10b981' : '#e2e8f0',
-                  color: quickValidateResult.scene_detected ? '#065f46' : '#374151',
-                  boxShadow: quickValidateResult.scene_detected
-                    ? '0 4px 12px rgba(16,185,129,0.10)'
-                    : '0 2px 8px rgba(0,0,0,0.05)',
-                }}>
-                  {/* Header row */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Zap size={14} style={{ fill: 'currentColor' }} />
-                      <span style={{ fontSize: '12px', fontWeight: '800', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                        {quickValidateResult.scene_detected ? 'Issue Detected' : 'Scene Clear'}
+            {/* Retake button top-left */}
+            <button
+              onClick={handleRetake}
+              style={{
+                position: 'absolute', top: '20px', left: '16px',
+                background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.2)', borderRadius: '20px',
+                color: '#ffffff', padding: '8px 14px',
+                fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '4px', zIndex: 20
+              }}
+            >
+              ✕ Retake
+            </button>
+
+            {/* Quick scan badge top-right */}
+            {isValidating && (
+              <div style={{
+                position: 'absolute', top: '20px', right: '16px',
+                background: 'rgba(59,130,246,0.2)', backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(59,130,246,0.4)', borderRadius: '20px',
+                color: '#93c5fd', padding: '8px 12px',
+                fontSize: '10px', fontWeight: '800', zIndex: 20,
+                display: 'flex', alignItems: 'center', gap: '5px'
+              }}>
+                <Zap size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                AI Scanning...
+              </div>
+            )}
+            {!isValidating && quickValidateResult && (
+              <div style={{
+                position: 'absolute', top: '20px', right: '16px',
+                background: quickValidateResult.scene_detected ? 'rgba(16,185,129,0.2)' : 'rgba(0,0,0,0.4)',
+                backdropFilter: 'blur(8px)',
+                border: `1px solid ${quickValidateResult.scene_detected ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.15)'}`,
+                borderRadius: '20px',
+                color: quickValidateResult.scene_detected ? '#6ee7b7' : 'rgba(255,255,255,0.7)',
+                padding: '8px 12px',
+                fontSize: '10px', fontWeight: '800', zIndex: 20,
+                display: 'flex', alignItems: 'center', gap: '5px'
+              }}>
+                {quickValidateResult.scene_detected ? '⚡ Issue Detected' : '✓ Scene Clear'}
+                {quickValidateResult.suggested_dept && (
+                  <span style={{ background: '#ffd900', color: '#000', borderRadius: '10px', padding: '1px 6px', fontSize: '8px', fontWeight: '900' }}>
+                    {quickValidateResult.suggested_dept}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Open sheet button if closed */}
+            {!sheetOpen && (
+              <button
+                onClick={() => setSheetOpen(true)}
+                style={{
+                  position: 'absolute', bottom: '32px', left: '50%', transform: 'translateX(-50%)',
+                  background: '#ffd900', border: 'none', borderRadius: '28px',
+                  padding: '14px 36px', fontSize: '14px', fontWeight: '900',
+                  cursor: 'pointer', zIndex: 20, boxShadow: '0 4px 20px rgba(255,217,0,0.4)',
+                  display: 'flex', alignItems: 'center', gap: '6px'
+                }}
+              >
+                <Upload size={16} /> Upload & Analyze
+              </button>
+            )}
+
+            {/* BOTTOM SHEET DRAWER */}
+            {sheetOpen && (
+              <div
+                className="camera-bottom-sheet"
+                style={{ zIndex: 30, padding: '0 0 calc(16px + env(safe-area-inset-bottom))' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Drag Handle */}
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px' }}>
+                  <div style={{ width: '36px', height: '4px', borderRadius: '2px', backgroundColor: '#e2e8f0' }} />
+                </div>
+
+                <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+                  {/* Trust score compact strip */}
+                  {!isValidating && quickValidateResult && typeof quickValidateResult.trust_score === 'number' && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      background: quickValidateResult.scene_detected ? '#ecfdf5' : '#f8fafc',
+                      border: `1px solid ${quickValidateResult.scene_detected ? '#a7f3d0' : '#e2e8f0'}`,
+                      borderRadius: '14px', padding: '10px 14px'
+                    }}>
+                      <Zap size={14} style={{ color: quickValidateResult.scene_detected ? '#059669' : '#94a3b8', flexShrink: 0 }} />
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: quickValidateResult.scene_detected ? '#065f46' : '#374151', flex: 1 }}>
+                        {quickValidateResult.scene_detected ? 'Civic Issue Detected' : 'Scene Appears Clear'}
+                        {quickValidateResult.suggested_dept && ` → ${quickValidateResult.suggested_dept}`}
+                      </span>
+                      <span style={{
+                        fontSize: '10px', fontWeight: '900',
+                        color: quickValidateResult.trust_score >= 70 ? '#059669' : quickValidateResult.trust_score >= 40 ? '#d97706' : '#dc2626'
+                      }}>
+                        Trust {quickValidateResult.trust_score.toFixed(0)}
                       </span>
                     </div>
-                    {quickValidateResult.suggested_dept && (
-                      <span style={{
-                        fontSize: '9px',
-                        fontWeight: '800',
-                        padding: '3px 8px',
-                        borderRadius: '20px',
-                        backgroundColor: '#ffd900',
-                        color: '#000000',
-                        letterSpacing: '0.05em'
-                      }}>
-                        {quickValidateResult.suggested_dept}
-                      </span>
-                    )}
-                  </div>
+                  )}
 
-                  {/* Detected issues chips */}
-                  {Array.isArray(quickValidateResult.raw_detections) && quickValidateResult.raw_detections.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '10px' }}>
-                      {[...new Set(quickValidateResult.raw_detections.map(d => d.label))].slice(0, 4).map((label, i) => (
-                        <span key={i} style={{
-                          fontSize: '10px',
-                          fontWeight: '700',
-                          padding: '3px 9px',
-                          borderRadius: '20px',
-                          backgroundColor: 'rgba(16,185,129,0.12)',
-                          color: '#065f46',
-                          border: '1px solid rgba(16,185,129,0.25)'
-                        }}>
-                          {label}
-                        </span>
+                  {/* Title input */}
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Incident Title (e.g. Broken Water Pipe)"
+                    style={{
+                      backgroundColor: '#f1f5f9', border: 'none',
+                      borderRadius: '14px', padding: '13px 16px',
+                      fontSize: '13px', color: '#0f172a',
+                      outline: 'none', fontWeight: '600', fontFamily: 'Outfit'
+                    }}
+                  />
+
+                  {/* Description textarea */}
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Description (where, what happened)..."
+                    rows={2}
+                    style={{
+                      backgroundColor: '#f1f5f9', border: 'none',
+                      borderRadius: '14px', padding: '13px 16px',
+                      fontSize: '12px', color: '#0f172a',
+                      outline: 'none', resize: 'none',
+                      fontFamily: 'Outfit', fontWeight: '500'
+                    }}
+                  />
+
+                  {/* Category pill selector */}
+                  <div>
+                    <span style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Category</span>
+                    <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap' }}>
+                      {['Infrastructure', 'Violence/Loitering', 'Theft/Property', 'Traffic Warning', 'Emergency Alert'].map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => setCategory(cat)}
+                          style={{
+                            padding: '7px 13px', borderRadius: '20px',
+                            border: category === cat ? '2px solid #ffd900' : '1.5px solid #e2e8f0',
+                            background: category === cat ? '#ffd900' : '#f8fafc',
+                            color: category === cat ? '#000' : '#475569',
+                            fontSize: '11px', fontWeight: category === cat ? '800' : '600',
+                            cursor: 'pointer', fontFamily: 'Outfit',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {cat.split('/')[0]}
+                        </button>
                       ))}
                     </div>
-                  )}
+                  </div>
 
-                  {/* Trust score bar */}
-                  {typeof quickValidateResult.trust_score === 'number' && (
-                    <div style={{ marginBottom: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: '700', marginBottom: '4px', opacity: 0.8 }}>
-                        <span>Trust Score</span>
-                        <span style={{
-                          color: quickValidateResult.trust_score >= 70 ? '#059669'
-                            : quickValidateResult.trust_score >= 40 ? '#d97706' : '#dc2626',
-                          fontWeight: '800'
-                        }}>
-                          {quickValidateResult.trust_score.toFixed(0)}/100
-                        </span>
+                  {/* Trim sliders */}
+                  <div style={{ background: '#f8fafc', borderRadius: '16px', padding: '12px 14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: '800', color: '#475569', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      <span>✂️ Clip Window</span>
+                      <span style={{ color: '#ffd900', fontWeight: '900' }}>{(trimEnd - trimStart).toFixed(1)}s / 15s max</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '10px', color: '#94a3b8', width: '44px', fontWeight: '700' }}>Start {trimStart.toFixed(1)}s</span>
+                        <input type="range" min="0" max={videoDuration || 15} step="0.1" value={trimStart}
+                          onChange={(e) => handleStartTrimChange(e.target.value)}
+                          style={{ flex: 1, accentColor: '#ffd900', cursor: 'pointer' }}
+                        />
                       </div>
-                      <div style={{ height: '6px', borderRadius: '3px', backgroundColor: 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%',
-                          width: `${Math.min(100, quickValidateResult.trust_score)}%`,
-                          borderRadius: '3px',
-                          backgroundColor: quickValidateResult.trust_score >= 70 ? '#10b981'
-                            : quickValidateResult.trust_score >= 40 ? '#f59e0b' : '#ef4444',
-                          transition: 'width 0.5s ease'
-                        }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '10px', color: '#94a3b8', width: '44px', fontWeight: '700' }}>End {trimEnd.toFixed(1)}s</span>
+                        <input type="range" min="0" max={videoDuration || 15} step="0.1" value={trimEnd}
+                          onChange={(e) => handleEndTrimChange(e.target.value)}
+                          style={{ flex: 1, accentColor: '#ffd900', cursor: 'pointer' }}
+                        />
                       </div>
                     </div>
-                  )}
-
-                  <div style={{ fontSize: '9px', opacity: 0.55, marginTop: '4px', fontStyle: 'italic' }}>
-                    Quick pre-scan · Full 6-pipeline analysis runs on upload
                   </div>
-                </div>
-              )}
 
-              {!isValidating && !quickValidateResult && (
-                <div style={{
-                  padding: '10px 14px',
-                  borderRadius: '14px',
-                  backgroundColor: '#f8fafc',
-                  border: '1px dashed #cbd5e1',
-                  color: '#94a3b8',
-                  fontSize: '10px',
-                  fontWeight: '600',
-                  fontFamily: 'Outfit',
-                  textAlign: 'center'
-                }}>
-                  AI pre-scan will run after recording stops
-                </div>
-              )}
-            </div>
+                  {/* Emergency toggle row */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    background: emergencyOverride ? 'rgba(255,59,48,0.06)' : '#f8fafc',
+                    border: `1.5px solid ${emergencyOverride ? 'rgba(255,59,48,0.3)' : '#e2e8f0'}`,
+                    borderRadius: '14px', padding: '12px 16px'
+                  }}>
+                    <div>
+                      <span style={{ fontSize: '12px', fontWeight: '800', color: emergencyOverride ? '#dc2626' : '#374151', fontFamily: 'Outfit', display: 'block' }}>🚨 Direct Dispatch</span>
+                      <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '500' }}>Bypass AI queue — emergency only</span>
+                    </div>
+                    {/* iOS toggle */}
+                    <div
+                      onClick={() => setEmergencyOverride(p => !p)}
+                      style={{
+                        width: '44px', height: '26px', borderRadius: '13px',
+                        background: emergencyOverride ? '#ef4444' : '#e2e8f0',
+                        position: 'relative', cursor: 'pointer',
+                        transition: 'background 0.25s ease', flexShrink: 0
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute', top: '3px',
+                        left: emergencyOverride ? '21px' : '3px',
+                        width: '20px', height: '20px', borderRadius: '50%',
+                        background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+                        transition: 'left 0.25s cubic-bezier(0.16,1,0.3,1)'
+                      }} />
+                    </div>
+                  </div>
 
-            {/* Trimming slider panel */}
-            <div style={{
-              backgroundColor: '#f8f8f8',
-              border: '1px solid #e5e5e5',
-              borderRadius: '16px',
-              padding: '12px',
-              marginBottom: '12px'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: '750', marginBottom: '8px', color: '#333' }}>
-                <span>✂️ SELECT 15s UPLOAD OFFSET</span>
-                <span style={{ color: '#007aff' }}>
-                  Window: {(trimEnd - trimStart).toFixed(1)}s (Max: 15s)
-                </span>
-              </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '10px', color: '#666', width: '50px' }}>Start: {trimStart.toFixed(1)}s</span>
-                  <input 
-                    type="range"
-                    min="0"
-                    max={videoDuration || 15}
-                    step="0.1"
-                    value={trimStart}
-                    onChange={(e) => handleStartTrimChange(e.target.value)}
-                    style={{ flex: 1, accentColor: '#ffd900' }}
-                  />
-                </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '10px', color: '#666', width: '50px' }}>End: {trimEnd.toFixed(1)}s</span>
-                  <input 
-                    type="range"
-                    min="0"
-                    max={videoDuration || 15}
-                    step="0.1"
-                    value={trimEnd}
-                    onChange={(e) => handleEndTrimChange(e.target.value)}
-                    style={{ flex: 1, accentColor: '#ffd900' }}
-                  />
-                </div>
-              </div>
-              <p style={{ margin: '6px 0 0 0', fontSize: '9px', color: '#888', textAlign: 'center' }}>
-                * Note: Full {videoDuration.toFixed(1)}s raw file has been auto-saved to your local downloads folder.
-              </p>
-            </div>
+                  {/* Save copy toggle */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    background: '#f8fafc', border: '1.5px solid #e2e8f0',
+                    borderRadius: '14px', padding: '12px 16px'
+                  }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#374151', fontFamily: 'Outfit' }}>📥 Save raw copy to device</span>
+                    <div
+                      onClick={() => setSaveLocalCopy(p => !p)}
+                      style={{
+                        width: '44px', height: '26px', borderRadius: '13px',
+                        background: saveLocalCopy ? '#ffd900' : '#e2e8f0',
+                        position: 'relative', cursor: 'pointer',
+                        transition: 'background 0.25s ease', flexShrink: 0
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute', top: '3px',
+                        left: saveLocalCopy ? '21px' : '3px',
+                        width: '20px', height: '20px', borderRadius: '50%',
+                        background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+                        transition: 'left 0.25s cubic-bezier(0.16,1,0.3,1)'
+                      }} />
+                    </div>
+                  </div>
 
-            {/* Incident metadata inputs */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
-              <input 
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Incident Title (e.g. Broken Water Pipe)"
-                style={{
-                  backgroundColor: '#f2f2f2',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: '12px',
-                  padding: '10px 14px',
-                  fontSize: '12px',
-                  color: '#000000',
-                  outline: 'none',
-                  fontWeight: '600'
-                }}
-              />
-              
-              <textarea 
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Description details (where, who, what happened)..."
-                rows={2}
-                style={{
-                  backgroundColor: '#f2f2f2',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: '12px',
-                  padding: '10px 14px',
-                  fontSize: '12px',
-                  color: '#000000',
-                  outline: 'none',
-                  fontFamily: 'sans-serif',
-                  resize: 'none',
-                  fontWeight: '500'
-                }}
-              />
+                  {/* Submit button */}
+                  <button
+                    onClick={handleUpload}
+                    disabled={uploading}
+                    style={{
+                      width: '100%', padding: '15px',
+                      borderRadius: '18px', border: 'none',
+                      background: uploading ? '#e2e8f0' : (emergencyOverride ? '#ef4444' : '#ffd900'),
+                      color: uploading ? '#94a3b8' : '#000',
+                      fontSize: '14px', fontWeight: '900',
+                      cursor: uploading ? 'not-allowed' : 'pointer',
+                      fontFamily: 'Outfit',
+                      boxShadow: uploading ? 'none' : `0 6px 20px ${emergencyOverride ? 'rgba(239,68,68,0.3)' : 'rgba(255,217,0,0.4)'}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {uploading ? (
+                      <><div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid #94a3b8', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} /> Analyzing...</>
+                    ) : (
+                      <><Upload size={16} /> {emergencyOverride ? '🚨 Emergency Dispatch' : 'Upload & Analyze'}</>
+                    )}
+                  </button>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  style={{
-                    flex: 1,
-                    backgroundColor: '#f2f2f2',
-                    border: '1px solid #e5e5e5',
-                    borderRadius: '12px',
-                    padding: '10px 12px',
-                    fontSize: '12px',
-                    color: '#000000',
-                    outline: 'none',
-                    fontWeight: '600'
-                  }}
-                >
-                  <option value="Violence/Loitering">Violence / Loitering</option>
-                  <option value="Infrastructure">Infrastructure Hazard</option>
-                  <option value="Theft/Property">Theft / Property Crime</option>
-                  <option value="Traffic Warning">Traffic Violation</option>
-                  <option value="Emergency Alert">Emergency Alert</option>
-                </select>
-
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: '12px',
-                  padding: '4px 10px',
-                  backgroundColor: '#fdfdfd'
-                }}>
-                  <span style={{ fontSize: '10px', color: '#ff3b30', fontWeight: '800' }}>Direct Dispatch:</span>
-                  <input 
-                    type="checkbox"
-                    checked={emergencyOverride}
-                    onChange={(e) => setEmergencyOverride(e.target.checked)}
-                    style={{ accentColor: '#ff3b30', width: '16px', height: '16px' }}
-                  />
                 </div>
               </div>
-
-              {/* Save Full Copy Checkbox */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                border: '1px solid #e5e5e5',
-                borderRadius: '12px',
-                padding: '10px 14px',
-                backgroundColor: '#fdfdfd',
-                marginTop: '2px'
-              }}>
-                <span style={{ fontSize: '11px', color: '#333333', fontWeight: '750', fontFamily: 'Outfit' }}>
-                  📥 Save full recording to device downloads
-                </span>
-                <input 
-                  type="checkbox"
-                  checked={saveLocalCopy}
-                  onChange={(e) => setSaveLocalCopy(e.target.checked)}
-                  style={{ accentColor: '#ffd900', width: '18px', height: '18px', cursor: 'pointer' }}
-                />
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            <div style={{ display: 'flex', gap: '10px', marginTop: 'auto', paddingBottom: '10px' }}>
-              <button
-                onClick={handleRetake}
-                disabled={uploading}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  borderRadius: '12px',
-                  border: '1px solid #e5e5e5',
-                  backgroundColor: '#f2f2f2',
-                  color: '#000000',
-                  fontWeight: '700',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '4px'
-                }}
-              >
-                Retake
-              </button>
-              
-              <button
-                onClick={handleUpload}
-                disabled={uploading}
-                style={{
-                  flex: 2,
-                  padding: '10px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  backgroundColor: emergencyOverride ? '#ff3b30' : '#ffd900',
-                  color: '#000000',
-                  fontWeight: '800',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  boxShadow: `0 4px 12px ${emergencyOverride ? 'rgba(255, 59, 48, 0.2)' : 'rgba(255, 217, 0, 0.25)'}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '4px'
-                }}
-              >
-                {uploading ? '🤖 Analyzing...' : 'Upload & Analyze'}
-              </button>
-            </div>
-
+            )}
           </div>
         ) : (
           /* ================== ACTIVE CAPTURE VIEWFINDER STATE ================== */
@@ -985,9 +909,6 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                 />
               )}
             </div>
-
-
-
           </div>
         )}
       </div>

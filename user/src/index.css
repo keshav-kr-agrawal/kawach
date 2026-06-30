@@ -389,5 +389,37 @@ body.in-app #root {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
 }
 
+/* Bottom Sheet Slide-Up Animation */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Bottom Sheet Camera Upload Drawer */
+.camera-bottom-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-radius: 28px 28px 0 0;
+  max-height: 75dvh;
+  overflow-y: auto;
+  background: #ffffff;
+  scrollbar-width: none;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.2);
+}
+
+.camera-bottom-sheet::-webkit-scrollbar {
+  display: none;
+}
+
+
 
 

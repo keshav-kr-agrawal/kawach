@@ -46,7 +46,7 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
     { id: 'act-3', event: 'Scam caller log reported: +91-9122340590', date: '1 week ago', result: 'Frozen in RBI Registry' }
   ];
 
-  if (!isReady || !userReports) {
+  if (!isReady) {
     return (
       <div className="p-6 flex flex-col gap-6 animate-pulse select-none">
         <div className="h-28 bg-slate-200 rounded-3xl" />
@@ -57,7 +57,7 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
   }
 
   return (
-    <div className="subview-container select-text relative">
+    <div className="relative w-full h-full overflow-y-auto pb-24 select-text bg-slate-50" style={{ scrollbarWidth: 'none' }}>
       <div className="absolute top-0 inset-x-0 h-48 bg-gradient-to-b from-yellow-500/5 to-transparent pointer-events-none z-0" />
       
       {/* Header (Hidden because of layout level TopBar) */}

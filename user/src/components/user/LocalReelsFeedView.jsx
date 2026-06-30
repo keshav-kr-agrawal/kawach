@@ -181,15 +181,14 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
         </>
       )}
 
-      {/* Interactive Actions Overlay */}
+      {/* Action Buttons — bottom-right anchored, TikTok style */}
       <div style={{
         position: 'absolute',
-        right: '20px',
-        top: '50%',
-        transform: 'translateY(-50%)',
+        right: '12px',
+        bottom: 'calc(88px + env(safe-area-inset-bottom))',
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px',
+        gap: '16px',
         zIndex: 10,
         alignItems: 'center'
       }}>
@@ -198,8 +197,9 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           <button 
             onClick={(e) => { e.stopPropagation(); toggleUpvote(reel.id); }}
             style={{
-              background: upvotedList[reel.id] ? '#ffd900' : 'rgba(0,0,0,0.5)',
-              border: '1px solid rgba(255,255,255,0.15)',
+              background: upvotedList[reel.id] ? '#ffd900' : 'rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.2)',
               borderRadius: '50%',
               width: '44px',
               height: '44px',
@@ -213,7 +213,7 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           >
             <ArrowUp size={18} strokeWidth={2.5} />
           </button>
-          <span style={{ fontSize: '10px', color: '#ffffff', marginTop: '4px', fontWeight: '700' }}>
+          <span style={{ fontSize: '10px', color: '#ffffff', marginTop: '4px', fontWeight: '700', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
             {reel.upvotes}
           </span>
         </div>
@@ -223,8 +223,9 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           <button 
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: 'rgba(0,0,0,0.5)',
-              border: '1px solid rgba(255,255,255,0.15)',
+              background: 'rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.2)',
               borderRadius: '50%',
               width: '44px',
               height: '44px',
@@ -237,7 +238,7 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           >
             <Share2 size={18} />
           </button>
-          <span style={{ fontSize: '10px', color: '#ffffff', marginTop: '4px', fontWeight: '600' }}>{reel.shares}</span>
+          <span style={{ fontSize: '10px', color: '#ffffff', marginTop: '4px', fontWeight: '600', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{reel.shares}</span>
         </div>
 
         {/* Mute Button */}
@@ -245,8 +246,9 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           <button 
             onClick={(e) => { e.stopPropagation(); toggleMute(); }}
             style={{
-              background: isMuted ? 'rgba(255, 59, 48, 0.15)' : 'rgba(0,0,0,0.5)',
-              border: isMuted ? '1px solid rgba(255, 59, 48, 0.4)' : '1px solid rgba(255,255,255,0.15)',
+              background: isMuted ? 'rgba(255, 59, 48, 0.3)' : 'rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(8px)',
+              border: isMuted ? '1px solid rgba(255, 59, 48, 0.5)' : '1px solid rgba(255,255,255,0.2)',
               borderRadius: '50%',
               width: '44px',
               height: '44px',
@@ -259,7 +261,7 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           >
             {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
-          <span style={{ fontSize: '8px', color: isMuted ? '#ff3b30' : '#ffffff', marginTop: '4px', fontWeight: '750' }}>
+          <span style={{ fontSize: '8px', color: isMuted ? '#ff3b30' : '#ffffff', marginTop: '4px', fontWeight: '750', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
             {isMuted ? "Muted" : "Sound"}
           </span>
         </div>
@@ -269,7 +271,8 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           <button 
             onClick={(e) => { e.stopPropagation(); triggerReportModal(reel); }}
             style={{
-              background: 'rgba(255, 59, 48, 0.15)',
+              background: 'rgba(255, 59, 48, 0.25)',
+              backdropFilter: 'blur(8px)',
               border: '1px solid rgba(255, 59, 48, 0.4)',
               borderRadius: '50%',
               width: '44px',
@@ -283,157 +286,102 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           >
             <AlertOctagon size={18} />
           </button>
-          <span style={{ fontSize: '8px', color: '#ff3b30', marginTop: '4px', fontWeight: '700' }}>Flag Fake</span>
+          <span style={{ fontSize: '8px', color: '#ff6b6b', marginTop: '4px', fontWeight: '700', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>Flag Fake</span>
         </div>
       </div>
 
-      {/* Details Overlay Sheet at Bottom */}
+      {/* Bottom-left gradient overlay — content info */}
       <div style={{
         position: 'absolute',
-        bottom: 'calc(70px + env(safe-area-inset-bottom))',
+        bottom: 0,
         left: 0,
-        right: '76px',
-        padding: '20px 20px 24px',
-        background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%)',
+        right: '64px',
+        padding: '0 16px calc(80px + env(safe-area-inset-bottom)) 16px',
+        background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)',
         zIndex: 5,
         color: '#ffffff',
         pointerEvents: 'none'
       }}>
+        {/* AI checking compact pill */}
         {isReelChecking && (
           <div style={{
-            backgroundColor: 'rgba(255, 217, 0, 0.95)',
-            color: '#000000',
-            padding: '4px 10px',
-            borderRadius: '8px',
-            fontSize: '10px',
-            fontWeight: '800',
-            width: 'fit-content',
-            marginBottom: '6px',
             display: 'inline-flex',
-            alignItems: 'center'
+            alignItems: 'center',
+            gap: '4px',
+            backgroundColor: 'rgba(255,217,0,0.15)',
+            backdropFilter: 'blur(6px)',
+            border: '1px solid rgba(255,217,0,0.3)',
+            color: '#ffd900',
+            padding: '3px 8px',
+            borderRadius: '20px',
+            fontSize: '9px',
+            fontWeight: '800',
+            marginBottom: '6px',
           }}>
-            🤖 AI SAFETY VERIFICATION ACTIVE
+            🤖 AI Scanning
           </div>
         )}
+
+        {/* Compact dept + priority pills row */}
         {reel.routedDepartment && (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '5px',
-            marginBottom: '8px',
-            backgroundColor: 'rgba(0, 0, 0, 0.70)',
-            backdropFilter: 'blur(6px)',
-            padding: '10px 12px',
-            borderRadius: '12px',
-            borderLeft: `4px solid ${getPriorityColor(reel.routingPriority)}`,
-            pointerEvents: 'auto',
-            maxWidth: '290px'
-          }}>
-            {/* Dept + priority row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '12px' }}>{getDepartmentEmoji(reel.routedDepartment)}</span>
-              <span style={{ fontSize: '11px', fontWeight: '850', color: '#ffd900', fontFamily: 'Outfit' }}>
-                {reel.routedDepartment}
-              </span>
-              {reel.subCategory && (
-                <span style={{
-                  fontSize: '8px',
-                  fontWeight: '700',
-                  padding: '2px 6px',
-                  borderRadius: '20px',
-                  backgroundColor: 'rgba(255,217,0,0.18)',
-                  color: '#ffd900',
-                  border: '1px solid rgba(255,217,0,0.35)'
-                }}>
-                  {reel.subCategory.replace(/_/g, ' ')}
-                </span>
-              )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', marginBottom: '6px', pointerEvents: 'auto' }}>
+            <span style={{
+              fontSize: '10px',
+              fontWeight: '800',
+              color: '#ffd900',
+              fontFamily: 'Outfit',
+              textShadow: '0 1px 4px rgba(0,0,0,0.8)'
+            }}>
+              {getDepartmentEmoji(reel.routedDepartment)} {reel.routedDepartment}
+            </span>
+            {reel.subCategory && (
               <span style={{
                 fontSize: '8px',
-                fontWeight: '900',
+                fontWeight: '700',
                 padding: '2px 6px',
-                borderRadius: '6px',
-                backgroundColor: getPriorityColor(reel.routingPriority),
-                color: '#ffffff',
-                marginLeft: 'auto'
+                borderRadius: '20px',
+                backgroundColor: 'rgba(255,217,0,0.15)',
+                backdropFilter: 'blur(6px)',
+                color: '#ffd900',
+                border: '1px solid rgba(255,217,0,0.25)'
               }}>
-                {reel.routingPriority}
-              </span>
-            </div>
-
-            {/* Routing reason */}
-            {reel.routingReason && (
-              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.80)', fontWeight: '500', lineHeight: '1.2' }}>
-                {reel.routingReason}
+                {reel.subCategory.replace(/_/g, ' ')}
               </span>
             )}
-
-            {/* Detected scene issues chips */}
-            {Array.isArray(reel.detectedIssues) && reel.detectedIssues.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                {reel.detectedIssues.slice(0, 3).map((issue, i) => (
-                  <span key={i} style={{
-                    fontSize: '8px',
-                    fontWeight: '700',
-                    padding: '2px 7px',
-                    borderRadius: '20px',
-                    backgroundColor: 'rgba(16,185,129,0.20)',
-                    color: '#6ee7b7',
-                    border: '1px solid rgba(16,185,129,0.35)'
-                  }}>
-                    {issue}
-                  </span>
-                ))}
-              </div>
+            <span style={{
+              fontSize: '8px',
+              fontWeight: '900',
+              padding: '2px 6px',
+              borderRadius: '6px',
+              backgroundColor: getPriorityColor(reel.routingPriority),
+              color: '#ffffff',
+            }}>
+              {reel.routingPriority}
+            </span>
+            {typeof reel.trustScore === 'number' && reel.trustScore > 0 && (
+              <span style={{
+                fontSize: '8px',
+                fontWeight: '700',
+                padding: '2px 6px',
+                borderRadius: '20px',
+                backgroundColor: 'rgba(0,0,0,0.3)',
+                backdropFilter: 'blur(6px)',
+                color: reel.trustScore >= 70 ? '#6ee7b7' : reel.trustScore >= 40 ? '#fbbf24' : '#f87171',
+              }}>
+                Trust {reel.trustScore.toFixed(0)}
+              </span>
             )}
-
-            {/* Trust score bar + ETA row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {typeof reel.trustScore === 'number' && reel.trustScore > 0 && (
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: 'rgba(255,255,255,0.6)', marginBottom: '2px' }}>
-                    <span>Trust</span>
-                    <span style={{
-                      color: reel.trustScore >= 70 ? '#6ee7b7' : reel.trustScore >= 40 ? '#fbbf24' : '#f87171',
-                      fontWeight: '800'
-                    }}>
-                      {reel.trustScore.toFixed(0)}
-                    </span>
-                  </div>
-                  <div style={{ height: '4px', borderRadius: '2px', backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${Math.min(100, reel.trustScore)}%`,
-                      borderRadius: '2px',
-                      backgroundColor: reel.trustScore >= 70 ? '#10b981' : reel.trustScore >= 40 ? '#f59e0b' : '#ef4444'
-                    }} />
-                  </div>
-                </div>
-              )}
-              {reel.estimatedResolutionDays && (
-                <span style={{
-                  fontSize: '8px',
-                  fontWeight: '800',
-                  padding: '2px 7px',
-                  borderRadius: '20px',
-                  backgroundColor: 'rgba(255,255,255,0.10)',
-                  color: 'rgba(255,255,255,0.75)',
-                  whiteSpace: 'nowrap'
-                }}>
-                  ~{reel.estimatedResolutionDays}d ETA
-                </span>
-              )}
-            </div>
           </div>
         )}
-        <h2 style={{ fontSize: '14px', margin: '0 0 4px 0', fontFamily: 'Outfit', fontWeight: '800' }}>
+
+        <h2 style={{ fontSize: '13px', margin: '0 0 3px 0', fontFamily: 'Outfit', fontWeight: '800', lineHeight: 1.3, textShadow: '0 1px 4px rgba(0,0,0,0.6)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {reel.title}
         </h2>
-        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', margin: '0 0 10px 0', lineHeight: 1.4, fontWeight: '500' }}>
+        <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.80)', margin: '0 0 6px 0', lineHeight: 1.3, fontWeight: '500', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
           {reel.description}
         </p>
-        <div style={{ display: 'flex', gap: '10px', fontSize: '9px', color: 'rgba(255,255,255,0.5)', fontWeight: '500' }}>
-          <span>👤 Ghost ID: {reel.uploaderUuid.substring(0, 8)}...</span>
+        <div style={{ display: 'flex', gap: '8px', fontSize: '9px', color: 'rgba(255,255,255,0.5)', fontWeight: '500' }}>
+          <span>👤 {reel.uploaderUuid.substring(0, 8)}...</span>
           <span>•</span>
           <span>⏱️ {reel.timestamp}</span>
         </div>
@@ -558,95 +506,117 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
         />
       ))}
 
-      {/* Report Modal */}
+      {/* Flag Report — Bottom Sheet (not full-screen takeover) */}
       {reportModal && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: '#ffffff',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '24px',
-          color: '#000000',
-          animation: 'fadeIn 0.2s ease-out'
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 9999,
+          }}
+          onClick={() => setReportModal(null)}
+        >
+          {/* Dim overlay */}
           <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255, 59, 48, 0.1)',
-            border: '2px solid #ff3b30',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#ff3b30',
-            marginBottom: '20px'
-          }}>
-            <AlertOctagon size={32} />
-          </div>
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(2px)',
+          }} />
+          {/* Sheet */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              borderRadius: '24px 24px 0 0',
+              backgroundColor: '#ffffff',
+              padding: `24px 24px calc(24px + env(safe-area-inset-bottom))`,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '16px',
+              animation: 'slideUp 0.25s ease-out',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drag handle */}
+            <div style={{ width: '36px', height: '4px', borderRadius: '2px', backgroundColor: '#e2e8f0', marginBottom: '4px' }} />
 
-          <h3 style={{ fontSize: '18px', margin: '0 0 8px 0', fontFamily: 'Outfit', fontWeight: '850' }}>
-            Flag Safety Video
-          </h3>
-          <p style={{
-            fontSize: '12px',
-            color: '#666666',
-            textAlign: 'center',
-            maxWidth: '240px',
-            lineHeight: 1.5,
-            margin: '0 0 20px 0',
-            fontWeight: '500'
-          }}>
-            Flagging this video initiates an automated forensic verification trace. The upload status will transition into secondary rigorous verification models.
-          </p>
-
-          {reportStatusMessage ? (
-            <span style={{ fontSize: '12px', color: '#ff3b30', fontWeight: '700', textAlign: 'center', maxWidth: '240px' }}>
-              {reportStatusMessage}
-            </span>
-          ) : (
-            <div style={{ display: 'flex', gap: '12px', width: '100%', maxWidth: '240px' }}>
-              <button
-                onClick={() => setReportModal(null)}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  borderRadius: '12px',
-                  border: '1px solid #e5e5e5',
-                  backgroundColor: '#f2f2f2',
-                  color: '#000000',
-                  cursor: 'pointer',
-                  fontWeight: '700',
-                  fontSize: '12px'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={submitReport}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  backgroundColor: '#ff3b30',
-                  color: '#ffffff',
-                  cursor: 'pointer',
-                  fontWeight: '700',
-                  fontSize: '12px',
-                  boxShadow: '0 4px 10px rgba(255, 59, 48, 0.2)'
-                }}
-              >
-                Flag Video
-              </button>
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 59, 48, 0.08)',
+              border: '2px solid rgba(255,59,48,0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ff3b30',
+            }}>
+              <AlertOctagon size={28} />
             </div>
-          )}
+
+            <h3 style={{ fontSize: '17px', margin: 0, fontFamily: 'Outfit', fontWeight: '850', color: '#000' }}>
+              Flag Safety Video
+            </h3>
+            <p style={{
+              fontSize: '12px',
+              color: '#64748b',
+              textAlign: 'center',
+              maxWidth: '280px',
+              lineHeight: 1.5,
+              margin: 0,
+              fontWeight: '500'
+            }}>
+              Flagging initiates an automated forensic verification trace. The upload status will transition into secondary rigorous verification models.
+            </p>
+
+            {reportStatusMessage ? (
+              <span style={{ fontSize: '12px', color: '#ff3b30', fontWeight: '700', textAlign: 'center' }}>
+                {reportStatusMessage}
+              </span>
+            ) : (
+              <div style={{ display: 'flex', gap: '10px', width: '100%', maxWidth: '320px' }}>
+                <button
+                  onClick={() => setReportModal(null)}
+                  style={{
+                    flex: 1,
+                    padding: '13px',
+                    borderRadius: '16px',
+                    border: '1px solid #e2e8f0',
+                    backgroundColor: '#f8fafc',
+                    color: '#374151',
+                    cursor: 'pointer',
+                    fontWeight: '700',
+                    fontSize: '13px',
+                    fontFamily: 'Outfit'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitReport}
+                  style={{
+                    flex: 1,
+                    padding: '13px',
+                    borderRadius: '16px',
+                    border: 'none',
+                    backgroundColor: '#ff3b30',
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    fontWeight: '800',
+                    fontSize: '13px',
+                    fontFamily: 'Outfit',
+                    boxShadow: '0 4px 12px rgba(255, 59, 48, 0.25)'
+                  }}
+                >
+                  Flag Video
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
