@@ -100,8 +100,8 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
 
           {/* Icon Brand */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-12 h-12 bg-yellow-50 border border-yellow-100 rounded-2xl flex items-center justify-center text-yellow-600 mb-4 shadow-2xs">
-              <Shield className="w-6 h-6" />
+            <div className="w-12 h-12 mb-4">
+              <img src="/kawach.png" alt="KAWACH Logo" className="w-full h-full object-contain" />
             </div>
             <h2 className="text-2xl font-black text-slate-900 font-outfit">
               {isSignUp ? 'Create Account' : 'Citizen Access'}
