@@ -12,8 +12,11 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
     setIsReady(true);
   }, []);
 
+  const safeReports = Array.isArray(userReports) ? userReports : [];
+  const safeBookmarkedLaws = Array.isArray(bookmarkedLaws) ? bookmarkedLaws : [];
+
   const localUploaderUuid = localStorage.getItem('kawach_uploader_uuid') || '';
-  const myReports = userReports.filter(r => r.uploaderUuid === localUploaderUuid || r.id.startsWith('c-'));
+  const myReports = safeReports.filter(r => r && (r.uploaderUuid === localUploaderUuid || (r.id && typeof r.id === 'string' && r.id.startsWith('c-'))));
   
   const likedIds = (() => {
     try {
@@ -23,7 +26,7 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
       return [];
     }
   })();
-  const myLikedReports = userReports.filter(r => likedIds.includes(r.id));
+  const myLikedReports = safeReports.filter(r => r && r.id && likedIds.includes(r.id));
 
   // Civic Trust Score metrics calculation
   const approvedReports = myReports.filter(r => r.status === 'PUBLIC_APPROVED').length;
@@ -42,6 +45,16 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
     { id: 'act-2', event: 'Emergency direct dispatch: Fire HSR block 4', date: '3 days ago', result: 'Dispatched instantly' },
     { id: 'act-3', event: 'Scam caller log reported: +91-9122340590', date: '1 week ago', result: 'Frozen in RBI Registry' }
   ];
+
+  if (!isReady || !userReports) {
+    return (
+      <div className="p-6 flex flex-col gap-6 animate-pulse select-none">
+        <div className="h-28 bg-slate-200 rounded-3xl" />
+        <div className="h-32 bg-slate-200 rounded-3xl" />
+        <div className="h-48 bg-slate-200 rounded-2xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="subview-container select-text relative">
@@ -68,7 +81,6 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
         </span>
       </div>
 
-      {isReady ? (
         <div className="p-4 space-y-6 pb-24 relative z-10">
 
         {/* 1. CIVIC TRUST SCORE CIRCULAR RADIAL */}
@@ -381,11 +393,6 @@ export default function UserProfileView({ onBack, bookmarkedLaws = [], userRepor
           )}
         </AnimatePresence>
       </div>
-      ) : (
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="w-6 h-6 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
     </div>
   );
 }

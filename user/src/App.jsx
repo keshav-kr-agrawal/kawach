@@ -108,7 +108,7 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
   const isProfileOrLibrary = location.pathname.includes('/profile') || location.pathname.includes('/library');
 
   return (
-    <div className="glass-panel" style={{
+    <div className="glass-panel flex-none" style={{
       width: '100%',
       padding: '12px 16px',
       borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
@@ -221,23 +221,15 @@ function UserLayout({ userReports }) {
   const isMapTab = location.pathname.startsWith('/user/map');
 
   return (
-    <div style={{
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      position: 'relative',
-      overflow: 'hidden',
-      backgroundColor: '#ffffff'
-    }}>
+    <div className="flex flex-col h-[100dvh] w-full max-w-md mx-auto overflow-hidden relative bg-white">
       {/* Persistent Dynamic Top Bar */}
       <TopBar 
         onOpenProfile={() => navigate('/user/profile')} 
         onOpenLibrary={() => navigate('/user/library')} 
       />
 
-      {/* Subview Scroll Viewport */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', width: '100%' }}>
+      {/* Scrollable Middle Content (Services, Map, Feed) */}
+      <div className="flex-1 overflow-y-auto pb-20 relative w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -245,18 +237,7 @@ function UserLayout({ userReports }) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden'
-            }}
+            className="w-full h-full flex flex-col overflow-hidden"
           >
             <Outlet />
           </motion.div>
@@ -356,10 +337,7 @@ function RequirePoliceAuth({ token, children }) {
 
 function CitizenAppWrapper({ children }) {
   return (
-    <div 
-      className="max-w-md mx-auto w-full relative shadow-2xl overflow-hidden bg-slate-50 flex flex-col justify-between border-x border-slate-200 select-none"
-      style={{ minHeight: '100dvh', height: '100dvh', display: 'flex', flexDirection: 'column' }}
-    >
+    <div className="flex flex-col h-[100dvh] w-full max-w-md mx-auto overflow-hidden relative shadow-2xl bg-slate-50 border-x border-slate-200 select-none">
       {children}
     </div>
   );
@@ -797,23 +775,9 @@ export default function App() {
 
   return (
     <Routes>
-      {/* Landing Gateway Page */}
+      {/* Standalone User Login Screen (Default Root Route) */}
       <Route 
         path="/" 
-        element={
-          <LandingPageView 
-            onEnterCitizen={() => navigate(citizenToken ? '/user/map' : '/user/login')} 
-            onOfficialLogin={(token, user) => {
-              setOfficialToken(token);
-              setOfficialUser(user);
-            }}
-          />
-        } 
-      />
-      
-      {/* Standalone Login Screen */}
-      <Route 
-        path="/user/login" 
         element={
           <CitizenAppWrapper>
             <CitizenLoginView 
@@ -827,9 +791,26 @@ export default function App() {
                   navigate('/user/map');
                 }
               }}
-              onBackToHome={() => navigate('/')}
+              onBackToHome={() => navigate('/portals')}
             />
           </CitizenAppWrapper>
+        } 
+      />
+
+      {/* Redirect old login path to root */}
+      <Route path="/user/login" element={<Navigate to="/" replace />} />
+      
+      {/* Multi-portal Gateway Page (Moved from root) */}
+      <Route 
+        path="/portals" 
+        element={
+          <LandingPageView 
+            onEnterCitizen={() => navigate(citizenToken ? '/user/map' : '/')} 
+            onOfficialLogin={(token, user) => {
+              setOfficialToken(token);
+              setOfficialUser(user);
+            }}
+          />
         } 
       />
 
