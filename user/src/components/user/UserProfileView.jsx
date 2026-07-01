@@ -2,7 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, EyeOff, Bookmark, Activity, ArrowLeft, Award, Trash2, CheckCircle2, X, Heart, Play, MapPin, Radio, ShieldAlert } from 'lucide-react';
 
-export default function UserProfileView({ onBack, bookmarkedLaws = [], userReports = [], onRemoveBookmark, onDeleteReport, onResolveReport, onSignOut }) {
+function Spinner() {
+  return (
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+  );
+}
+
+export default function UserProfileView({ 
+  onBack, 
+  bookmarkedLaws = [], 
+  userReports = [], 
+  onRemoveBookmark, 
+  onDeleteReport, 
+  onResolveReport, 
+  onSignOut,
+  isLoading,
+  user
+}) {
+  // Strict loading check matching the system directive
+  if (isLoading || !user) {
+    return (
+      <div className="flex h-[100dvh] items-center justify-center bg-black">
+        <Spinner />
+      </div>
+    );
+  }
+
   const [ghostMode, setGhostMode] = useState(true);
   const [isReady, setIsReady] = useState(false);
   const [activeTab, setActiveTab] = useState('posted'); // 'posted' or 'liked'

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation, Navigate, Outlet, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { User, BookOpen, ArrowLeft, Shield } from 'lucide-react';
 import { supabase } from './supabaseClient';
@@ -122,8 +122,8 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {!isProfileOrLibrary ? (
-          <button 
-            onClick={onOpenProfile}
+          <Link 
+            to="/user/profile"
             style={{
               width: '32px',
               height: '32px',
@@ -134,12 +134,13 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+              textDecoration: 'none'
             }}
             title="Open User Profile"
           >
             <User size={15} color="#000000" strokeWidth={2.5} />
-          </button>
+          </Link>
         ) : (
           <button 
             onClick={() => navigate(-1)}
@@ -221,7 +222,7 @@ function UserLayout({ userReports }) {
   const isMapTab = location.pathname.startsWith('/user/map');
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full max-w-md mx-auto overflow-hidden relative bg-white">
+    <div className="flex flex-col h-[100dvh] w-full max-w-md mx-auto overflow-hidden relative bg-black">
       {/* Persistent Dynamic Top Bar */}
       <TopBar 
         onOpenProfile={() => navigate('/user/profile')} 
@@ -368,7 +369,7 @@ class ProfileErrorBoundary extends React.Component {
 
 function CitizenAppWrapper({ children }) {
   return (
-    <div className="flex flex-col h-[100dvh] w-full max-w-md mx-auto overflow-hidden relative shadow-2xl bg-slate-50 border-x border-slate-200 select-none">
+    <div className="flex flex-col h-[100dvh] w-full max-w-md mx-auto overflow-hidden relative bg-black">
       {children}
     </div>
   );
@@ -381,6 +382,7 @@ export default function App() {
   const [userReports, setUserReports] = useState([]);
   const [citizenToken, setCitizenToken] = useState('');
   const [isLoadingSession, setIsLoadingSession] = useState(true);
+  const [citizenUser, setCitizenUser] = useState(null);
   const [officialToken, setOfficialToken] = useState(() => {
     try {
       return localStorage.getItem('token') || '';
@@ -433,6 +435,7 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setCitizenToken(session.access_token);
+        setCitizenUser(session.user);
       }
       setIsLoadingSession(false);
     }).catch(() => {
@@ -442,8 +445,10 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setCitizenToken(session.access_token);
+        setCitizenUser(session.user);
       } else {
         setCitizenToken('');
+        setCitizenUser(null);
       }
       setIsLoadingSession(false);
     });
@@ -911,6 +916,8 @@ export default function App() {
                   setCitizenToken('');
                   navigate('/');
                 }}
+                isLoading={isLoadingSession}
+                user={citizenUser}
               />
             </ProfileErrorBoundary>
           } 

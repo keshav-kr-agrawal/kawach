@@ -71,18 +71,7 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
   return (
     <div 
       ref={cardRef} 
-      style={{
-        width: '100%',
-        height: '100%',
-        scrollSnapAlign: 'start',
-        scrollSnapStop: 'always',
-        position: 'relative',
-        backgroundColor: '#000000',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0
-      }}
+      className="relative w-full h-[100dvh] snap-center bg-black flex items-center justify-center flex-shrink-0"
     >
       {/* Real captured video player OR mock animation */}
       {reel.videoUrl ? (
@@ -105,7 +94,7 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
                 setReelsPlayProgress(Math.min(100, Math.max(0, progress)));
               }
             }}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', zIndex: 2 }}
+            className="absolute inset-0 w-full h-full object-cover"
           />
           {/* Snapchat-style Story Progress Bar */}
           <div style={{
@@ -181,34 +170,22 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
         </>
       )}
 
-      {/* Action Buttons — bottom-right anchored, TikTok style */}
-      <div style={{
-        position: 'absolute',
-        right: '12px',
-        bottom: 'calc(88px + env(safe-area-inset-bottom))',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        zIndex: 10,
-        alignItems: 'center'
-      }}>
+      {/* UI Overlay (Bottom Right - Actions) */}
+      <div className="absolute bottom-24 right-4 flex flex-col items-center gap-6 z-10">
         {/* Upvote button */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <button 
             onClick={(e) => { e.stopPropagation(); toggleUpvote(reel.id); }}
             style={{
-              background: upvotedList[reel.id] ? '#ffd900' : 'rgba(0,0,0,0.4)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: '50%',
+              background: 'transparent',
+              border: 'none',
               width: '44px',
               height: '44px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: upvotedList[reel.id] ? '#000000' : '#ffffff',
-              cursor: 'pointer',
-              boxShadow: upvotedList[reel.id] ? '0 0 12px rgba(234,179,8,0.4)' : 'none'
+              color: upvotedList[reel.id] ? '#ffd900' : '#ffffff',
+              cursor: 'pointer'
             }}
           >
             <ArrowUp size={18} strokeWidth={2.5} />
@@ -223,10 +200,8 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           <button 
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: 'rgba(0,0,0,0.4)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: '50%',
+              background: 'transparent',
+              border: 'none',
               width: '44px',
               height: '44px',
               display: 'flex',
@@ -246,10 +221,8 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           <button 
             onClick={(e) => { e.stopPropagation(); toggleMute(); }}
             style={{
-              background: isMuted ? 'rgba(255, 59, 48, 0.3)' : 'rgba(0,0,0,0.4)',
-              backdropFilter: 'blur(8px)',
-              border: isMuted ? '1px solid rgba(255, 59, 48, 0.5)' : '1px solid rgba(255,255,255,0.2)',
-              borderRadius: '50%',
+              background: 'transparent',
+              border: 'none',
               width: '44px',
               height: '44px',
               display: 'flex',
@@ -271,10 +244,8 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           <button 
             onClick={(e) => { e.stopPropagation(); triggerReportModal(reel); }}
             style={{
-              background: 'rgba(255, 59, 48, 0.25)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255, 59, 48, 0.4)',
-              borderRadius: '50%',
+              background: 'transparent',
+              border: 'none',
               width: '44px',
               height: '44px',
               display: 'flex',
@@ -290,97 +261,44 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
         </div>
       </div>
 
-      {/* Bottom-left gradient overlay — content info */}
-      <div style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: '64px',
-        padding: '0 16px calc(80px + env(safe-area-inset-bottom)) 16px',
-        background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)',
-        zIndex: 5,
-        color: '#ffffff',
-        pointerEvents: 'none'
-      }}>
+      {/* UI Overlay (Bottom Left - Text/AI Tags) */}
+      <div className="absolute bottom-20 left-4 right-16 flex flex-col gap-2 z-10 text-white pointer-events-none">
         {/* AI checking compact pill */}
         {isReelChecking && (
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            backgroundColor: 'rgba(255,217,0,0.15)',
-            backdropFilter: 'blur(6px)',
-            border: '1px solid rgba(255,217,0,0.3)',
-            color: '#ffd900',
-            padding: '3px 8px',
-            borderRadius: '20px',
-            fontSize: '9px',
-            fontWeight: '800',
-            marginBottom: '6px',
-          }}>
+          <div className="bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-full w-max flex items-center gap-1">
             🤖 AI Scanning
           </div>
         )}
 
         {/* Compact dept + priority pills row */}
         {reel.routedDepartment && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', marginBottom: '6px', pointerEvents: 'auto' }}>
-            <span style={{
-              fontSize: '10px',
-              fontWeight: '800',
-              color: '#ffd900',
-              fontFamily: 'Outfit',
-              textShadow: '0 1px 4px rgba(0,0,0,0.8)'
-            }}>
+          <div className="flex flex-wrap items-center gap-1.5 pointer-events-auto">
+            <span className="bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-full w-max font-bold">
               {getDepartmentEmoji(reel.routedDepartment)} {reel.routedDepartment}
             </span>
             {reel.subCategory && (
-              <span style={{
-                fontSize: '8px',
-                fontWeight: '700',
-                padding: '2px 6px',
-                borderRadius: '20px',
-                backgroundColor: 'rgba(255,217,0,0.15)',
-                backdropFilter: 'blur(6px)',
-                color: '#ffd900',
-                border: '1px solid rgba(255,217,0,0.25)'
-              }}>
+              <span className="bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-full w-max">
                 {reel.subCategory.replace(/_/g, ' ')}
               </span>
             )}
-            <span style={{
-              fontSize: '8px',
-              fontWeight: '900',
-              padding: '2px 6px',
-              borderRadius: '6px',
-              backgroundColor: getPriorityColor(reel.routingPriority),
-              color: '#ffffff',
-            }}>
+            <span className="text-white text-xs px-2 py-1 rounded-full w-max font-black" style={{ backgroundColor: getPriorityColor(reel.routingPriority) }}>
               {reel.routingPriority}
             </span>
             {typeof reel.trustScore === 'number' && reel.trustScore > 0 && (
-              <span style={{
-                fontSize: '8px',
-                fontWeight: '700',
-                padding: '2px 6px',
-                borderRadius: '20px',
-                backgroundColor: 'rgba(0,0,0,0.3)',
-                backdropFilter: 'blur(6px)',
-                color: reel.trustScore >= 70 ? '#6ee7b7' : reel.trustScore >= 40 ? '#fbbf24' : '#f87171',
-              }}>
+              <span className="bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-full w-max">
                 Trust {reel.trustScore.toFixed(0)}
               </span>
             )}
           </div>
         )}
 
-        <h2 style={{ fontSize: '13px', margin: '0 0 3px 0', fontFamily: 'Outfit', fontWeight: '800', lineHeight: 1.3, textShadow: '0 1px 4px rgba(0,0,0,0.6)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <h2 className="text-sm font-bold text-shadow" style={{ margin: 0, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
           {reel.title}
         </h2>
-        <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.80)', margin: '0 0 6px 0', lineHeight: 1.3, fontWeight: '500', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+        <p className="text-xs text-white/90 text-shadow" style={{ margin: 0, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
           {reel.description}
         </p>
-        <div style={{ display: 'flex', gap: '8px', fontSize: '9px', color: 'rgba(255,255,255,0.5)', fontWeight: '500' }}>
+        <div className="flex gap-2 text-[10px] text-white/60 font-semibold">
           <span>👤 {reel.uploaderUuid.substring(0, 8)}...</span>
           <span>•</span>
           <span>⏱️ {reel.timestamp}</span>
@@ -473,24 +391,8 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
   }
 
   return (
-    <div 
-      className="view-container" 
-      style={{ 
-        padding: '0', 
-        position: 'relative', 
-        height: '100%', 
-        overflowY: 'scroll', 
-        scrollSnapType: 'y mandatory',
-        backgroundColor: '#000000',
-        scrollbarWidth: 'none'
-      }}
-    >
-      <style>{`
-        /* Hide scrollbars for reels container */
-        .view-container::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
+    <div className="w-full h-full snap-y snap-mandatory overflow-y-scroll scrollbar-hide bg-black">
+
       
       {allReels.map((reel) => (
         <ReelCard 
