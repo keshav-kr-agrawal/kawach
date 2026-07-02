@@ -2,7 +2,7 @@
 
 KAWACH is an enterprise-grade, dual-sided software platform designed to solve physical street crime analytics and digital public safety threats. Engineered for the **Karnataka State Police (KSP) Datathon** and **Economic Times AI Hackathon 2026 (Problem Statement 6)**, the platform consolidates fragmented police registries, emergency feeds, bank fraud records, and telecommunication logs into a single, high-fidelity command console while equipping citizens with a secure reporting PWA.
 
----
+----
 
 ## 🏗️ System Architecture & Decoupled Stack
 
