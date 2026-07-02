@@ -338,9 +338,12 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
             const d = await res.json();
             console.log('[CLOUDINARY] Upload successful:', d.secure_url);
             return d.secure_url;
+          } else {
+            const errText = await res.text();
+            console.error('[CLOUDINARY] Upload failed with status:', res.status, errText);
           }
           return null;
-        })().catch(e => { console.error('[CLOUDINARY]', e); return null; })
+        })().catch(e => { console.error('[CLOUDINARY] Exception:', e); return null; })
       : Promise.resolve(null);
 
     const fullAnalysisPromise = runFullAnalysis(recordedBlob, title.trim(), description.trim(), category)

@@ -78,7 +78,7 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
         <>
           <video
             ref={videoRef}
-            src={reel.trimStart !== undefined && reel.trimEnd !== undefined 
+            src={reel.trimStart !== undefined && reel.trimEnd !== undefined && reel.trimEnd > reel.trimStart
               ? `${reel.videoUrl}#t=${reel.trimStart},${reel.trimEnd}` 
               : reel.videoUrl}
             loop
