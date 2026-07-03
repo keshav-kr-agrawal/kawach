@@ -213,7 +213,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       // Mock un-capped recording stop
       const mockBlob = new Blob(['mock-video-raw-long'], { type: 'video/mp4' });
       setRecordedBlob(mockBlob);
-      const mockUrl = 'https://www.w3schools.com/html/mov_bbb.mp4'; // fallback placeholder video
+      const mockUrl = 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4'; // fallback placeholder video from Cloudinary
       setVideoUrl(mockUrl);
       setTrimStart(0);
       setTrimEnd(Math.min(15, recordTime));

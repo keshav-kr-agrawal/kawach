@@ -522,57 +522,6 @@ export default function App() {
     }
   };
 
-  const SEED_REPORTS = [
-    {
-      id: "seed-1",
-      title: "Water Pipeline Leakage on 80ft Road",
-      description: "Severe water wastage observed from the main pipeline. Immediate repair required.",
-      category: "Infrastructure",
-      uploaderUuid: "sys-seed-01",
-      status: "PUBLIC_APPROVED",
-      lat: 12.9302,
-      lng: 77.6225,
-      videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4",
-      emergencyOverride: false,
-      trimStart: 0,
-      trimEnd: 12,
-      views: 142,
-      upvotes: 48,
-      timestamp: "2 hours ago",
-      routedDepartment: "WATER_BOARD",
-      routingPriority: "HIGH",
-      routingReason: "Main supply pipeline rupture causing local flooding.",
-      trustScore: 94,
-      civicUrgencyScore: 85,
-      sceneDetected: true,
-      detectedIssues: ["water_leakage", "flooded_street"]
-    },
-    {
-      id: "seed-2",
-      title: "Illegal Trash Dumping Near Park Entrance",
-      description: "Large pile of garbage dumped overnight next to the children's park.",
-      category: "Infrastructure",
-      uploaderUuid: "sys-seed-02",
-      status: "PUBLIC_APPROVED",
-      lat: 12.9268,
-      lng: 77.6258,
-      videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-      emergencyOverride: false,
-      trimStart: 0,
-      trimEnd: 10,
-      views: 89,
-      upvotes: 21,
-      timestamp: "5 hours ago",
-      routedDepartment: "SANITATION",
-      routingPriority: "NORMAL",
-      routingReason: "Public space obstruction and sanitation hazard.",
-      trustScore: 88,
-      civicUrgencyScore: 60,
-      sceneDetected: true,
-      detectedIssues: ["waste_accumulation"]
-    }
-  ];
-
   // Fetch all reports from Supabase on load
   useEffect(() => {
     const fetchReports = async () => {
@@ -584,7 +533,7 @@ export default function App() {
 
         if (error) {
           console.warn('[SUPABASE] Table "citizen_reports" might not be created yet. Please run the SQL setup script. Error:', error.message);
-          setUserReports(SEED_REPORTS);
+          setUserReports([]);
           return;
         }
 
@@ -623,14 +572,14 @@ export default function App() {
             temporalConsistency: item.temporal_consistency,
             dominantClass: item.dominant_class
           }));
-          setUserReports([...mappedReports, ...SEED_REPORTS]);
-          console.log('[SUPABASE] Loaded reports successfully:', mappedReports.length, 'records found. Merged with seed data.');
+          setUserReports(mappedReports);
+          console.log('[SUPABASE] Loaded reports successfully:', mappedReports.length, 'records found.');
         } else {
-          setUserReports(SEED_REPORTS);
+          setUserReports([]);
         }
       } catch (err) {
         console.error('[SUPABASE] Exception during load:', err);
-        setUserReports(SEED_REPORTS);
+        setUserReports([]);
       }
     };
 
