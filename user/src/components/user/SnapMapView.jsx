@@ -40,19 +40,6 @@ function MapZoomListener({ onChange }) {
   return null;
 }
 
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) return 9999;
-  const R = 6371; // Radius of earth in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
-
 export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onOpenProfile, onOpenLibrary }) {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(14);
@@ -144,27 +131,23 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
     ...mapPins,
     ...userReports
       .filter(r => r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2')
-      .filter(r => r.videoUrl && !r.videoUrl.includes('w3schools.com') && !r.videoUrl.includes('mixkit.co'))
-      .map(r => {
-        const dist = calculateDistance(gpsCoords ? gpsCoords[0] : 12.9285, gpsCoords ? gpsCoords[1] : 77.6245, r.lat, r.lng);
-        return {
-          id: r.id,
-          title: r.title || 'Citizen Incident Log',
-          description: r.description || 'User recorded safety alert.',
-          lat: r.lat + (Math.sin((r.id || '').charCodeAt(r.id.length - 1) || 1) * 0.00015),
-          lng: r.lng + (Math.cos((r.id || '').charCodeAt(r.id.length - 2) || 1) * 0.00015),
-          uploaderUuid: r.uploaderUuid,
-          timestamp: r.timestamp || 'Just now',
-          distance: dist < 0.05 ? 'Within 50m' : `${dist.toFixed(2)} km`,
-          status: r.status,
-          views: r.views || 0,
-          avatarGradient: 'linear-gradient(135deg, #ffd900 0%, #ff9500 100%)',
-          feedType: r.category || 'General Alert',
-          videoUrl: r.videoUrl,
-          trimStart: r.trimStart,
-          trimEnd: r.trimEnd
-        };
-      })
+      .map(r => ({
+        id: r.id,
+        title: r.title || 'Citizen Incident Log',
+        description: r.description || 'User recorded safety alert.',
+        lat: r.lat + (Math.sin((r.id || '').charCodeAt(r.id.length - 1) || 1) * 0.00015),
+        lng: r.lng + (Math.cos((r.id || '').charCodeAt(r.id.length - 2) || 1) * 0.00015),
+        uploaderUuid: r.uploaderUuid,
+        timestamp: r.timestamp || 'Just now',
+        distance: 'Within 50m',
+        status: r.status,
+        views: r.views || 0,
+        avatarGradient: 'linear-gradient(135deg, #ffd900 0%, #ff9500 100%)',
+        feedType: r.category || 'General Alert',
+        videoUrl: r.videoUrl,
+        trimStart: r.trimStart,
+        trimEnd: r.trimEnd
+      }))
   ];
 
   // STRICT MODERATION FILTER: Stop displaying any videos that are REPORTED_SUSPICIOUS or REJECTED

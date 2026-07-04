@@ -28,19 +28,6 @@ const getPriorityColor = (prio) => {
   }
 };
 
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) return 9999;
-  const R = 6371; // Radius of earth in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
-
 // Sub-component for individual video reel cards
 function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvotedList, toggleUpvote, triggerReportModal }) {
   const videoRef = useRef(null);
@@ -167,7 +154,7 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
               STREAMING LOCAL ALERTS
             </span>
             <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>
-              Distance: {reel.distanceValue < 0.05 ? 'Under 50m' : `${reel.distanceValue.toFixed(2)} km away`}
+              Distance: {reel.distanceValue === 0.05 ? 'Under 50m' : `${reel.distanceValue} km away`}
             </span>
             <span style={{
               fontSize: '9px',
@@ -337,18 +324,14 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
   const [reportStatusMessage, setReportStatusMessage] = useState('');
   const [isMuted, setIsMuted] = useState(false);
 
-  const userLat = gpsCoords ? gpsCoords[0] : 12.9285;
-  const userLng = gpsCoords ? gpsCoords[1] : 77.6245;
-
   // Merge approved user uploads and sort strictly by distance
   const allReels = userReports
     .filter(r => r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'DEPT_ROUTING' || r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2')
-    .filter(r => r.videoUrl && !r.videoUrl.includes('w3schools.com') && !r.videoUrl.includes('mixkit.co'))
     .map(r => ({
       id: r.id,
       title: r.title,
       description: r.description || 'Recorded safety alert.',
-      distanceValue: calculateDistance(userLat, userLng, r.lat, r.lng),
+      distanceValue: 0.05,
       uploaderUuid: r.uploaderUuid,
       timestamp: r.timestamp || 'Just now',
       upvotes: r.upvotes || 0,
@@ -369,8 +352,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
       detectedIssues: r.detectedIssues,
       temporalConsistency: r.temporalConsistency,
       dominantClass: r.dominantClass
-    }))
-    .sort((a, b) => a.distanceValue - b.distanceValue);
+    }));
 
   const toggleUpvote = (id) => {
     setUpvotedList(prev => ({

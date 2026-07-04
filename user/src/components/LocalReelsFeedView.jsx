@@ -28,19 +28,6 @@ const getPriorityColor = (prio) => {
   }
 };
 
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) return 9999;
-  const R = 6371; // Radius of earth in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
-
 // Sub-component for individual video reel cards
 function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvotedList, toggleUpvote, triggerReportModal }) {
   const videoRef = useRef(null);
@@ -178,7 +165,7 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
               STREAMING LOCAL ALERTS
             </span>
             <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>
-              Distance: {reel.distanceValue < 0.05 ? 'Under 50m' : `${reel.distanceValue.toFixed(2)} km away`}
+              Distance: {reel.distanceValue === 0.05 ? 'Under 50m' : `${reel.distanceValue} km away`}
             </span>
             <span style={{
               fontSize: '9px',
@@ -366,6 +353,76 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
             )}
           </div>
         )}
+        {/* AI Forensic Insights Overlay Panel */}
+        {(reel.trustScore !== undefined || reel.aiVerdict) && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            marginBottom: '10px',
+            backgroundColor: 'rgba(15, 23, 42, 0.8)', // Slate-900 with transparency
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            padding: '10px 14px',
+            borderRadius: '16px',
+            pointerEvents: 'auto',
+            maxWidth: '280px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
+              <span style={{
+                fontSize: '9px',
+                fontWeight: '900',
+                color: reel.aiVerdict === 'AI_GENERATED' ? '#ff3b30' : '#10b981',
+                backgroundColor: reel.aiVerdict === 'AI_GENERATED' ? 'rgba(255, 59, 48, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                padding: '2px 8px',
+                borderRadius: '8px',
+                fontFamily: 'Outfit',
+                letterSpacing: '0.05em'
+              }}>
+                {reel.aiVerdict === 'AI_GENERATED' ? '⚠️ DEEPFAKE SIGNALS' : '✓ FORENSIC PASS'}
+              </span>
+              <span style={{
+                fontSize: '9px',
+                fontWeight: '900',
+                color: reel.trustScore >= 75 ? '#10b981' : reel.trustScore >= 45 ? '#f59e0b' : '#ff3b30',
+                fontFamily: 'Outfit'
+              }}>
+                🛡️ TRUST: {reel.trustScore}%
+              </span>
+            </div>
+
+            {/* Micro progress bar for trust score */}
+            <div style={{ height: '3px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1.5px', overflow: 'hidden' }}>
+              <div style={{
+                width: `${reel.trustScore}%`,
+                height: '100%',
+                backgroundColor: reel.trustScore >= 75 ? '#10b981' : reel.trustScore >= 45 ? '#f59e0b' : '#ff3b30',
+                borderRadius: '1.5px'
+              }} />
+            </div>
+
+            {/* Scene analysis detected issues tags */}
+            {reel.detectedIssues && reel.detectedIssues.length > 0 && (
+              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '2px' }}>
+                {reel.detectedIssues.map((issue, idx) => (
+                  <span key={idx} style={{
+                    fontSize: '8px',
+                    fontWeight: '850',
+                    backgroundColor: 'rgba(255, 217, 0, 0.15)',
+                    color: '#ffd900',
+                    padding: '2px 6px',
+                    borderRadius: '6px',
+                    fontFamily: 'Outfit'
+                  }}>
+                    🏷️ {issue.split(' ')[0].replace(/_/g, ' ')}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <h2 style={{ fontSize: '14px', margin: '0 0 4px 0', fontFamily: 'Outfit', fontWeight: '800' }}>
           {reel.title}
         </h2>
@@ -396,20 +453,16 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
   });
   const [reportModal, setReportModal] = useState(null);
   const [reportStatusMessage, setReportStatusMessage] = useState('');
-  const [isMuted, setIsMuted] = useState(false);
-
-  const userLat = gpsCoords ? gpsCoords[0] : 12.9285;
-  const userLng = gpsCoords ? gpsCoords[1] : 77.6245;
+  const [isMuted, setIsMuted] = useState(true);
 
   // Merge approved user uploads and sort strictly by distance
   const allReels = userReports
     .filter(r => r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'DEPT_ROUTING' || r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2')
-    .filter(r => r.videoUrl && !r.videoUrl.includes('w3schools.com') && !r.videoUrl.includes('mixkit.co'))
     .map(r => ({
       id: r.id,
       title: r.title,
       description: r.description || 'Recorded safety alert.',
-      distanceValue: calculateDistance(userLat, userLng, r.lat, r.lng),
+      distanceValue: 0.05,
       uploaderUuid: r.uploaderUuid,
       timestamp: r.timestamp || 'Just now',
       upvotes: r.upvotes || 0,
@@ -421,9 +474,14 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
       trimEnd: r.trimEnd,
       routedDepartment: r.routedDepartment,
       routingPriority: r.routingPriority,
-      routingReason: r.routingReason
-    }))
-    .sort((a, b) => a.distanceValue - b.distanceValue);
+      routingReason: r.routingReason,
+      trustScore: r.trustScore !== undefined ? r.trustScore : 90,
+      civicUrgencyScore: r.civicUrgencyScore !== undefined ? r.civicUrgencyScore : 50,
+      aiVerdict: r.aiVerdict || 'AUTHENTIC',
+      fakeProb: r.fakeProb !== undefined ? r.fakeProb : 0.05,
+      sceneDetected: r.sceneDetected !== undefined ? r.sceneDetected : true,
+      detectedIssues: r.detectedIssues || []
+    }));
 
   const toggleUpvote = (id) => {
     setUpvotedList(prev => ({

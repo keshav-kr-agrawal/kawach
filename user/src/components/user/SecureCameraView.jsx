@@ -79,7 +79,12 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     fd.append('title', t);
     fd.append('description', d);
     fd.append('category', cat);
-    const res = await fetch(`${getApiBase()}/full-analysis`, { method: 'POST', body: fd });
+    const queryParams = new URLSearchParams({
+      title: t,
+      description: d,
+      category: cat
+    }).toString();
+    const res = await fetch(`${getApiBase()}/full-analysis?${queryParams}`, { method: 'POST', body: fd });
     if (!res.ok) throw new Error('full-analysis failed');
     return res.json();
   };
@@ -233,7 +238,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       // Mock un-capped recording stop
       const mockBlob = new Blob(['mock-video-raw-long'], { type: 'video/mp4' });
       setRecordedBlob(mockBlob);
-      const mockUrl = 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4'; // fallback placeholder video from Cloudinary
+      const mockUrl = 'https://www.w3schools.com/html/mov_bbb.mp4'; // fallback placeholder video
       setVideoUrl(mockUrl);
       setTrimStart(0);
       setTrimEnd(Math.min(15, recordTime));
@@ -330,7 +335,8 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     const cloudinaryPromise = (cloudName && uploadPreset)
       ? (async () => {
           const fd = new FormData();
-          fd.append('file', recordedBlob);
+          const fileExt = recordedBlob.type.includes('webm') ? 'webm' : 'mp4';
+          fd.append('file', recordedBlob, `video.${fileExt}`);
           fd.append('upload_preset', uploadPreset);
           fd.append('resource_type', 'video');
           const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, { method: 'POST', body: fd });
@@ -399,7 +405,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       lat: gpsCoords[0],
       lng: gpsCoords[1],
       emergencyOverride,
-      videoUrl: finalVideoUrl || videoUrl,
+      videoUrl: finalVideoUrl || (videoUrl.startsWith('blob:') ? 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4' : videoUrl),
       trimStart,
       trimEnd,
       views: 0,

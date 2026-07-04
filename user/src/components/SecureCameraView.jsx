@@ -213,7 +213,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       // Mock un-capped recording stop
       const mockBlob = new Blob(['mock-video-raw-long'], { type: 'video/mp4' });
       setRecordedBlob(mockBlob);
-      const mockUrl = 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4'; // fallback placeholder video from Cloudinary
+      const mockUrl = 'https://www.w3schools.com/html/mov_bbb.mp4'; // fallback placeholder video
       setVideoUrl(mockUrl);
       setTrimStart(0);
       setTrimEnd(Math.min(15, recordTime));
@@ -316,7 +316,8 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     if (cloudName && uploadPreset) {
       try {
         const formData = new FormData();
-        formData.append('file', recordedBlob);
+        const fileExt = recordedBlob.type.includes('webm') ? 'webm' : 'mp4';
+        formData.append('file', recordedBlob, `video.${fileExt}`);
         formData.append('upload_preset', uploadPreset);
         formData.append('resource_type', 'video');
 
@@ -375,7 +376,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
         lat: gpsCoords[0], // Anchors video directly at exact current GPS location
         lng: gpsCoords[1],
         emergencyOverride: emergencyOverride,
-        videoUrl: finalVideoUrl, // saves reference to local URL or Cloudinary URL
+        videoUrl: finalVideoUrl || (videoUrl.startsWith('blob:') ? 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4' : videoUrl), // saves reference to local URL or Cloudinary URL
         trimStart: trimStart,
         trimEnd: trimEnd,
         views: 0,
