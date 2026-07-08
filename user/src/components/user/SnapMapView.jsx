@@ -581,7 +581,14 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
                     onTimeUpdate={(e) => {
                       const video = e.target;
                       const start = selectedVideo.trimStart !== undefined ? selectedVideo.trimStart : 0;
-                      const end = selectedVideo.trimEnd !== undefined ? selectedVideo.trimEnd : video.duration || 15;
+                      const end = selectedVideo.trimEnd !== undefined && selectedVideo.trimEnd > start ? selectedVideo.trimEnd : video.duration || 999;
+                      
+                      // Handle manual loop fallback for media fragments
+                      if (video.currentTime >= end - 0.2) {
+                        video.currentTime = start;
+                        video.play().catch(() => {});
+                      }
+
                       const duration = end - start;
                       if (duration > 0) {
                         const progress = ((video.currentTime - start) / duration) * 100;

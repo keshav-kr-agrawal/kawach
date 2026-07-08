@@ -87,7 +87,14 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
             onTimeUpdate={(e) => {
               const video = e.target;
               const start = reel.trimStart !== undefined ? reel.trimStart : 0;
-              const end = reel.trimEnd !== undefined ? reel.trimEnd : video.duration || 15;
+              const end = reel.trimEnd !== undefined && reel.trimEnd > start ? reel.trimEnd : video.duration || 999;
+              
+              // Handle manual loop fallback for media fragments
+              if (video.currentTime >= end - 0.2) {
+                video.currentTime = start;
+                video.play().catch(() => {});
+              }
+
               const duration = end - start;
               if (duration > 0) {
                 const progress = ((video.currentTime - start) / duration) * 100;
