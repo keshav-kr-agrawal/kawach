@@ -326,7 +326,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
 
   // Merge approved user uploads and sort strictly by distance
   const allReels = userReports
-    .filter(r => r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'DEPT_ROUTING' || r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2')
+    .filter(r => r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'DEPT_ROUTING' || r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2' || r.status === 'REPORTED_SUSPICIOUS')
     .map(r => ({
       id: r.id,
       title: r.title,

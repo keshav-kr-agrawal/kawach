@@ -130,7 +130,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
   const allPinsRaw = [
     ...mapPins,
     ...userReports
-      .filter(r => r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2')
+      .filter(r => r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2' || r.status === 'DEPT_ROUTING' || r.status === 'REPORTED_SUSPICIOUS')
       .map(r => ({
         id: r.id,
         title: r.title || 'Citizen Incident Log',

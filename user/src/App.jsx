@@ -246,7 +246,7 @@ function UserLayout({ userReports }) {
       </div>
 
       {/* Persistent Upload Tracker Banners if active uploads are in progress (only shown on Map) */}
-      {userReports.length > 0 && isMapTab && (
+      {userReports.filter(r => r.status !== 'PUBLIC_APPROVED' && r.status !== 'REJECTED' && r.status !== 'RESOLVED').length > 0 && isMapTab && (
         <div style={{
           position: 'absolute',
           bottom: '100px',
@@ -258,7 +258,10 @@ function UserLayout({ userReports }) {
           gap: '8px',
           pointerEvents: 'none'
         }}>
-          {userReports.slice(0, 2).map((report) => (
+          {userReports
+            .filter(r => r.status !== 'PUBLIC_APPROVED' && r.status !== 'REJECTED' && r.status !== 'RESOLVED')
+            .slice(0, 2)
+            .map((report) => (
             <div 
               className="glass-panel"
               style={{
@@ -625,6 +628,34 @@ export default function App() {
           }));
           setUserReports([...mappedReports, ...SEED_REPORTS]);
           console.log('[SUPABASE] Loaded reports successfully:', mappedReports.length, 'records found. Merged with seed data.');
+
+          // Resume simulated AI processing for any in-progress reports uploaded by this user
+          const currentUserUuid = localStorage.getItem('kawach_uploader_uuid');
+          mappedReports.forEach((report) => {
+            const inProgressStatuses = [
+              VIDEO_STATUS.AI_CHECK_1,
+              VIDEO_STATUS.DEPT_ROUTING,
+              VIDEO_STATUS.COHORT_TEST,
+              VIDEO_STATUS.REPORTED_SUSPICIOUS,
+              VIDEO_STATUS.AI_CHECK_2
+            ];
+            if (inProgressStatuses.includes(report.status) && report.uploaderUuid === currentUserUuid) {
+              console.log(`[SUPABASE] Resuming verification simulation for report: ${report.id} (status: ${report.status})`);
+              simulateWorkflowProgress(report, async (updatedReport) => {
+                setUserReports((prev) => 
+                  prev.map((r) => r.id === updatedReport.id ? { ...updatedReport, flagsCount: r.flagsCount } : r)
+                );
+                try {
+                  await supabase
+                    .from('citizen_reports')
+                    .update({ status: updatedReport.status })
+                    .eq('id', updatedReport.id);
+                } catch (err) {
+                  console.error('[SUPABASE] Error syncing resumed workflow status:', err);
+                }
+              });
+            }
+          });
         } else {
           setUserReports(SEED_REPORTS);
         }
@@ -709,20 +740,6 @@ export default function App() {
           console.error('[SUPABASE] Error syncing workflow status:', err);
         }
       });
-    } else {
-      setTimeout(async () => {
-        setUserReports((prev) => 
-          prev.map((r) => r.id === newReport.id ? { ...r, status: VIDEO_STATUS.AI_CHECK_2 } : r)
-        );
-        try {
-          await supabase
-            .from('citizen_reports')
-            .update({ status: VIDEO_STATUS.AI_CHECK_2 })
-            .eq('id', newReport.id);
-        } catch (err) {
-          console.error('[SUPABASE] Error syncing emergency status:', err);
-        }
-      }, 5000);
     }
   };
 
