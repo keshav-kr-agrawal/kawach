@@ -626,8 +626,8 @@ export default function App() {
             temporalConsistency: item.temporal_consistency,
             dominantClass: item.dominant_class
           }));
-          setUserReports([...mappedReports, ...SEED_REPORTS]);
-          console.log('[SUPABASE] Loaded reports successfully:', mappedReports.length, 'records found. Merged with seed data.');
+          setUserReports(mappedReports);
+          console.log('[SUPABASE] Loaded reports successfully:', mappedReports.length, 'records found.');
 
           // Resume simulated AI processing for any in-progress reports uploaded by this user
           const currentUserUuid = localStorage.getItem('kawach_uploader_uuid');
@@ -657,11 +657,11 @@ export default function App() {
             }
           });
         } else {
-          setUserReports(SEED_REPORTS);
+          setUserReports([]);
         }
       } catch (err) {
         console.error('[SUPABASE] Exception during load:', err);
-        setUserReports(SEED_REPORTS);
+        setUserReports([]);
       }
     };
 
