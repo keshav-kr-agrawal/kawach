@@ -376,7 +376,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
         lat: gpsCoords[0], // Anchors video directly at exact current GPS location
         lng: gpsCoords[1],
         emergencyOverride: emergencyOverride,
-        videoUrl: finalVideoUrl || (videoUrl.startsWith('blob:') ? 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4' : videoUrl), // saves reference to local URL or Cloudinary URL
+        videoUrl: finalVideoUrl || (videoUrl.startsWith('blob:') ? 'https://www.w3schools.com/html/mov_bbb.mp4' : videoUrl), // saves reference to local URL or Cloudinary URL
         trimStart: trimStart,
         trimEnd: trimEnd,
         views: 0,

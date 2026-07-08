@@ -405,7 +405,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       lat: gpsCoords[0],
       lng: gpsCoords[1],
       emergencyOverride,
-      videoUrl: finalVideoUrl || (videoUrl.startsWith('blob:') ? 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4' : videoUrl),
+      videoUrl: finalVideoUrl || (videoUrl.startsWith('blob:') ? 'https://www.w3schools.com/html/mov_bbb.mp4' : videoUrl),
       trimStart,
       trimEnd,
       views: 0,

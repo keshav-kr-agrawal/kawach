@@ -46,7 +46,7 @@ const MOCK_REPORTS = [
     status: 'DEPT_ROUTING',
     lat: 12.9348,
     lng: 77.6212,
-    video_url: 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4',
+    video_url: 'https://www.w3schools.com/html/mov_bbb.mp4',
     upvotes: 41,
     views: 120,
     timestamp: new Date(Date.now() - 1000 * 600).toISOString()
@@ -59,7 +59,7 @@ const MOCK_REPORTS = [
     status: 'COHORT_TEST',
     lat: 12.9255,
     lng: 77.6288,
-    video_url: 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4',
+    video_url: 'https://www.w3schools.com/html/mov_bbb.mp4',
     upvotes: 18,
     views: 45,
     timestamp: new Date(Date.now() - 1000 * 1500).toISOString()
@@ -72,7 +72,7 @@ const MOCK_REPORTS = [
     status: 'DEPT_ROUTING',
     lat: 12.9298,
     lng: 77.6241,
-    video_url: 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4',
+    video_url: 'https://www.w3schools.com/html/mov_bbb.mp4',
     upvotes: 35,
     views: 190,
     timestamp: new Date(Date.now() - 1000 * 240).toISOString()
@@ -85,7 +85,7 @@ const MOCK_REPORTS = [
     status: 'AI_CHECK_2',
     lat: 12.9312,
     lng: 77.6295,
-    video_url: 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4',
+    video_url: 'https://www.w3schools.com/html/mov_bbb.mp4',
     upvotes: 12,
     views: 64,
     timestamp: new Date(Date.now() - 1000 * 900).toISOString()
@@ -98,7 +98,7 @@ const MOCK_REPORTS = [
     status: 'DEPT_ROUTING',
     lat: 12.9212,
     lng: 77.6185,
-    video_url: 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4',
+    video_url: 'https://www.w3schools.com/html/mov_bbb.mp4',
     upvotes: 27,
     views: 89,
     timestamp: new Date(Date.now() - 1000 * 1800).toISOString()
