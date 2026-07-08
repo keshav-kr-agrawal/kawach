@@ -311,6 +311,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
         center={gpsCoords} 
         zoom={14} 
         zoomControl={false}
+        zoomAnimation={false}
         style={{ width: '100%', height: '100%' }}
       >
         <TileLayer

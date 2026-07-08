@@ -9,9 +9,12 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+      return cache.addAll(ASSETS).catch((err) => {
+        console.warn('[ServiceWorker] Pre-caching asset list failed:', err);
+      });
     })
   );
 });
