@@ -3,9 +3,9 @@ const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/src/main.jsx',
-  '/src/App.jsx',
-  '/src/index.css'
+  '/favicon.svg',
+  '/icons.svg',
+  '/kawach.png'
 ];
 
 self.addEventListener('install', (e) => {

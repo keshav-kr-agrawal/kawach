@@ -602,7 +602,9 @@ export default function App() {
             status: item.status,
             lat: item.lat,
             lng: item.lng,
-            videoUrl: item.video_url,
+            videoUrl: item.video_url === 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4' || !item.video_url
+              ? 'https://www.w3schools.com/html/mov_bbb.mp4'
+              : item.video_url,
             emergencyOverride: item.emergency_override,
             trimStart: item.trim_start,
             trimEnd: item.trim_end,
