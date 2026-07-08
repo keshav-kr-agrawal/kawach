@@ -122,7 +122,7 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {!isProfileOrLibrary ? (
-          <Link 
+          <Link
             to="/user/profile"
             style={{
               width: '32px',
@@ -142,7 +142,7 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
             <User size={15} color="#000000" strokeWidth={2.5} />
           </Link>
         ) : (
-          <button 
+          <button
             onClick={() => navigate(-1)}
             style={{
               width: '32px',
@@ -161,7 +161,7 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
             <ArrowLeft size={15} strokeWidth={2.5} />
           </button>
         )}
-        
+
         <div>
           <h3 style={{ margin: 0, fontSize: '11px', fontWeight: '900', fontFamily: 'Outfit, sans-serif', color: '#000000', letterSpacing: '0.02em' }}>
             {title}
@@ -174,7 +174,7 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         {!isProfileOrLibrary && (
-          <button 
+          <button
             onClick={onOpenLibrary}
             style={{
               width: '32px',
@@ -193,7 +193,7 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
             <BookOpen size={15} strokeWidth={2.5} />
           </button>
         )}
-        
+
         <div style={{
           backgroundColor: 'rgba(255, 217, 0, 0.15)',
           color: '#000000',
@@ -224,9 +224,9 @@ function UserLayout({ userReports }) {
   return (
     <div className="flex flex-col h-[100dvh] w-full max-w-md mx-auto overflow-hidden relative bg-black">
       {/* Persistent Dynamic Top Bar */}
-      <TopBar 
-        onOpenProfile={() => navigate('/user/profile')} 
-        onOpenLibrary={() => navigate('/user/library')} 
+      <TopBar
+        onOpenProfile={() => navigate('/user/profile')}
+        onOpenLibrary={() => navigate('/user/library')}
       />
 
       {/* Scrollable Middle Content — each child view manages its own scroll */}
@@ -262,42 +262,42 @@ function UserLayout({ userReports }) {
             .filter(r => r.status !== 'PUBLIC_APPROVED' && r.status !== 'REJECTED' && r.status !== 'RESOLVED')
             .slice(0, 2)
             .map((report) => (
-            <div 
-              className="glass-panel"
-              style={{
-                padding: '10px 14px',
-                borderRadius: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                fontSize: '11px',
-                border: '1px solid rgba(0, 0, 0, 0.08)',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
-                pointerEvents: 'auto',
-                backgroundColor: '#ffffff'
-              }}
-              key={report.id}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                <span style={{ color: '#ffd900', fontWeight: '700' }}>📹 Processing Report:</span>
-                <span style={{ 
-                   color: '#333333',
-                   whiteSpace: 'nowrap',
-                   overflow: 'hidden',
-                   textOverflow: 'ellipsis',
-                   maxWidth: '120px'
+              <div
+                className="glass-panel"
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: '11px',
+                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+                  pointerEvents: 'auto',
+                  backgroundColor: '#ffffff'
+                }}
+                key={report.id}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                  <span style={{ color: '#ffd900', fontWeight: '700' }}>📹 Processing Report:</span>
+                  <span style={{
+                    color: '#333333',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '120px'
+                  }}>
+                    [{report.title || report.id}]
+                  </span>
+                </div>
+                <span style={{
+                  color: report.status === 'PUBLIC_APPROVED' ? '#22c55e' : (report.status === 'REPORTED_SUSPICIOUS' ? '#ff3b30' : '#ffd900'),
+                  fontWeight: '700'
                 }}>
-                  [{report.title || report.id}]
+                  {report.status}
                 </span>
               </div>
-              <span style={{
-                color: report.status === 'PUBLIC_APPROVED' ? '#22c55e' : (report.status === 'REPORTED_SUSPICIOUS' ? '#ff3b30' : '#ffd900'),
-                fontWeight: '700'
-              }}>
-                {report.status}
-              </span>
-            </div>
-          ))}
+            ))}
         </div>
       )}
 
@@ -462,7 +462,7 @@ export default function App() {
   }, []);
 
   const handleToggleBookmark = (lawId) => {
-    setBookmarkedLawIds((prev) => 
+    setBookmarkedLawIds((prev) =>
       prev.includes(lawId) ? prev.filter(id => id !== lawId) : [...prev, lawId]
     );
   };
@@ -602,9 +602,7 @@ export default function App() {
             status: item.status,
             lat: item.lat,
             lng: item.lng,
-            videoUrl: item.video_url === 'https://res.cloudinary.com/kijqhnss/video/upload/v1719602497/j99v3ykwxomvptqoxnvy.mp4' || !item.video_url
-              ? 'https://www.w3schools.com/html/mov_bbb.mp4'
-              : item.video_url,
+            videoUrl: item.video_url,
             emergencyOverride: item.emergency_override,
             trimStart: item.trim_start,
             trimEnd: item.trim_end,
@@ -644,7 +642,7 @@ export default function App() {
             if (inProgressStatuses.includes(report.status) && report.uploaderUuid === currentUserUuid) {
               console.log(`[SUPABASE] Resuming verification simulation for report: ${report.id} (status: ${report.status})`);
               simulateWorkflowProgress(report, async (updatedReport) => {
-                setUserReports((prev) => 
+                setUserReports((prev) =>
                   prev.map((r) => r.id === updatedReport.id ? { ...updatedReport, flagsCount: r.flagsCount } : r)
                 );
                 try {
@@ -672,7 +670,7 @@ export default function App() {
 
   const handleNewUpload = async (newReport) => {
     const reportWithFlags = { ...newReport, flagsCount: 0 };
-    
+
     // 1. Optimistic local state update for zero latency feel
     setUserReports((prev) => [reportWithFlags, ...prev]);
 
@@ -729,10 +727,10 @@ export default function App() {
     // 3. Sync the simulated AI processing pipeline to database
     if (!newReport.emergencyOverride) {
       simulateWorkflowProgress(reportWithFlags, async (updatedReport) => {
-        setUserReports((prev) => 
+        setUserReports((prev) =>
           prev.map((r) => r.id === updatedReport.id ? { ...updatedReport, flagsCount: r.flagsCount } : r)
         );
-        
+
         try {
           await supabase
             .from('citizen_reports')
@@ -773,7 +771,7 @@ export default function App() {
 
   const handleResolveReport = async (reportId) => {
     // 1. Optimistic UI update
-    setUserReports((prev) => 
+    setUserReports((prev) =>
       prev.map((r) => r.id === reportId ? { ...r, status: 'RESOLVED' } : r)
     );
 
@@ -809,7 +807,7 @@ export default function App() {
       liked = true;
     }
 
-    setUserReports((prev) => 
+    setUserReports((prev) =>
       prev.map((r) => {
         if (r.id === reportId) {
           nextUpvotes = Math.max(0, (r.upvotes || 0) + (liked ? 1 : -1));
@@ -841,15 +839,15 @@ export default function App() {
         if (r.id === videoId) {
           const nextFlags = (r.flagsCount || 0) + 1;
           const isSuspicious = nextFlags >= 2;
-          
+
           let nextStatus = r.status;
           if (isSuspicious) {
             nextStatus = VIDEO_STATUS.REPORTED_SUSPICIOUS;
             console.log(`[MODERATION] Video ${videoId} flagged as fake ${nextFlags} times. Shifting to REPORTED_SUSPICIOUS.`);
-            
+
             setTimeout(async () => {
               const finalStatus = Math.random() > 0.4 ? VIDEO_STATUS.PUBLIC_APPROVED : VIDEO_STATUS.REJECTED;
-              setUserReports((currentList) => 
+              setUserReports((currentList) =>
                 currentList.map((item) => {
                   if (item.id === videoId) {
                     return { ...item, status: finalStatus, flagsCount: 0 };
@@ -868,14 +866,14 @@ export default function App() {
               }
             }, 6000);
           }
-          
+
           // Sync immediate flag status to database
           supabase
             .from('citizen_reports')
             .update({ status: nextStatus })
             .eq('id', videoId)
             .catch((err) => console.error('[SUPABASE] Error syncing flag status:', err));
-          
+
           return { ...r, flagsCount: nextFlags, status: nextStatus };
         }
         return r;
@@ -886,14 +884,14 @@ export default function App() {
   return (
     <Routes>
       {/* Standalone User Login Screen (Default Root Route) */}
-      <Route 
-        path="/" 
+      <Route
+        path="/"
         element={
           citizenToken ? (
             <Navigate to="/user/map" replace />
           ) : (
             <CitizenAppWrapper>
-              <CitizenLoginView 
+              <CitizenLoginView
                 onLoginSuccess={(token) => {
                   setCitizenToken(token);
                   const savedRedirect = sessionStorage.getItem('redirect_path');
@@ -908,29 +906,29 @@ export default function App() {
               />
             </CitizenAppWrapper>
           )
-        } 
+        }
       />
 
       {/* Redirect old login path to root */}
       <Route path="/user/login" element={<Navigate to="/" replace />} />
-      
+
       {/* Multi-portal Gateway Page (Moved from root) */}
-      <Route 
-        path="/portals" 
+      <Route
+        path="/portals"
         element={
-          <LandingPageView 
-            onEnterCitizen={() => navigate(citizenToken ? '/user/map' : '/')} 
+          <LandingPageView
+            onEnterCitizen={() => navigate(citizenToken ? '/user/map' : '/')}
             onOfficialLogin={(token, user) => {
               setOfficialToken(token);
               setOfficialUser(user);
             }}
           />
-        } 
+        }
       />
 
       {/* Routed App Container */}
-      <Route 
-        path="/user" 
+      <Route
+        path="/user"
         element={
           <RequireCitizenAuth token={citizenToken} isLoadingSession={isLoadingSession}>
             <CitizenAppWrapper>
@@ -940,49 +938,49 @@ export default function App() {
         }
       >
         <Route index element={<Navigate to="/user/map" replace />} />
-        <Route 
-          path="map" 
+        <Route
+          path="map"
           element={
-            <SnapMapView 
-              gpsCoords={gpsCoords} 
-              userReports={userReports} 
+            <SnapMapView
+              gpsCoords={gpsCoords}
+              userReports={userReports}
               onReportVideo={handleReportVideo}
               onOpenProfile={() => navigate('/user/profile')}
               onOpenLibrary={() => navigate('/user/library')}
             />
-          } 
+          }
         />
         <Route path="services" element={<ServicesDirectoryView gpsCoords={gpsCoords} />} />
         <Route path="camera" element={<SecureCameraView onUploadComplete={handleNewUpload} gpsCoords={gpsCoords} />} />
         <Route path="chat" element={<AlertsChatView />} />
-        <Route 
-          path="feed" 
+        <Route
+          path="feed"
           element={
-            <LocalReelsFeedView 
-              gpsCoords={gpsCoords} 
-              userReports={userReports} 
+            <LocalReelsFeedView
+              gpsCoords={gpsCoords}
+              userReports={userReports}
               onReportVideo={handleReportVideo}
               onUpvoteReport={handleUpvoteReport}
               onOpenProfile={() => navigate('/user/profile')}
               onOpenLibrary={() => navigate('/user/library')}
             />
-          } 
+          }
         />
-        <Route 
-          path="library" 
+        <Route
+          path="library"
           element={
-            <InteractiveLegalLibraryView 
+            <InteractiveLegalLibraryView
               onBack={() => navigate(-1)}
               onToggleBookmark={handleToggleBookmark}
               bookmarkedLawIds={bookmarkedLawIds}
             />
-          } 
+          }
         />
-        <Route 
-          path="profile" 
+        <Route
+          path="profile"
           element={
             <ProfileErrorBoundary>
-              <UserProfileView 
+              <UserProfileView
                 onBack={() => navigate(-1)}
                 bookmarkedLaws={ALL_FLASHCARDS.filter(c => bookmarkedLawIds.includes(c.id))}
                 userReports={userReports}
@@ -998,13 +996,13 @@ export default function App() {
                 user={citizenUser}
               />
             </ProfileErrorBoundary>
-          } 
+          }
         />
       </Route>
 
       {/* Official Portals Routing (Latency-Free SPA Routes) */}
-      <Route 
-        path="/department/police" 
+      <Route
+        path="/department/police"
         element={
           <RequirePoliceAuth token={officialToken}>
             <PoliceAppLayout user={officialUser} onLogout={handleOfficialLogout}>
@@ -1039,32 +1037,32 @@ export default function App() {
         <Route path="admin" element={<AdminView token={officialToken} user={officialUser} />} />
       </Route>
 
-      <Route 
-        path="/department/fire" 
+      <Route
+        path="/department/fire"
         element={
           <RequirePoliceAuth token={officialToken}>
             <FireDashboardView />
           </RequirePoliceAuth>
-        } 
+        }
       />
-      <Route 
-        path="/department/health" 
+      <Route
+        path="/department/health"
         element={
           <RequirePoliceAuth token={officialToken}>
             <HealthDashboardView />
           </RequirePoliceAuth>
-        } 
+        }
       />
-      <Route 
-        path="/department/disaster" 
+      <Route
+        path="/department/disaster"
         element={
           <RequirePoliceAuth token={officialToken}>
             <DisasterDashboardView />
           </RequirePoliceAuth>
-        } 
+        }
       />
-      <Route 
-        path="/admin" 
+      <Route
+        path="/admin"
         element={
           <RequirePoliceAuth token={officialToken}>
             <div className="p-6 bg-slate-950 min-h-screen text-slate-100 flex flex-col gap-6 select-text">
@@ -1083,7 +1081,7 @@ export default function App() {
               <AdminView token={officialToken} user={officialUser} />
             </div>
           </RequirePoliceAuth>
-        } 
+        }
       />
 
       {/* Fallback to landing */}

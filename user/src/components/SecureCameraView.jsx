@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Camera, RefreshCw, ShieldCheck, Upload, Trash2, Video, Zap, FileText } from 'lucide-react';
 import { VIDEO_STATUS } from '../api/videoService';
 import { routeReport } from '../api/routingService';
+import { supabase } from '../supabaseClient';
 
 
 export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
@@ -350,6 +351,35 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       localStorage.setItem('kawach_uploader_uuid', uploaderUuid);
     }
     const videoId = 'vid-' + Math.random().toString(36).substring(2, 10);
+
+    // If Cloudinary failed or was bypassed (finalVideoUrl starts with 'blob:'), attempt Supabase storage upload
+    if (!finalVideoUrl || finalVideoUrl.startsWith('blob:')) {
+      try {
+        console.log('[SUPABASE STORAGE] Cloudinary failed or bypassed. Attempting direct upload to Supabase storage...');
+        const fileExt = recordedBlob.type.includes('webm') ? 'webm' : 'mp4';
+        const fileName = `${uploaderUuid}/${videoId}_${Date.now()}.${fileExt}`;
+        
+        const { data, error } = await supabase.storage
+          .from('incident-videos')
+          .upload(fileName, recordedBlob, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: recordedBlob.type
+          });
+          
+        if (error) {
+          console.warn('[SUPABASE STORAGE] Upload failed:', error.message);
+        } else if (data) {
+          const { data: urlData } = supabase.storage
+            .from('incident-videos')
+            .getPublicUrl(fileName);
+          finalVideoUrl = urlData.publicUrl;
+          console.log('[SUPABASE STORAGE] Upload successful:', finalVideoUrl);
+        }
+      } catch (err) {
+        console.warn('[SUPABASE STORAGE] Exception during upload:', err);
+      }
+    }
 
     // Await routing results
     let routingResult = null;
