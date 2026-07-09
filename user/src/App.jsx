@@ -122,8 +122,8 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {!isProfileOrLibrary ? (
-          <Link
-            to="/user/profile"
+          <button
+            onClick={() => navigate('/user/profile')}
             style={{
               width: '32px',
               height: '32px',
@@ -135,12 +135,12 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
               justifyContent: 'center',
               cursor: 'pointer',
               boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-              textDecoration: 'none'
+              outline: 'none'
             }}
             title="Open User Profile"
           >
             <User size={15} color="#000000" strokeWidth={2.5} />
-          </Link>
+          </button>
         ) : (
           <button
             onClick={() => navigate(-1)}
