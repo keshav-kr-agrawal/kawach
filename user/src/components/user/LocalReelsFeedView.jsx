@@ -298,7 +298,44 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
             )}
           </div>
         )}
+        {/* AI Forensic Insights Overlay Panel */}
+        {(reel.trustScore !== undefined || reel.aiVerdict) && (
+          <div className="flex flex-col gap-1.5 pointer-events-auto bg-slate-900/80 backdrop-blur-md border border-white/10 p-3 rounded-2xl max-w-[280px] shadow-lg">
+            <div className="flex items-center justify-between gap-2">
+              <span className={`text-[9px] font-black px-2 py-0.5 rounded-md tracking-wider font-outfit ${
+                reel.aiVerdict === 'AI_GENERATED' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'
+              }`}>
+                {reel.aiVerdict === 'AI_GENERATED' ? '⚠️ DEEPFAKE SIGNALS' : '✓ FORENSIC PASS'}
+              </span>
+              <span className={`text-[9px] font-black font-outfit ${
+                reel.trustScore >= 75 ? 'text-emerald-400' : reel.trustScore >= 45 ? 'text-amber-400' : 'text-red-400'
+              }`}>
+                🛡️ TRUST: {reel.trustScore}%
+              </span>
+            </div>
 
+            {/* Micro progress bar for trust score */}
+            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all duration-300 ${
+                  reel.trustScore >= 75 ? 'bg-emerald-500' : reel.trustScore >= 45 ? 'bg-amber-500' : 'bg-red-500'
+                }`}
+                style={{ width: `${reel.trustScore}%` }}
+              />
+            </div>
+
+            {/* Scene analysis detected issues tags */}
+            {reel.detectedIssues && reel.detectedIssues.length > 0 && (
+              <div className="flex gap-1 flex-wrap mt-0.5">
+                {reel.detectedIssues.map((issue, idx) => (
+                  <span key={idx} className="text-[8px] font-black bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-md font-outfit">
+                    🏷️ {issue.split(' ')[0].replace(/_/g, ' ')}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <h2 className="text-sm font-bold text-shadow" style={{ margin: 0, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
           {reel.title}
         </h2>
@@ -329,7 +366,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
   });
   const [reportModal, setReportModal] = useState(null);
   const [reportStatusMessage, setReportStatusMessage] = useState('');
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
 
   // Merge approved user uploads and sort strictly by distance
   const allReels = userReports
@@ -354,6 +391,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
       subCategory: r.subCategory,
       estimatedResolutionDays: r.estimatedResolutionDays,
       trustScore: r.trustScore,
+      aiVerdict: r.aiVerdict,
       civicUrgencyScore: r.civicUrgencyScore,
       sceneDetected: r.sceneDetected,
       detectedIssues: r.detectedIssues,
