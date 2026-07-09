@@ -22,6 +22,7 @@ export default function UserProfileView({
   user
 }) {
   const handleSignOut = onSignOut || onLogout;
+  console.log('[USER PROFILE] Rendering UserProfileView', { user });
 
   // Strict loading check matching the system directive
   if (isLoading) {
@@ -338,7 +339,7 @@ export default function UserProfileView({
                         onClick={() => onRemoveBookmark ? onRemoveBookmark(card.id) : onToggleBookmark(card.id)}
                         className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200"
                         title="Remove Bookmark"
-                        style={{ minWidth: '36px', minHeight: '36px', display: 'flex', alignItems: 'center', justify_content: 'center' }}
+                        style={{ minWidth: '36px', minHeight: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
