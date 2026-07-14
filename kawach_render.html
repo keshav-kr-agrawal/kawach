@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>KAWACH — final architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap');
+  :root{
+    --bg:#12151a; --panel:#1a1e25; --panel2:#20252e; --line:#2c323d;
+    --text:#e7e9ec; --sub:#9aa2ad; --mute:#5f6771;
+    --teal:#3ED9C4; --purple:#9A8CF2; --purple-d:#221f3a; --amber:#F2A93B; --coral:#F2765A;
+    --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);padding:32px 20px 80px;line-height:1.55}
+  .wrap{max-width:940px;margin:0 auto}
+  h1{font-family:var(--mono);font-weight:700;font-size:26px;letter-spacing:-0.5px;margin:0 0 6px}
+  .tagline{color:var(--sub);font-size:14px;margin:0 0 20px}
+  .hint{font-family:var(--mono);font-size:11px;color:var(--amber);background:var(--panel);border:1px solid var(--line);display:inline-block;padding:6px 12px;border-radius:20px;margin-bottom:28px}
+  section.branch{margin-bottom:34px}
+  .branch-title{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--teal);margin:0 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .branch-title .host{font-size:11px;color:var(--sub);font-weight:400;background:var(--panel2);padding:2px 8px;border-radius:6px;border:1px solid var(--line)}
+  .branch-sub{color:var(--sub);font-size:13px;margin:0 0 14px}
+  .callout{background:var(--purple-d);border:1px solid #382f5c;border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--sub);margin-bottom:16px}
+  .callout b{color:var(--purple)}
+  ul.tree{list-style:none;margin:0;padding:0}
+  ul.tree ul.tree{margin-left:18px;padding-left:16px;border-left:1px solid var(--line);margin-top:2px}
+  ul.tree li{position:relative;padding:3px 0}
+  ul.tree li::before{content:"";position:absolute;left:-16px;top:19px;width:14px;height:1px;background:var(--line)}
+  ul.tree.top > li::before{display:none}
+  .node{display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px 6px 4px;border-radius:8px;user-select:none;transition:background .12s}
+  .node:hover{background:var(--panel2)}
+  .node.open{background:var(--purple-d)}
+  .node-name{font-family:var(--mono);font-size:13.5px;color:var(--text)}
+  .badge{font-family:var(--mono);font-size:9.5px;padding:1px 6px;border-radius:10px;background:var(--panel2);color:var(--coral);border:1px solid #4a2e26}
+  .chev{font-size:10px;color:var(--mute);transition:transform .15s}
+  .node.open .chev{transform:rotate(90deg);color:var(--purple)}
+  .desc{max-height:0;overflow:hidden;transition:max-height .18s ease;margin-left:22px}
+  .desc.open{max-height:280px}
+  .desc-inner{font-size:12.5px;color:var(--sub);padding:6px 12px 12px;max-width:620px}
+  .desc-inner .tool{display:inline-block;font-family:var(--mono);font-size:10.5px;color:var(--purple);background:var(--panel2);border:1px solid #382f5c;padding:2px 7px;border-radius:5px;margin-top:6px}
+  details{margin:8px 0}
+  summary{font-family:var(--mono);font-size:12.5px;color:var(--sub);cursor:pointer;padding:6px 4px}
+  summary:hover{color:var(--text)}
+  .footer-note{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:36px;font-size:13px;color:var(--sub)}
+  .footer-note b{color:var(--text)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>KAWACH — final architecture</h1>
+  <p class="tagline">Detection and reporting are two separate paths — this tree keeps them separate. Click any node for its description.</p>
+  <span class="hint">▸ click a node to expand its description</span>
+
+  <section class="branch">
+    <div class="branch-title">citizen <span class="host">Vercel — React/Vite PWA</span></div>
+    <p class="branch-sub">Snapchat-style platform: map, video, reels, AI chat, services</p>
+    <ul class="tree top">
+
+      <li>
+        <div class="node" data-d="0"><span class="chev">▸</span><span class="node-name">social feed / reels</span><span class="badge">USP</span></div>
+        <div class="desc" data-desc="0"><div class="desc-inner">Every video or photo posted — whether shot for the Reels feed or attached to a report — passes through the AI detection layer. If it's identified as a live local incident (a pothole, a street fight, a visible counterfeit note), it auto-surfaces as a reel to other users in that same area. This happens whether or not anyone files a formal complaint — it's crowdsourced situational awareness, and it's why people open the app like a social feed, not just during emergencies.
+        <span class="tool">Cloudinary — reel storage</span> <span class="tool">Leaflet + OSM — geo-match to nearby users</span></div></div>
+      </li>
+
+      <li>
+        <div class="node" data-d="1"><span class="chev">▸</span><span class="node-name">AI detection layer — Nayak assistant</span></div>
+        <div class="desc" data-desc="1"><div class="desc-inner">Always-on scanner. It never files a complaint by itself — it classifies what's in the upload, scores severity, and works out which department it belongs to, then asks the citizen to confirm before anything becomes an official complaint.
+        <span class="tool">Gemini 2.5 / 3.x Flash free tier</span></div></div>
+        <ul class="tree">
+          <li><div class="node" data-d="1a"><span class="chev">▸</span><span class="node-name">text detection</span></div><div class="desc" data-desc="1a"><div class="desc-inner">Scam-script and phishing-language patterns in chat, SMS, or forwarded text.</div></div></li>
+          <li><div class="node" data-d="1b"><span class="chev">▸</span><span class="node-name">video detection</span></div><div class="desc" data-desc="1b"><div class="desc-inner">Deepfake face-forensics, plus general scene classification — is this a pothole, a fire, a fight, roadkill, a crowd.
+          <span class="tool">HF Spaces — MTCNN + EfficientNet-B7, YOLO12s scene model</span></div></div></li>
+          <li><div class="node" data-d="1c"><span class="chev">▸</span><span class="node-name">voice detection</span></div><div class="desc" data-desc="1c"><div class="desc-inner">AI-cloned or spoofed voice on a call, and raw loud-noise/disturbance detection from ambient audio.
+          <span class="tool">HF Spaces — voice-spoof + audio-event classifier</span></div></div></li>
+          <li><div class="node" data-d="1d"><span class="chev">▸</span><span class="node-name">image detection (currency)</span></div><div class="desc" data-desc="1d"><div class="desc-inner">Real/fake verdict on a photographed note from microprint and security-thread analysis.</div></div></li>
+          <li><div class="node" data-d="1e"><span class="chev">▸</span><span class="node-name">link detection</span></div><div class="desc" data-desc="1e"><div class="desc-inner">Checks shared links/QR codes against known phishing and fraudster site patterns.</div></div></li>
+          <li><div class="node" data-d="1f"><span class="chev">▸</span><span class="node-name">AI classifier (fusion)</span></div><div class="desc" data-desc="1f"><div class="desc-inner">Combines every signal above into one output: issue type, severity, and the specific department it should route to.</div></div></li>
+          <li><div class="node" data-d="1g"><span class="chev">▸</span><span class="node-name">confirm &amp; route</span><span class="badge">bridge</span></div><div class="desc" data-desc="1g"><div class="desc-inner">The one moment detection and reporting connect. Citizen sees "we think this is a road hazard — raise it as a complaint?" and taps yes or no. A "no" still lets the clip surface in Reels; only a "yes" creates a formal complaint in a department queue.</div></div></li>
+        </ul>
+      </li>
+
+      <li>
+        <div class="node" data-d="2"><span class="chev">▸</span><span class="node-name">reporting</span><span class="badge">separate path</span></div>
+        <div class="desc" data-desc="2"><div class="desc-inner">Independent of the feed and independent of AI detection — the citizen picks a category directly and submits. The classifier still runs on any attached evidence (e.g. verifying a currency photo), but it doesn't gate whether the report gets filed.
+        <span class="tool">Supabase — Postgres + Realtime</span></div></div>
+        <ul class="tree">
+          <li><div class="node" data-d="2a"><span class="chev">▸</span><span class="node-name">crimes</span></div><div class="desc" data-desc="2a"><div class="desc-inner">Routes to the police crime classifier.</div></div></li>
+          <li><div class="node" data-d="2b"><span class="chev">▸</span><span class="node-name">emergencies</span></div><div class="desc" data-desc="2b"><div class="desc-inner">Dual-routes to whichever of fire / police / health fits, flagged at the top SLA tier.</div></div></li>
+          <li><div class="node" data-d="2c"><span class="chev">▸</span><span class="node-name">gov department issues</span></div><div class="desc" data-desc="2c"><div class="desc-inner">Manual version of the same routing the AI classifier does automatically — for citizens who'd rather just pick the department themselves.</div></div></li>
+          <li><div class="node" data-d="2d"><span class="chev">▸</span><span class="node-name">text reporting</span></div><div class="desc" data-desc="2d"><div class="desc-inner">Free-text complaints for anything that doesn't fit a structured category.</div></div></li>
+          <li><div class="node" data-d="2e"><span class="chev">▸</span><span class="node-name">counterfeit</span></div><div class="desc" data-desc="2e"><div class="desc-inner">Backed by the image detection (currency) classifier above.</div></div></li>
+          <li><div class="node" data-d="2f"><span class="chev">▸</span><span class="node-name">digital arrest / active scam session</span></div><div class="desc" data-desc="2f"><div class="desc-inner">Fuses voice + video + text detection into one live risk score before financial transfer happens — the platform's headline flow.</div></div></li>
+        </ul>
+      </li>
+
+      <li>
+        <div class="node" data-d="3"><span class="chev">▸</span><span class="node-name">anonymity guarantee</span></div>
+        <div class="desc" data-desc="3"><div class="desc-inner">Every report — from Reels-detected or direct — carries only an anonymous tracking ID. No name, phone number, or account identity is ever attached or visible to any department dashboard. This is the platform's core trust promise: report anything, reveal nothing.</div></div>
+      </li>
+
+      <li>
+        <div class="node" data-d="4"><span class="chev">▸</span><span class="node-name">Citizen Fraud Shield — WhatsApp</span></div>
+        <div class="desc" data-desc="4"><div class="desc-inner">Same fraud-risk assessment as the app, reachable from WhatsApp for citizens who won't install a new app mid-scam call.
+        <span class="tool">WhatsApp Cloud API free tier</span></div></div>
+      </li>
+
+    </ul>
+  </section>
+
+  <section class="branch">
+    <div class="branch-title">department layer <span class="host">Render free — FastAPI router · Supabase Realtime</span></div>
+    <p class="branch-sub">Where every confirmed AI-detected issue and every direct report lands, auto-sorted to the right desk</p>
+
+    <div class="callout"><b>Every department dashboard is identical in structure</b> — a live severity-sorted alert queue, a map of active issues in that department's jurisdiction, a status workflow (new → acknowledged → in progress → resolved), and its own analytics panel. Only the category of what lands there differs.</div>
+
+    <div class="node" data-d="e0"><span class="chev">▸</span><span class="node-name">SLA &amp; escalation engine</span><span class="badge">shared infra</span></div>
+    <div class="desc" data-desc="e0"><div class="desc-inner">Severity sets a timer — critical 15 min, high 4 hrs, medium 24 hrs, low 72 hrs. If a department hasn't acted before the timer lapses, the issue turns red on that department's own dashboard <i>and</i> pushes into the Master Admin Dashboard's escalation feed for oversight. Reports that touch more than one department — a pothole causing a traffic hazard, for instance — dual-route to both queues automatically.</div></div>
+
+    <details open>
+      <summary>municipal departments (10) — click any to expand</summary>
+      <ul class="tree top">
+        <li><div class="node" data-d="m1"><span class="chev">▸</span><span class="node-name">Public Works – Roads (PWD)</span></div><div class="desc" data-desc="m1"><div class="desc-inner">Potholes, road damage, verified by scene classification on submitted video/photo.</div></div></li>
+        <li><div class="node" data-d="m2"><span class="chev">▸</span><span class="node-name">Public Works – Buildings (PWD)</span></div><div class="desc" data-desc="m2"><div class="desc-inner">Unsafe or unauthorized construction reports.</div></div></li>
+        <li><div class="node" data-d="m3"><span class="chev">▸</span><span class="node-name">Electricity Board (DISCOM)</span></div><div class="desc" data-desc="m3"><div class="desc-inner">Outages, exposed wiring, faulty infrastructure.</div></div></li>
+        <li><div class="node" data-d="m4"><span class="chev">▸</span><span class="node-name">Water Supply &amp; Sewerage Board</span></div><div class="desc" data-desc="m4"><div class="desc-inner">Supply issues, leakage, contamination, sewage overflow.</div></div></li>
+        <li><div class="node" data-d="m5"><span class="chev">▸</span><span class="node-name">Sanitation &amp; Solid Waste Management</span></div><div class="desc" data-desc="m5"><div class="desc-inner">Garbage, dumping, cleanliness — merged from your original "sanitation" and "waste management," which real municipal bodies run as one department.</div></div></li>
+        <li><div class="node" data-d="m6"><span class="chev">▸</span><span class="node-name">Pollution &amp; Noise Control Board</span></div><div class="desc" data-desc="m6"><div class="desc-inner">Air pollution and — new — noise complaints, using the audio-event detector above. This is where your "very heavy noise" example actually routes.</div></div></li>
+        <li><div class="node" data-d="m7"><span class="chev">▸</span><span class="node-name">Traffic Police / Management</span></div><div class="desc" data-desc="m7"><div class="desc-inner">Congestion, signal faults, violations.</div></div></li>
+        <li><div class="node" data-d="m8"><span class="chev">▸</span><span class="node-name">Fire &amp; Emergency Services</span></div><div class="desc" data-desc="m8"><div class="desc-inner">Fire hazards and active fires, always top SLA tier.</div></div></li>
+        <li><div class="node" data-d="m9"><span class="chev">▸</span><span class="node-name">Health Department</span></div><div class="desc" data-desc="m9"><div class="desc-inner">Public health hazards, outbreak reports.</div></div></li>
+        <li><div class="node" data-d="m10"><span class="chev">▸</span><span class="node-name">Education Department</span></div><div class="desc" data-desc="m10"><div class="desc-inner">School infrastructure and access issues.</div></div></li>
+      </ul>
+    </details>
+
+    <div class="node" data-d="p0" style="margin-top:14px"><span class="chev">▸</span><span class="node-name" style="font-size:14.5px;color:var(--teal)">police crime classifier</span></div>
+    <div class="desc" data-desc="p0"><div class="desc-inner">The deepest branch — street fights, crime reports, and digital-arrest sessions land here. Same dashboard structure as every other department, plus the graph-intelligence layer below.
+    <span class="tool">Neo4j Aura free tier, JSON fallback</span></div></div>
+    <ul class="tree" style="margin-left:0;padding-left:16px;border-left:1px solid var(--line)">
+      <li>
+        <div class="node" data-d="p1"><span class="chev">▸</span><span class="node-name">AI analytics</span></div>
+        <div class="desc" data-desc="p1"><div class="desc-inner">Case-level intelligence built from every routed report.</div></div>
+        <ul class="tree">
+          <li><div class="node" data-d="p1a"><span class="chev">▸</span><span class="node-name">relation mapping</span></div><div class="desc" data-desc="p1a"><div class="desc-inner">Graph linking suspects to gangs, vehicles, phones, UPI accounts, CDR pings.
+          <span class="tool">NetworkX</span></div></div></li>
+          <li><div class="node" data-d="p1b"><span class="chev">▸</span><span class="node-name">criminal mapping (neural network)</span></div><div class="desc" data-desc="p1b"><div class="desc-inner">Learned embeddings surfacing non-obvious connections between cases.</div></div></li>
+          <li><div class="node" data-d="p1c"><span class="chev">▸</span><span class="node-name">repeat offender tracking</span></div><div class="desc" data-desc="p1c"><div class="desc-inner">Flags individuals reappearing across separately-filed reports.</div></div></li>
+          <li><div class="node" data-d="p1d"><span class="chev">▸</span><span class="node-name">predictive risk scoring</span></div><div class="desc" data-desc="p1d"><div class="desc-inner">Scores a case or area by escalation likelihood.</div></div></li>
+          <li><div class="node" data-d="p1e"><span class="chev">▸</span><span class="node-name">crime hotspot + trend/anomaly alerts</span></div><div class="desc" data-desc="p1e"><div class="desc-inner">Flags statistically unusual spikes before they're obvious from raw volume.</div></div></li>
+          <li><div class="node" data-d="p1f"><span class="chev">▸</span><span class="node-name">geospatial fraud + counterfeit hotspot layer</span></div><div class="desc" data-desc="p1f"><div class="desc-inner">Patrol-prioritization map for SHO/SP roles.</div></div></li>
+          <li><div class="node" data-d="p1g"><span class="chev">▸</span><span class="node-name">socio-economic crime correlation</span></div><div class="desc" data-desc="p1g"><div class="desc-inner">District-level policy insight from crime density vs. socio-economic indicators.</div></div></li>
+        </ul>
+      </li>
+      <li><div class="node" data-d="p2"><span class="chev">▸</span><span class="node-name">criminal profile</span></div><div class="desc" data-desc="p2"><div class="desc-inner">Single-suspect dossier — history, records, analysis, mapping, and predictive re-offense score.</div></div></li>
+      <li><div class="node" data-d="p3"><span class="chev">▸</span><span class="node-name">digital arrest live-session monitor</span></div><div class="desc" data-desc="p3"><div class="desc-inner">Receives the fused risk score in real time — can alert dispatch before a victim transfers money.</div></div></li>
+      <li><div class="node" data-d="p4"><span class="chev">▸</span><span class="node-name">auditable evidence export</span></div><div class="desc" data-desc="p4"><div class="desc-inner">One-click, hash-sealed evidence bundle for court submission.
+      <span class="tool">Supabase Storage</span></div></div></li>
+    </ul>
+
+    <div class="node" data-d="a0" style="margin-top:16px"><span class="chev">▸</span><span class="node-name" style="font-size:14.5px;color:var(--amber)">master admin dashboard</span></div>
+    <div class="desc" data-desc="a0"><div class="desc-inner">One view across every department — total issues, resolution rate per department, a city-wide heatmap, a department performance leaderboard, and a live escalation feed for anything that breached its SLA. This is the single screen that shows the whole government side of the platform at a glance.
+    <span class="tool">Supabase aggregate views + Chart.js/Recharts</span></div></div>
+
+  </section>
+
+  <div class="footer-note">
+    <b>Full stack:</b> Vercel (PWA) · Supabase (auth, Postgres, realtime, evidence storage) · Cloudinary (video/reel media) · Hugging Face Spaces free CPU/ZeroGPU (all ML models) · Render free (routing API) · Neo4j Aura free tier or JSON fallback · Gemini 2.5/3.x free tier · WhatsApp Cloud API free tier · Leaflet + OpenStreetMap. Zero paid infrastructure required to demo.
+  </div>
+
+</div>
+<script>
+document.querySelectorAll('.node').forEach(function(n){
+  n.addEventListener('click', function(){
+    var id = n.getAttribute('data-d');
+    var d = document.querySelector('.desc[data-desc="'+id+'"]');
+    n.classList.toggle('open');
+    if (d) d.classList.toggle('open');
+  });
+});
+</script>
+</body>
+</html>

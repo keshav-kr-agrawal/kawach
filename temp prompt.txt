@@ -181,7 +181,7 @@ my inovation arctiture plan:
             ->text detection
             ->video detection
             ->voice detection
-            ->image detection
+            ->image detection (currency)
             ->link detection (site,deep fakes,fraudsters)
             ->Ai Model classifier
             |
