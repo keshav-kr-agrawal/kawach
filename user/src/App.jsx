@@ -122,8 +122,12 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {!isProfileOrLibrary ? (
-          <Link
-            to="/user/profile"
+          <button
+            onClick={() => {
+              console.log('[TOPBAR] Clicked user profile circle button');
+              if (onOpenProfile) onOpenProfile();
+              else navigate('/user/profile');
+            }}
             style={{
               width: '32px',
               height: '32px',
@@ -135,12 +139,12 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
               justifyContent: 'center',
               cursor: 'pointer',
               boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-              textDecoration: 'none'
+              outline: 'none'
             }}
             title="Open User Profile"
           >
             <User size={15} color="#000000" strokeWidth={2.5} />
-          </Link>
+          </button>
         ) : (
           <button
             onClick={() => navigate(-1)}
@@ -222,7 +226,7 @@ function UserLayout({ userReports }) {
   const isMapTab = location.pathname.startsWith('/user/map');
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full max-w-md mx-auto overflow-hidden relative bg-black">
+    <div className="flex flex-col h-full w-full max-w-md mx-auto overflow-hidden relative bg-black">
       {/* Persistent Dynamic Top Bar */}
       <TopBar
         onOpenProfile={() => navigate('/user/profile')}
@@ -372,7 +376,7 @@ class ProfileErrorBoundary extends React.Component {
 
 function CitizenAppWrapper({ children }) {
   return (
-    <div className="flex flex-col h-[100dvh] w-full max-w-md mx-auto overflow-hidden relative bg-black">
+    <div className="flex flex-col h-full w-full max-w-md mx-auto overflow-hidden relative bg-black">
       {children}
     </div>
   );

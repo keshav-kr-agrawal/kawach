@@ -956,6 +956,10 @@ body.police-mode .btn-rulebook:hover {
   .gateway-container {
     grid-template-columns: 1fr;
   }
+  .gateway-card {
+    padding: 24px;
+    min-height: auto;
+  }
   .rulebook-banner {
     flex-direction: column;
     align-items: flex-start;

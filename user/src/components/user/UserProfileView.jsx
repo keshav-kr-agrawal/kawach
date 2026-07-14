@@ -13,14 +13,19 @@ export default function UserProfileView({
   bookmarkedLaws = [], 
   userReports = [], 
   onRemoveBookmark, 
+  onToggleBookmark,
   onDeleteReport, 
   onResolveReport, 
   onSignOut,
+  onLogout,
   isLoading,
   user
 }) {
+  const handleSignOut = onSignOut || onLogout;
+  console.log('[USER PROFILE] Rendering UserProfileView', { user });
+
   // Strict loading check matching the system directive
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
       <div className="flex h-[100dvh] items-center justify-center bg-black">
         <Spinner />
@@ -208,7 +213,7 @@ export default function UserProfileView({
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            Posted Logs ({myReports.length})
+            Posted ({myReports.length})
           </button>
           <button
             onClick={() => setActiveTab('liked')}
@@ -218,7 +223,17 @@ export default function UserProfileView({
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            Liked Feed ({myLikedReports.length})
+            Liked ({myLikedReports.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('bookmarks')}
+            className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all uppercase tracking-wider text-center ${
+              activeTab === 'bookmarks'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Saved Laws ({safeBookmarkedLaws.length})
           </button>
         </div>
 
@@ -263,7 +278,7 @@ export default function UserProfileView({
               </div>
             )}
           </section>
-        ) : (
+        ) : activeTab === 'liked' ? (
           <section className="space-y-3">
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1 flex items-center gap-1.5">
               <Heart className="w-4 h-4 text-slate-400" /> Liked Reports & Feeds
@@ -303,12 +318,54 @@ export default function UserProfileView({
               </div>
             )}
           </section>
+        ) : (
+          <section className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1 flex items-center gap-1.5">
+              <Bookmark className="w-4 h-4 text-slate-400" /> Saved Legal Guides & Rights
+            </h3>
+
+            {safeBookmarkedLaws.length > 0 ? (
+              <div className="space-y-3">
+                {safeBookmarkedLaws.map((card) => (
+                  <div key={card.id} className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-xs hover:border-yellow-250 transition-all duration-300">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <span className="px-2 py-0.5 bg-yellow-100 border border-yellow-200 rounded-full text-[9px] font-bold text-yellow-800 uppercase tracking-wide">
+                          {card.backTitle || 'Motor Vehicles Act'}
+                        </span>
+                        <h4 className="font-extrabold text-slate-900 text-sm mt-1">{card.title}</h4>
+                      </div>
+                      <button
+                        onClick={() => onRemoveBookmark ? onRemoveBookmark(card.id) : onToggleBookmark(card.id)}
+                        className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200"
+                        title="Remove Bookmark"
+                        style={{ minWidth: '36px', minHeight: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="text-slate-600 text-xs font-semibold leading-relaxed font-sans">
+                      {card.backContent || card.frontDescription}
+                    </p>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-[10px] text-slate-700 leading-relaxed font-semibold">
+                      <span className="text-emerald-700 font-extrabold block mb-1 uppercase tracking-wide">Takeaway Action:</span>
+                      {card.action}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center text-slate-400 text-xs font-semibold">
+                No saved laws yet. Go to the Law Library and tap the bookmark icon on any card to save it here.
+              </div>
+            )}
+          </section>
         )}
 
         {/* Sign Out Button */}
         <section className="pt-2">
           <button 
-            onClick={onSignOut}
+            onClick={handleSignOut}
             className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-2xl text-xs uppercase tracking-wider shadow-sm transition-colors text-center"
             style={{ minHeight: '44px' }}
           >

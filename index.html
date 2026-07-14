@@ -96,7 +96,7 @@
                 <div class="feature-tag"><i data-lucide="shield-check"></i> Safe Zone GIS</div>
               </div>
             </div>
-            <a href="http://localhost:5175/#/user/login" class="btn-gateway btn-citizen">
+            <a href="http://localhost:5175/#/" class="btn-gateway btn-citizen">
               <span>Access Citizen Portal</span>
               <i data-lucide="arrow-right"></i>
             </a>
@@ -119,7 +119,7 @@
                 <div class="feature-tag"><i data-lucide="camera"></i> CCTV Analytics</div>
               </div>
             </div>
-            <a href="http://localhost:5175/" class="btn-gateway btn-police">
+            <a href="http://localhost:5175/#/portals" class="btn-gateway btn-police">
               <span>Enter Command Console</span>
               <i data-lucide="arrow-right"></i>
             </a>
@@ -142,7 +142,7 @@
                 <div class="feature-tag"><i data-lucide="heart-pulse"></i> Medical Alerts</div>
               </div>
             </div>
-            <a href="http://localhost:5175/" class="btn-gateway" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #059669;">
+            <a href="http://localhost:5175/#/portals" class="btn-gateway" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #059669;">
               <span>Access Civic Panels</span>
               <i data-lucide="arrow-right"></i>
             </a>
@@ -379,9 +379,9 @@
       <div>
         <h4 style="color: #ffffff; font-size: 14px; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em;">System Nodes</h4>
         <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 2.2;">
-          <li><a href="http://localhost:5175/#/user/login" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Citizen Sentinel PWA</a></li>
-          <li><a href="http://localhost:5175/" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Police Command Center</a></li>
-          <li><a href="http://localhost:5175/" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Civic Departments Panel</a></li>
+          <li><a href="http://localhost:5175/#/" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Citizen Sentinel PWA</a></li>
+          <li><a href="http://localhost:5175/#/portals" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Police Command Center</a></li>
+          <li><a href="http://localhost:5175/#/portals" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Civic Departments Panel</a></li>
           <li><a href="http://localhost:5175/#/admin" style="color: #94a3b8; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Super Admin Console</a></li>
         </ul>
       </div>
@@ -433,14 +433,9 @@
             url.hostname = window.location.hostname;
             link.setAttribute('href', url.toString());
           } else {
-            // Production: strip port and make it a clean relative route redirect
-            let relativePath = '';
-            if (url.port === '5175') {
-              relativePath = url.hash ? url.hash.substring(1) : '/user';
-            } else if (url.port === '5174') {
-              relativePath = url.hash ? url.hash.substring(1) : '/police';
-            }
-            link.setAttribute('href', relativePath || '/');
+            // Production: strip port and make it a clean relative hash route redirect
+            const relativePath = url.hash || '/';
+            link.setAttribute('href', relativePath);
           }
         } catch (e) {
           console.warn('Failed to parse redirect link:', href);
