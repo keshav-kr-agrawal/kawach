@@ -100,5 +100,15 @@ class TestNayakAssistant(unittest.TestCase):
         self.assertTrue(res_scam["is_scam"])
         self.assertEqual(res_scam["matched_pattern"], "Digital Arrest / Impersonation script")
 
+    def test_07_search_law(self):
+        """Test search_law endpoint with query terms"""
+        res = self.client.get("/api/nayak/search?query=cheating")
+        self.assertEqual(res.status_code, 200)
+        results = res.json()
+        self.assertIsInstance(results, list)
+        self.assertGreater(len(results), 0)
+        # Cheating should match BNS Section 318 or IPC Section 415
+        self.assertIn(results[0]["section"], ["318", "415"])
+
 if __name__ == "__main__":
     unittest.main()

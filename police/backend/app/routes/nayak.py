@@ -586,3 +586,14 @@ def handle_nayak_upload(
         "media_url": req.media_url,
         "verdict": verdict
     }
+
+@router.get("/search")
+def search_law_rulebook(
+    query: str,
+    db: Session = Depends(get_db)
+):
+    query_clean = query.strip()
+    if not query_clean:
+        return []
+    results = retrieve_law_chunks(query_clean, db, None, top_k=3)
+    return results
