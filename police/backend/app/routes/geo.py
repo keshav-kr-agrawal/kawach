@@ -96,36 +96,97 @@ from app.neo4j_db import get_neo4j_db
 
 @router.get("/hotspots")
 def detect_hotspots(
+    eps_km: float = Query(1.5, ge=0.1, le=25.0, description="DBSCAN neighborhood radius in km"),
+    min_samples: int = Query(2, ge=1, le=20, description="Min incidents to form a hotspot cluster"),
     db = Depends(get_neo4j_db),
     claims: dict = Depends(get_current_user_claims)
 ):
+    """
+    Crime/fraud hotspot detection via DBSCAN spatial clustering.
+
+    Incidents are clustered on haversine distance; each cluster becomes one
+    GeoJSON feature at the cluster centroid carrying its member incidents,
+    dominant type, and max threat level. Unclustered incidents (DBSCAN noise)
+    are returned as single-point features flagged is_hotspot=false.
+    """
     result = db.run("MATCH (inc:Incident)-[:OCCURRED_AT]->(loc:Location) RETURN inc, loc")
-    features = []
-    
+
+    incidents = []
     for record in result:
         inc = record["inc"]
         loc = record["loc"]
-        
-        # Ensure longitude comes first in GeoJSON coordinates
-        feature = {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [float(loc.get("lng")), float(loc.get("lat"))]
-            },
-            "properties": {
-                "id": inc.get("id"),
-                "type": inc.get("type"),
-                "description": inc.get("description"),
-                "threat_level": inc.get("threat_level"),
-                "timestamp": inc.get("timestamp"),
-                "location_name": loc.get("name")
-            }
-        }
-        features.append(feature)
-        
+        try:
+            lat, lng = float(loc.get("lat")), float(loc.get("lng"))
+        except (TypeError, ValueError):
+            continue
+        incidents.append({
+            "id": inc.get("id"),
+            "type": inc.get("type"),
+            "description": inc.get("description"),
+            "threat_level": inc.get("threat_level"),
+            "timestamp": inc.get("timestamp"),
+            "location_name": loc.get("name"),
+            "lat": lat,
+            "lng": lng,
+        })
+
+    features = []
+    if incidents:
+        # Haversine-metric DBSCAN: inputs in radians, eps in radians
+        # (earth radius ~6371 km).
+        coords = np.radians([[i["lat"], i["lng"]] for i in incidents])
+        eps_rad = eps_km / 6371.0
+        labels = DBSCAN(eps=eps_rad, min_samples=min_samples, metric="haversine").fit_predict(coords)
+
+        threat_rank = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1}
+        clusters = {}
+        for incident, label in zip(incidents, labels):
+            clusters.setdefault(int(label), []).append(incident)
+
+        for label, members in sorted(clusters.items()):
+            if label == -1:
+                # DBSCAN noise — isolated incidents, not hotspots
+                for m in members:
+                    features.append({
+                        "type": "Feature",
+                        "geometry": {"type": "Point", "coordinates": [m["lng"], m["lat"]]},
+                        "properties": {**{k: m[k] for k in ("id", "type", "description", "threat_level", "timestamp", "location_name")},
+                                       "is_hotspot": False, "cluster_id": None, "incident_count": 1},
+                    })
+                continue
+
+            centroid_lat = sum(m["lat"] for m in members) / len(members)
+            centroid_lng = sum(m["lng"] for m in members) / len(members)
+            type_counts = {}
+            for m in members:
+                type_counts[m["type"]] = type_counts.get(m["type"], 0) + 1
+            dominant_type = max(type_counts, key=type_counts.get)
+            max_threat = max(members, key=lambda m: threat_rank.get(str(m["threat_level"]).upper(), 0))["threat_level"]
+
+            features.append({
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [centroid_lng, centroid_lat]},
+                "properties": {
+                    "is_hotspot": True,
+                    "cluster_id": label,
+                    "incident_count": len(members),
+                    "dominant_type": dominant_type,
+                    "max_threat_level": max_threat,
+                    "location_names": sorted({m["location_name"] for m in members if m["location_name"]}),
+                    "incident_ids": [m["id"] for m in members],
+                },
+            })
+
+    hotspot_count = sum(1 for f in features if f["properties"].get("is_hotspot"))
     return {
         "type": "FeatureCollection",
-        "features": features
+        "features": features,
+        "metadata": {
+            "algorithm": "DBSCAN (haversine)",
+            "eps_km": eps_km,
+            "min_samples": min_samples,
+            "total_incidents": len(incidents),
+            "hotspot_clusters": hotspot_count,
+        },
     }
 

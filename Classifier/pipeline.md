@@ -131,7 +131,7 @@ Classifier/
 
 ### 3.4 Google Gemini — LLM Dispatcher
 
-**Model:** `gemini-1.5-flash` · **SDK:** `google-generativeai`
+**Model:** `gemini-2.5-flash` · **SDK:** `google-generativeai`
 
 Used for:
 1. Zero-shot civic department classification with sub-category and resolution estimate (Pipeline 2)

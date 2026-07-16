@@ -58,6 +58,39 @@ async function fetchDeptReports() {
   }
 }
 
+// SLA tiers (minutes) per routing priority — from the KAWACH build spec §6.3:
+// critical 15 min, high 4 hrs, medium/normal 24 hrs, low 72 hrs.
+const SLA_MINUTES = {
+  CRITICAL: 15,
+  HIGH: 240,
+  NORMAL: 1440,
+  MEDIUM: 1440,
+  LOW: 4320
+};
+
+function computeSla(report) {
+  if (!report.timestamp || report.status === 'RESOLVED') return null;
+  const prio = (report.routing_priority || 'NORMAL').toUpperCase();
+  const slaMinutes = SLA_MINUTES[prio] ?? SLA_MINUTES.NORMAL;
+  const deadline = new Date(report.timestamp).getTime() + slaMinutes * 60 * 1000;
+  const remainingMs = deadline - Date.now();
+  return {
+    isBreached: remainingMs < 0,
+    remainingMs,
+    label: remainingMs < 0
+      ? `SLA BREACHED ${formatDuration(-remainingMs)} ago`
+      : `SLA: ${formatDuration(remainingMs)} left`
+  };
+}
+
+function formatDuration(ms) {
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ${mins % 60}m`;
+  return `${Math.floor(hrs / 24)}d ${hrs % 24}h`;
+}
+
 function renderDashboard() {
   // Update stats counts
   const totalCount = activeReports.length;
@@ -88,6 +121,12 @@ function renderDashboard() {
     const prio = report.routing_priority || 'NORMAL';
     const prioClass = 'prio-' + prio.toLowerCase();
 
+    // SLA countdown / breach badge
+    const sla = computeSla(report);
+    const slaBadge = sla
+      ? `<span class="badge ${sla.isBreached ? 'sla-breached' : 'sla-ok'}">${sla.isBreached ? '🚨 ' : '⏳ '}${sla.label}</span>`
+      : '';
+
     // Date parsing
     const dateStr = report.timestamp ? new Date(report.timestamp).toLocaleString() : 'Just now';
 
@@ -101,6 +140,7 @@ function renderDashboard() {
             <span class="badge ${isResolved ? 'status-resolved' : 'status-pending'}">
               ${isResolved ? '✓ Resolved' : '⚡ Active Alert'}
             </span>
+            ${slaBadge}
           </div>
         </div>
 

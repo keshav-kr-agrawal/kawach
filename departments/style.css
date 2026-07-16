@@ -364,6 +364,20 @@ body {
 .badge.status-resolved { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.25); }
 .badge.status-pending { background: rgba(249, 115, 22, 0.1); color: var(--accent-orange); border: 1px solid rgba(249, 115, 22, 0.25); }
 
+.badge.sla-breached {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid var(--accent-red, #ef4444);
+  color: var(--accent-red, #ef4444);
+  font-weight: 800;
+  animation: sla-pulse 1.6s ease-in-out infinite;
+}
+.badge.sla-ok { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.25); color: var(--accent-blue, #3b82f6); }
+
+@keyframes sla-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
 /* Video container in report */
 .video-preview-box {
   width: 100%;

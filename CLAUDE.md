@@ -27,23 +27,24 @@ Don't trust a feature name alone — check this table before describing somethin
 - Real Gemini-based department routing + DistilBERT priority cross-check (Pipeline 2)
 - Real YOLO12s (road damage) + SigLIP TrashNet scene classifier (Pipeline 3)
 - Real deterministic trust/urgency score fusion (`trust_scorer.py`)
-- **Caveat**: if `Classifier/weights/` fails to load, `/classify` and `/full-analysis` silently return random "mostly authentic" results (`main.py:146-149`) instead of erroring — always check `/health` reports real model-loaded state before trusting a demo run.
-- **Caveat (as of this writing)**: `router.py:235` and `main.py:561` hardcode `gemini-1.5-flash`, which is fully shut down (404s on every call) — every routing/hotspot call using this silently degrades to keyword/statistical fallback until fixed.
+- Gemini model is `gemini-2.5-flash` (env-overridable via `GEMINI_MODEL`, defined in `router.py`) — the old shut-down `gemini-1.5-flash` references were fixed 2026-07-16.
+- `/health` now reports `deepfake_mode` (`real`/`mock_fallback`), `routing_mode` (`gemini`/`keyword_fallback`), and `gemini_model` — **check this before any demo run**: if weights aren't loaded, `/classify` and `/full-analysis` still fall back to mock "mostly authentic" results (`_mock_deepfake` in `main.py`), but the degradation is now visible instead of silent.
 
 **Citizen PWA (`user/`)**:
 - Supabase (`citizen_reports` table) is real — real CRUD, with a hardcoded `SEED_REPORTS` fallback if the table is missing.
 - `routingService.js` really calls the Classifier's `/route` endpoint, with a local keyword-heuristic fallback on failure — this one is honest about degrading.
-- **`videoService.js` and the escalation logic in `App.jsx:840-886` are currently a client-side `setTimeout`/`Math.random()` simulation of the AI moderation pipeline** — not connected to the real Classifier. Don't describe this flow as "live AI classification" until this is fixed (tracked in the master plan).
+- Upload-time classification is real: `SecureCameraView.jsx` (nested `user/` version) calls `/full-analysis` at upload and stores verdict/trust fields on the report.
+- **Moderation flow fixed 2026-07-16**: `videoService.js`'s staged workflow progression now derives every outcome deterministically from the report's real classifier fields (`deriveModerationVerdict` — AI_GENERATED→REJECTED, AUTHENTIC+trust≥40→APPROVED, else→SUSPICIOUS review), and the flag-escalation in `App.jsx` (`handleReportVideo`) re-runs the real `/classify` on the stored video URL (`reclassifyVideoUrl`). If the classifier is unreachable, the video stays honestly in REPORTED_SUSPICIOUS ("Under Review") — no fabricated verdict. The 4-second stage animation is UI pacing only.
 - Auth is real Supabase email/password (`CitizenLoginView.jsx`), **not** anonymous — despite `plan/kawach_build_spec.md` describing an anonymous-session design. Don't claim "fully anonymous accounts" in a deck; the accurate claim is "reports are de-identified before reaching departments" (verify this per Phase 5 of the master plan).
 - `user/src/components/*.jsx` has a stale duplicate set of every citizen component (top-level copies alongside `user/src/components/user/`, `department/`, `admin/`). Only the nested versions are imported by `App.jsx` — treat top-level dupes as dead code, not a second implementation.
 
 **Police backend (`police/backend`)**:
-- Real: offender/relation graph construction from SQL data (`routes/network.py`), RBAC-scoped queries, z-score anomaly alerts (`routes/alerts.py`), audit logging.
-- **Heuristic dressed as ML**: predictive risk scoring (`routes/analytics.py:56-103`) is a real weighted formula but with `random.uniform` jitter added — score changes on every call for identical input. `/patterns` is fully hardcoded mock data.
-- **Imported but unused**: `sklearn.cluster.DBSCAN` is imported in `routes/geo.py` but never called — `/hotspots` returns raw ungrouped points, not clusters.
-- **Missing entirely**: real PDF evidence export (`/reports/generate` currently just logs an audit row and returns a fake `download_url` — no PDF, no hash), SLA/escalation engine (SLA only exists as string labels, no computed breach logic), `app/ml/` is an empty module (no dedicated ML code — everything "ML" is inlined heuristics in route handlers).
+- Real: offender/relation graph construction from SQL data (`routes/network.py`), RBAC-scoped queries, z-score anomaly alerts (`routes/alerts.py`), audit logging, FIR-level SLA breach computation from stored `sla_deadline` (`routes/investigations.py`).
+- **Fixed 2026-07-16 — `/hotspots` (`routes/geo.py`) now runs real DBSCAN** (haversine metric, `eps_km`/`min_samples` query params) and returns hotspot cluster centroids with member incidents + noise points flagged `is_hotspot: false`, instead of raw ungrouped points.
+- **Fixed 2026-07-16 — `/reports/generate` is a real hash-sealed evidence export**: generates an actual PDF via `reportlab` from live DB rows (repeat offenders / SLA breaches / district performance), computes SHA-256 over the final PDF bytes, records the hash in the audit log, and serves the file at `/api/reports/download/{id}`. The PDF footer states the chain-of-custody + BSA §63 admissibility intent.
+- **Still heuristic dressed as ML**: predictive risk scoring (`routes/analytics.py:56-103`) is a real weighted formula but with `random.uniform` jitter added — score changes on every call for identical input. `/patterns` is fully hardcoded mock data. `app/ml/` is still an empty module.
 
-**Departments dashboard (`departments/`)**: genuinely functional against live Supabase — real read (filtered by `routed_department`) and real write (`resolveReport` sets `status: 'RESOLVED'`). Not a mockup, just framework-free.
+**Departments dashboard (`departments/`)**: genuinely functional against live Supabase — real read (filtered by `routed_department`) and real write (`resolveReport` sets `status: 'RESOLVED'`). Not a mockup, just framework-free. **Added 2026-07-16**: per-report SLA countdown/breach badge (`computeSla` in `app.js` — CRITICAL 15min / HIGH 4h / NORMAL 24h / LOW 72h per build spec §6.3; breached reports pulse red).
 
 ## Non-negotiable design principles (from `plan/kawach_build_spec.md`, keep enforcing these while building)
 

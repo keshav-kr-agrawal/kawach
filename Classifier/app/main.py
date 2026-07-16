@@ -112,6 +112,7 @@ async def health():
     if scene_analyzer:
         scene_count = (1 if scene_analyzer.yolo_model else 0) + (1 if scene_analyzer.trash_model else 0)
     pv_loaded = priority_validator is not None and priority_validator.model is not None
+    from .router import GEMINI_MODEL
     return HealthResponse(
         status="ok" if len(models) > 0 else "degraded",
         models_loaded=len(models),
@@ -120,6 +121,9 @@ async def health():
         device=device,
         pipelines_active=_ACTIVE_PIPELINES,
         version="2.1.0",
+        deepfake_mode="real" if len(models) > 0 else "mock_fallback",
+        routing_mode="gemini" if os.environ.get("GEMINI_API_KEY") else "keyword_fallback",
+        gemini_model=GEMINI_MODEL,
     )
 
 
@@ -557,8 +561,9 @@ async def predict_hotspot(request: HotspotRequest):
     if api_key and n >= 2:
         try:
             import google.generativeai as genai
+            from .router import GEMINI_MODEL
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel(GEMINI_MODEL)
 
             report_lines = "\n".join(
                 f"- Dept: {r.department}, Priority: {r.priority}, "

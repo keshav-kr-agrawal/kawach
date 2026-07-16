@@ -59,7 +59,7 @@ Below is exactly what happens inside the microservice from the moment a video la
 ║                               ║     ║                                  ║
 ║  ① video_reader.py            ║     ║  ① router.py — Gemini Path       ║
 ║  ┌─────────────────────────┐  ║     ║  ┌──────────────────────────┐   ║
-║  │ VideoReader             │  ║     ║  │ gemini-1.5-flash         │   ║
+║  │ VideoReader             │  ║     ║  │ gemini-2.5-flash         │   ║
 ║  │ cv2.VideoCapture(mp4)   │  ║     ║  │ Zero-shot JSON prompt    │   ║
 ║  │ np.linspace(0, N, 32)   │  ║     ║  │ → department             │   ║
 ║  │ → 32 evenly-spaced      │  ║     ║  │ → sub_category           │   ║
