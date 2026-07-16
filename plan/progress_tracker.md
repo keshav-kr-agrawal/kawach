@@ -14,7 +14,7 @@ Last updated: 2026-07-16 (Phase 0 AI-tasks + all of Phase 1 + all of Phase 2 com
 | 0.2 | Swap `gemini-1.5-flash` → `gemini-2.5-flash` (router.py:235, main.py:561) | AI | Done | 2026-07-16 — env-overridable via `GEMINI_MODEL`; README/pipeline.md updated too |
 | 0.3 | Confirm `GEMINI_API_KEY` valid for 2.5-flash | MANUAL | Not started | Check local `.env` AND the HF Space env vars |
 | 0.4 | Add real-vs-mock indicator to Classifier `/health` | AI | Done | 2026-07-16 — `/health` now reports `deepfake_mode`, `routing_mode`, `gemini_model` |
-| 0.5 | Confirm Postgres/Neo4j reachability, decide fallback strategy | MANUAL | Not started | |
+| 0.5 | Confirm Postgres/Neo4j reachability, decide fallback strategy | MANUAL | Done | Verified Postgres reachability; implemented in-memory fallback for Neo4j & keyword fallback for Postgres |
 | 0.6 | Delete stale duplicate components in `user/src/components/*.jsx` | AI | Done | 2026-07-16 — deleted 8 files directly under components/ that duplicated user/ |
 
 ## Phase 1 — Make the core pipeline honest
@@ -97,7 +97,7 @@ Last updated: 2026-07-16 (Phase 0 AI-tasks + all of Phase 1 + all of Phase 2 com
 ## Quick status summary
 
 - **Total tasks**: 40 (30 across the 6 main phases + 10 in the Nayak track)
-- **Done**: 15 (0.1, 0.2, 0.4, 1.1–1.7, 2.1–2.5)
+- **Done**: 17 (0.1, 0.2, 0.4, 0.5, 0.6, 1.1–1.7, 2.1–2.5)
 - **In progress**: 0
 - **Blocked**: 0
-- **Not started**: 25 (nearest manual blockers: 0.3 Gemini key check, 0.5 DB reachability)
+- **Not started**: 23 (nearest manual blocker: 0.3 Gemini key check)
