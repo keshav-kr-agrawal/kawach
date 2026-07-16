@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports, fraud_shield, ingestion, osint_scraper, webhooks
+from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports, fraud_shield, ingestion, osint_scraper, webhooks, nayak
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -34,6 +34,7 @@ app.include_router(fraud_shield.router, prefix=f"{settings.API_V1_STR}/fraud-shi
 app.include_router(ingestion.router, prefix=f"{settings.API_V1_STR}/ingestion", tags=["Data Ingestion Layer"])
 app.include_router(osint_scraper.router, prefix=f"{settings.API_V1_STR}/osint", tags=["OSINT"])
 app.include_router(webhooks.router, prefix=f"{settings.API_V1_STR}/webhooks", tags=["Webhooks"])
+app.include_router(nayak.router, prefix=f"{settings.API_V1_STR}/nayak", tags=["Nayak Citizen Assistant"])
 
 @app.get("/")
 def read_root():

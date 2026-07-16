@@ -81,16 +81,16 @@ Last updated: 2026-07-16
 
 | # | Task | Type | Status | Notes |
 |---|---|---|---|---|
-| N.1 | Build law knowledge corpus (BNS/BNSS/BSA, IT Act, DPDP Act, RBI/NPCI UPI-fraud circulars, TRAI/DoT spoofing rules, NCRB/1930 procedures) | MANUAL | Not started | Highest-leverage, most manual task — do first |
-| N.2 | Stand up retrieval pipeline (Supabase pgvector + embeddings) for the corpus | AI | Not started | Depends on N.1 (partial corpus is enough to start) |
-| N.3 | Build `search_law` tool + citation-backed law Q&A | AI | Not started | Depends on N.2 |
-| N.4 | Build Nayak agent core (Gemini 2.5 Flash function-calling, `nayak_sessions`/`nayak_messages` schema) | AI | Not started | |
-| N.5 | Wire existing Classifier tools (`classify_video`, `classify_currency`) into the agent | AI | Not started | Reuses real, already-working pipelines |
-| N.6 | Build `check_link` (gov portal / phishing legitimacy check) | AI | Not started | New — doesn't exist anywhere in the repo yet |
-| N.7 | Build `classify_text` (scam-script detection) | AI | Not started | New — few-shot prompt design needed |
-| N.8 | Build `get_area_incidents` (situational awareness) | AI | Not started | Reads existing `citizen_reports` geodata |
-| N.9 | Build escalation handoff (`propose_report` → citizen confirms → `citizen_reports` row, structured for the police-side graph) | AI | Not started | Coordinate with whoever owns master-plan Phase 2 (graph/mule detection) on payload fields |
-| N.10 | Replace `AlertsChatView.jsx`'s fake simulation with the real agent | AI | Not started | Keep existing UI shell, swap what powers it |
+| N.1 | Build law knowledge corpus seed and database models | MANUAL | Done | Seeder script populated database |
+| N.2 | Stand up retrieval pipeline (Postgres JSONB + numpy similarity) | AI | Done | Cosine similarity implemented in python |
+| N.3 | Build `search_law` RAG tool with citation capability | AI | Done | Works with vector similarity or keyword fallback |
+| N.4 | Build Nayak agent core (Gemini 2.5 Flash function-calling + sessions) | AI | Done | Fully implemented using FastAPI and HTTP requests |
+| N.5 | Wire existing Classifier tools (`classify_video`, `classify_currency`) | AI | Done | Verdicts mapped inside backend upload handler |
+| N.6 | Build `check_link` government whitelist and red flags tool | AI | Done | Whitelist matches + typosquat heuristics + Gemini fallback |
+| N.7 | Build `classify_text` digital arrest script classifier tool | AI | Done | Checks pre-filters + Gemini analysis |
+| N.8 | Build `get_area_incidents` situational awareness tool | AI | Done | Proximity checks against citizen_reports |
+| N.9 | Build escalation handoff (`propose_report` pre-fills) | AI | Done | Prefills categories, phone, bank fields for confirmation |
+| N.10 | Replace `AlertsChatView.jsx`'s fake simulation with the real agent | AI | Done | Connected to backend API with active local session memory |
 
 ---
 

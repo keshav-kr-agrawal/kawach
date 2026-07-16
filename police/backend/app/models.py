@@ -274,3 +274,53 @@ class RBIFraudRegistry(Base):
     fraud_type = Column(String)
     reported_amount = Column(Float)
     status = Column(String, default="Flagged") # Flagged, Frozen
+
+class NayakSession(Base):
+    __tablename__ = 'nayak_sessions'
+    
+    id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=False)
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_active_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    title = Column(String, nullable=True)
+
+class NayakMessage(Base):
+    __tablename__ = 'nayak_messages'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(String, ForeignKey('nayak_sessions.id', ondelete='CASCADE'), nullable=False)
+    role = Column(String, nullable=False)  # 'user', 'assistant', 'tool'
+    content = Column(String, nullable=False)
+    tool_name = Column(String, nullable=True)
+    tool_result = Column(JSONB, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+class NayakUserUpload(Base):
+    __tablename__ = 'nayak_user_uploads'
+    
+    id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=False)
+    session_id = Column(String, ForeignKey('nayak_sessions.id', ondelete='SET NULL'), nullable=True)
+    media_url = Column(String, nullable=False)
+    media_type = Column(String, nullable=False)  # 'image', 'video', 'audio', 'link', 'text'
+    classifier_verdict = Column(JSONB, nullable=True)
+    linked_report_id = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+class NayakLawChunk(Base):
+    __tablename__ = 'nayak_law_chunks'
+    
+    id = Column(String, primary_key=True)
+    act = Column(String, nullable=False)
+    section = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    official_text = Column(String, nullable=False)
+    citizen_scenario = Column(String, nullable=False)
+    citizen_explanation = Column(String, nullable=False)
+    recommended_action = Column(String, nullable=False)
+    penalty_summary = Column(String, nullable=False)
+    source_url = Column(String, nullable=True)
+    last_verified = Column(String, nullable=False)
+    tags = Column(JSONB, nullable=False)
+    embedding = Column(JSONB, nullable=True)
+

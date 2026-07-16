@@ -1,17 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User } from 'lucide-react';
+import { Send, Bot, User, RefreshCw, AlertTriangle } from 'lucide-react';
 
 export default function AlertsChatView() {
   const [messages, setMessages] = useState([
     {
       id: 'msg-1',
       sender: 'bot',
-      text: "🛡️ Hello! I am your KAWACH Safety Guard. You can ask me to evaluate local safety conditions, verify viral WhatsApp rumors, or check safe route mappings.",
+      text: "🛡️ Hello! I am Nayak, your KAWACH Safety Guard. You can ask me to evaluate local safety conditions, verify viral WhatsApp rumors, check safe route mappings, or get citation-backed answers on Indian law.",
       timestamp: '12:00 PM'
     }
   ]);
   const [inputText, setInputText] = useState('');
   const [checkingRumor, setCheckingRumor] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+  const [userId, setUserId] = useState('default-citizen-uuid');
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -22,13 +24,69 @@ export default function AlertsChatView() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = (textToSend) => {
+  // Load user session history on mount
+  useEffect(() => {
+    let storedUid = localStorage.getItem('nayak_user_id');
+    if (!storedUid) {
+      storedUid = 'citizen-' + Math.random().toString(36).substring(2, 11);
+      localStorage.setItem('nayak_user_id', storedUid);
+    }
+    setUserId(storedUid);
+
+    const activeSess = localStorage.getItem('nayak_session_id');
+    if (activeSess) {
+      setSessionId(activeSess);
+      fetchMessages(activeSess, storedUid);
+    }
+  }, []);
+
+  const fetchMessages = async (sessId, uid) => {
+    setCheckingRumor(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/nayak/sessions/${sessId}/messages`, {
+        headers: { 'X-User-Id': uid }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.length > 0) {
+          setMessages(data.map(m => ({
+            id: m.id,
+            sender: m.role === 'user' ? 'user' : 'bot',
+            text: m.content,
+            timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            tool_name: m.tool_name,
+            tool_result: m.tool_result
+          })));
+        }
+      }
+    } catch (err) {
+      console.error("[NAYAK] Failed to load messages:", err);
+    } finally {
+      setCheckingRumor(false);
+    }
+  };
+
+  const startNewSession = () => {
+    localStorage.removeItem('nayak_session_id');
+    setSessionId(null);
+    setMessages([
+      {
+        id: 'msg-start-' + Date.now(),
+        sender: 'bot',
+        text: "🛡️ Chat session reset. I am ready to evaluate new security issues, links, or BNS legal rights queries.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+  };
+
+  const handleSendMessage = async (textToSend) => {
     const text = textToSend || inputText;
     if (!text.trim()) return;
 
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const userMsgId = 'user-' + Date.now();
     const newMsg = {
-      id: 'user-' + Date.now(),
+      id: userMsgId,
       sender: 'user',
       text: text,
       timestamp: timestamp
@@ -36,42 +94,72 @@ export default function AlertsChatView() {
 
     setMessages((prev) => [...prev, newMsg]);
     if (!textToSend) setInputText('');
-
-    simulateAIResponse(text);
-  };
-
-  const simulateAIResponse = (userQuery) => {
     setCheckingRumor(true);
-    
-    setTimeout(() => {
-      let botText = '';
-      const query = userQuery.toLowerCase();
 
-      if (query.includes('rumor') || query.includes('kidnap') || query.includes('forward')) {
-        botText = "🚨 **RUMOR VERIFICATION SYSTEM VERDICT:** \n\n**Claim:** Child kidnapping gangs in Koramangala.\n**Verdict:** ❌ **VERIFIED HOAX**\n\n**Rationale:** Bengaluru City Police has confirmed no such gangs or incidents exist. This is a false rumor. Please do not forward.";
-      } else if (query.includes('route') || query.includes('safe') || query.includes('hsr') || query.includes('koramangala')) {
-        botText = "🗺️ **ROUTE INTELLIGENCE REPORT:**\n\nKoramangala to HSR check. \n\n* **Green Zone:** 80ft Road Koramangala is clear and streetlights are functional.\n* **Advisory:** Inner Ring Road has minor water logging. Avoid two-wheelers for now.\n* **Patrols:** 3 active police vehicles on beat.";
-      } else if (query.includes('scam') || query.includes('arrest') || query.includes('cbi') || query.includes('police call')) {
-        botText = "⚠️ **DIGITAL ARREST EXTORTION WARNING:**\n\nIf you receive a video call claiming to be CBI or Police placing you under 'digital arrest' and demanding money: \n\n1. **DISCONNECT IMMEDIATELY.** \n2. Police will never demand cash transfers via chat/call.\n3. Report to **1930**.";
+    try {
+      const res = await fetch('http://localhost:8000/api/nayak/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': userId
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          message: text,
+          lat: 12.9716, // Bengaluru Urban Center
+          lng: 77.5946
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.session_id && data.session_id !== sessionId) {
+          setSessionId(data.session_id);
+          localStorage.setItem('nayak_session_id', data.session_id);
+        }
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            text: data.message.content,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
       } else {
-        botText = "✅ **KAWACH Safety Assistant:**\n\nNo immediate incident clusters or active safety warnings match your query. Let me know if you would like me to check a specific route or WhatsApp forward.";
+        throw new Error("Server returned HTTP " + res.status);
       }
-
+    } catch (err) {
+      console.error("[NAYAK] Chat call failed:", err);
       setMessages((prev) => [
         ...prev,
         {
-          id: 'bot-' + Date.now(),
+          id: 'bot-err-' + Date.now(),
           sender: 'bot',
-          text: botText,
+          text: "⚠️ **SYSTEM CONNECTION DEGRADED:**\n\nUnable to reach the active KAWACH safety node grid. Please make sure the backend command console (`police/backend`) is running.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
+    } finally {
       setCheckingRumor(false);
-    }, 1200);
+    }
   };
 
   const handleQuickQuestion = (qText) => {
     handleSendMessage(qText);
+  };
+
+  const renderMessageText = (txt) => {
+    if (!txt) return "";
+    // Parse bold markdown **text**
+    const parts = txt.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={idx} style={{ fontWeight: '700', color: '#1E293B' }}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
   };
 
   return (
@@ -100,6 +188,26 @@ export default function AlertsChatView() {
             High-speed water clogging logged on Outer Ring Road. Police advising detours.
           </p>
         </div>
+        <button 
+          onClick={startNewSession}
+          title="New Chat Session"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            backgroundColor: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '12px',
+            padding: '6px 10px',
+            fontSize: '10px',
+            color: '#64748B',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+        >
+          <RefreshCw size={10} />
+          Reset Chat
+        </button>
       </div>
 
       {/* Chat Messages Log */}
@@ -162,7 +270,7 @@ export default function AlertsChatView() {
                   whiteSpace: 'pre-wrap',
                   fontWeight: '500'
                 }}>
-                  {msg.text}
+                  {renderMessageText(msg.text)}
                 </div>
                 <div style={{ 
                   textAlign: isBot ? 'left' : 'right', 
@@ -237,7 +345,7 @@ export default function AlertsChatView() {
           🔍 Kidnap Rumor Check
         </button>
         <button
-          onClick={() => handleQuickQuestion('Is route to HSR safe right now?')}
+          onClick={() => handleQuickQuestion('Is the route to HSR safe right now?')}
           style={{
             padding: '8px 14px',
             borderRadius: '20px',
@@ -251,10 +359,10 @@ export default function AlertsChatView() {
             minHeight: '36px'
           }}
         >
-          🗺️ Safe Route to HSR
+          🗺️ Safe Route Check
         </button>
         <button
-          onClick={() => handleQuickQuestion('Received CBI video call scam')}
+          onClick={() => handleQuickQuestion('I received a phone call claiming to be CBI placing me under digital arrest')}
           style={{
             padding: '8px 14px',
             borderRadius: '20px',
@@ -268,7 +376,24 @@ export default function AlertsChatView() {
             minHeight: '36px'
           }}
         >
-          ⚠️ CBI Call Scam
+          ⚠️ Digital Arrest Help
+        </button>
+        <button
+          onClick={() => handleQuickQuestion('What is the RBI circular on UPI fraud customer liability?')}
+          style={{
+            padding: '8px 14px',
+            borderRadius: '20px',
+            border: '1px solid #e5e5e5',
+            backgroundColor: '#f8fafc',
+            fontSize: '11px',
+            color: '#09090B',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            fontWeight: '600',
+            minHeight: '36px'
+          }}
+        >
+          📚 UPI Fraud Liability
         </button>
       </div>
 
@@ -286,7 +411,7 @@ export default function AlertsChatView() {
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
-          placeholder="Ask KAWACH AI or paste WhatsApp forward..."
+          placeholder="Ask Nayak AI or paste suspicious link/call transcript..."
           style={{
             flex: 1,
             backgroundColor: '#f8fafc',
