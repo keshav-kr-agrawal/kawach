@@ -2,7 +2,7 @@
 
 *Edit this file by hand as work proceeds. Status values: `Not started` / `In progress` / `Done` / `Blocked`. Mirrors `plan/kawach_master_plan.md` — see that file for the "why" behind each task.*
 
-Last updated: 2026-07-16 (Phase 0 AI-tasks + all of Phase 1 completed)
+Last updated: 2026-07-16 (Phase 0 AI-tasks + all of Phase 1 + all of Phase 2 completed)
 
 ---
 
@@ -33,11 +33,11 @@ Last updated: 2026-07-16 (Phase 0 AI-tasks + all of Phase 1 completed)
 
 | # | Task | Type | Status | Notes |
 |---|---|---|---|---|
-| 2.1 | Remove random jitter from `predict_district_risk` | AI | Not started | |
-| 2.2 | Compute `/patterns` from real seeded FIR data | AI | Not started | |
-| 2.3 | Add Louvain community detection + centrality to offender graph | AI | Not started | |
-| 2.4 | Add money-mule shared-attribute heuristic | AI | Not started | |
-| 2.5 | Add transaction-anomaly bonus signal to digital-arrest fusion score | AI | Not started | |
+| 2.1 | Remove random jitter from `predict_district_risk` | AI | Done | 2026-07-16 — deterministic; added real 180-day crime-volume component + per-factor `score_breakdown` |
+| 2.2 | Compute `/patterns` from real seeded FIR data | AI | Done | 2026-07-16 — weekend delta, 90d trend shift, socio-economic Pearson correlate; cards omitted (not faked) on thin data |
+| 2.3 | Add Louvain community detection + centrality to offender graph | AI | Done | 2026-07-16 — `community_id` + betweenness/degree per node, `communities` summary block; Louvain path smoke-tested |
+| 2.4 | Add money-mule shared-attribute heuristic | AI | Done | 2026-07-16 — explainable `mule_flag`/`mule_reason` (low-prior + 2+ ties into risk≥70 community); owned Account/UPI/Phone nodes inherit flag |
+| 2.5 | Add transaction-anomaly bonus signal to digital-arrest fusion score | AI | Done | 2026-07-16 — `call_burst_anomaly` (dormancy-burst from real Call rows, fires even for unknown numbers) + `mule_network_signal` fused into Fraud Shield `/check` |
 
 ## Phase 3 — Digital Arrest & Fraud Shield completion
 
@@ -97,7 +97,7 @@ Last updated: 2026-07-16 (Phase 0 AI-tasks + all of Phase 1 completed)
 ## Quick status summary
 
 - **Total tasks**: 40 (30 across the 6 main phases + 10 in the Nayak track)
-- **Done**: 10 (0.1, 0.2, 0.4, 1.1–1.7)
+- **Done**: 15 (0.1, 0.2, 0.4, 1.1–1.7, 2.1–2.5)
 - **In progress**: 0
 - **Blocked**: 0
-- **Not started**: 30 (nearest manual blockers: 0.3 Gemini key check, 0.5 DB reachability)
+- **Not started**: 25 (nearest manual blockers: 0.3 Gemini key check, 0.5 DB reachability)

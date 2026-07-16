@@ -247,8 +247,95 @@ def get_network_graph(min_weight: int = 1, db: Session = Depends(get_db), claims
         # Filter links
         links_res = [l for l in links_res if l["source"] in nodes_ids and l["target"] in nodes_ids]
 
+    # ── Fraud-ring intelligence: Louvain communities + centrality + mule flags ──
+    # Fraud rings surface as dense communities distinct from the main graph;
+    # betweenness centrality ranks who bridges/brokers within and across them;
+    # money mules show as low-history nodes wired into high-risk communities.
+    communities_meta = []
+    if nodes_res and links_res:
+        G = nx.Graph()
+        G.add_nodes_from(n["id"] for n in nodes_res)
+        G.add_edges_from((l["source"], l["target"]) for l in links_res
+                         if l["source"] != l["target"])
+
+        communities = nx.community.louvain_communities(G, seed=42)
+        community_of = {}
+        for cid, members in enumerate(communities):
+            for node_id in members:
+                community_of[node_id] = cid
+
+        betweenness = nx.betweenness_centrality(G)
+        degree_cent = nx.degree_centrality(G)
+
+        # Max risk score per community (from Person nodes)
+        node_by_id = {n["id"]: n for n in nodes_res}
+        community_max_risk = {}
+        for node_id, cid in community_of.items():
+            risk = node_by_id.get(node_id, {}).get("risk_score", 0) or 0
+            community_max_risk[cid] = max(community_max_risk.get(cid, 0), risk)
+
+        for n in nodes_res:
+            cid = community_of.get(n["id"])
+            n["community_id"] = cid
+            n["betweenness_centrality"] = round(betweenness.get(n["id"], 0.0), 4)
+            n["degree_centrality"] = round(degree_cent.get(n["id"], 0.0), 4)
+
+            # Money-mule heuristic (explainable, from graph fraud research):
+            # a low-history person embedded (2+ ties) in a community that
+            # contains high-risk offenders — the classic intermediary/mule
+            # shape. Betweenness is reported as supporting evidence when the
+            # node also brokers paths.
+            n["mule_flag"] = False
+            if (
+                n["type"] == "Person"
+                and (n.get("priors") or 0) <= 1
+                and (n.get("risk_score") or 0) < 50
+                and cid is not None
+                and community_max_risk.get(cid, 0) >= 70
+                and G.degree(n["id"]) >= 2
+            ):
+                n["mule_flag"] = True
+                broker_note = (
+                    f", brokers cross-network paths (betweenness {betweenness[n['id']]:.3f})"
+                    if betweenness.get(n["id"], 0.0) > 0 else ""
+                )
+                n["mule_reason"] = (
+                    f"Low criminal history ({n.get('priors') or 0} priors) but holds "
+                    f"{G.degree(n['id'])} ties inside a network containing offenders with "
+                    f"risk up to {community_max_risk[cid]:.0f}%{broker_note} — consistent "
+                    f"with a money-mule/intermediary role."
+                )
+
+        # Account/UPI/Crypto nodes owned by a flagged mule inherit the flag
+        mule_person_ids = {n["id"] for n in nodes_res if n.get("mule_flag")}
+        for l in links_res:
+            if l["source"] in mule_person_ids and l["type"] == "Owned":
+                owned = node_by_id.get(l["target"])
+                if owned and owned["type"] in ("Account", "UPI ID", "Crypto Wallet", "Phone"):
+                    owned["mule_flag"] = True
+                    owned["mule_reason"] = f"Owned by suspected mule {node_by_id[l['source']]['label']}"
+
+        for cid, members in enumerate(communities):
+            person_members = [node_by_id[m] for m in members
+                              if m in node_by_id and node_by_id[m]["type"] == "Person"]
+            communities_meta.append({
+                "community_id": cid,
+                "size": len(members),
+                "person_count": len(person_members),
+                "max_risk_score": round(community_max_risk.get(cid, 0), 1),
+                "suspected_mules": sum(1 for m in members
+                                       if node_by_id.get(m, {}).get("mule_flag")),
+                "top_broker": max(members, key=lambda m: betweenness.get(m, 0.0)) if members else None,
+            })
+
     return {
         "nodes": nodes_res,
-        "links": links_res
+        "links": links_res,
+        "communities": communities_meta,
+        "metadata": {
+            "algorithm": "Louvain community detection + betweenness centrality (networkx)",
+            "community_count": len(communities_meta),
+            "suspected_mule_count": sum(1 for n in nodes_res if n.get("mule_flag")),
+        },
     }
 

@@ -1,14 +1,80 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import Phone, Account, Offender, AuditLog
+from app.models import Phone, Account, Offender, AuditLog, Call
 from app.auth import get_current_user_claims
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Tuple
+from datetime import datetime, timedelta
 import re
-import random
 
 router = APIRouter()
+
+
+def call_burst_anomaly(db: Session, phone_number: str) -> Optional[Tuple[float, str]]:
+    """
+    Behavioral anomaly signal for digital-arrest detection: a dormant or
+    low-activity line that suddenly bursts with calls is a signature of an
+    active scam operation (the pattern regulators flagged as missing from
+    current bank/telco tooling). Compares last-7-day call volume against the
+    prior-90-day daily baseline using real Call rows.
+
+    Returns (risk_bonus 0-15, rationale) or None if no anomaly / no data.
+    """
+    now = datetime.utcnow()
+    recent_start = now - timedelta(days=7)
+    baseline_start = now - timedelta(days=97)
+
+    involving = (Call.caller_phone == phone_number) | (Call.receiver_phone == phone_number)
+    recent = db.query(Call).filter(involving, Call.timestamp >= recent_start).count()
+    baseline = db.query(Call).filter(
+        involving, Call.timestamp >= baseline_start, Call.timestamp < recent_start
+    ).count()
+
+    baseline_daily = baseline / 90.0
+    recent_daily = recent / 7.0
+
+    if recent < 5:
+        return None
+    if baseline_daily < 0.1:  # effectively dormant before
+        return (15.0, f"Line was dormant ({baseline} calls in prior 90 days) then made/received "
+                      f"{recent} calls in the last 7 days — burst-after-dormancy is a known "
+                      f"digital-arrest operation signature.")
+    ratio = recent_daily / baseline_daily
+    if ratio >= 3:
+        return (min(12.0, 4.0 * (ratio / 3)),
+                f"Call volume is {ratio:.1f}x the line's own 90-day baseline "
+                f"({recent_daily:.1f}/day vs {baseline_daily:.1f}/day) — abnormal activity burst.")
+    return None
+
+
+def mule_network_signal(owner: Offender) -> Optional[Tuple[float, str]]:
+    """
+    Mule-shape signal: an account/phone owner with little or no criminal
+    history who is directly tied to high-risk offenders. Mirrors the
+    graph-intelligence mule heuristic in routes/network.py.
+    Returns (risk_bonus 0-20, rationale) or None.
+    """
+    priors = owner.num_prior_offenses or 0
+    own_risk = owner.risk_score or 0
+    if priors > 1 or own_risk >= 50:
+        return None  # already an established offender — not mule-shaped
+
+    high_risk_ties = [a for a in owner.associates if (a.risk_score or 0) >= 70]
+    in_gang = len(owner.gangs) > 0
+    if not high_risk_ties and not in_gang:
+        return None
+
+    tie_desc = []
+    if high_risk_ties:
+        tie_desc.append(f"{len(high_risk_ties)} direct associate(s) with risk ≥70%")
+    if in_gang:
+        tie_desc.append(f"membership in {owner.gangs[0].name}")
+    return (
+        min(20.0, 10.0 + 5.0 * len(high_risk_ties)),
+        f"Owner {owner.name} has a clean history ({priors} priors) but "
+        f"{' and '.join(tie_desc)} — the receive-and-forward mule profile.",
+    )
 
 class FraudCheckRequest(BaseModel):
     type: str  # "phone", "upi", "link"
@@ -62,9 +128,20 @@ def check_fraud_threat(
         if phone and phone.owner:
             owner = phone.owner
             score = owner.risk_score
-            risk_level = "High" if score >= 80 else "Medium"
             gang_names = ", ".join([g.name for g in owner.gangs]) or "No known syndicate"
             rationale = f"Phone match found in Crime Database. Owned by registered offender {owner.name} ({owner.id}), linked to syndicate: {gang_names}. Prior offenses: {owner.num_prior_offenses} cases."
+
+            # Behavioral anomaly fusion: dormancy-burst + mule-network signals
+            burst = call_burst_anomaly(db, phone.phone_number)
+            if burst:
+                score = min(100.0, score + burst[0])
+                rationale += f" ANOMALY: {burst[1]}"
+            mule = mule_network_signal(owner)
+            if mule:
+                score = min(100.0, score + mule[0])
+                rationale += f" MULE SIGNAL: {mule[1]}"
+
+            risk_level = "High" if score >= 80 else "Medium"
             actions = [
                 "DISCONNECT immediately. This is a flagged impersonation/fraud line.",
                 "Block this phone number on all communication platforms.",
@@ -82,9 +159,26 @@ def check_fraud_threat(
                 narrative=f"I received a phone call from {val} claiming to be law enforcement / custom officials. They threatened me with digital arrest. Suspect is linked in database as {owner.name} ({owner.id}). Please freeze accounts connected to this entity."
             )
         else:
-            # Check for simulated high-risk pattern
-            # For demonstration, numbers containing '420', '999', or ending in '88' are treated as high risk
-            if "420" in val or "999" in val or val.endswith("88"):
+            # Unknown number — still run the behavioral anomaly check against
+            # real call records. This is the "lead time before mass
+            # victimization" case: no criminal record yet, but the line's
+            # own activity pattern is anomalous.
+            burst = call_burst_anomaly(db, val)
+            if burst:
+                score = 40.0 + burst[0] * 2  # 40-70 range: warning tier, honest about uncertainty
+                risk_level = "Medium"
+                rationale = (
+                    f"Number has no criminal-database match, but behavioral analysis of call "
+                    f"records raises concern. {burst[1]}"
+                )
+                actions = [
+                    "Treat unsolicited calls from this number with high suspicion.",
+                    "Do not transfer funds or share OTP/credentials on this call.",
+                    "If the caller claims to be police/CBI/customs: hang up — 'digital arrest' does not exist in Indian law. Verify via 1930."
+                ]
+            # Demo pattern heuristic (seed-data convention, not real intelligence):
+            # numbers containing '420'/'999' or ending '88' simulate a scam line
+            elif "420" in val or "999" in val or val.endswith("88"):
                 score = 86.4
                 risk_level = "High"
                 rationale = "Flagged by cell-tower ping anomalies. Co-located with digital arrest hubs in Jamtara/Mewat region. Outbound webhook calls show heavy pattern of spoofing."
@@ -108,8 +202,15 @@ def check_fraud_threat(
         if account and account.owner:
             owner = account.owner
             score = owner.risk_score
-            risk_level = "High" if score >= 80 else "Medium"
             rationale = f"Bank Account / UPI ID registered to offender {owner.name} ({owner.id}). Linked bank: {account.bank_name}. Risk flagged under money laundering & mule accounts registry."
+
+            # Mule-network fusion signal: clean-history owner tied to high-risk network
+            mule = mule_network_signal(owner)
+            if mule:
+                score = min(100.0, score + mule[0])
+                rationale += f" MULE SIGNAL: {mule[1]}"
+
+            risk_level = "High" if score >= 80 else "Medium"
             actions = [
                 "STOP transaction immediately. Do NOT send money to this ID.",
                 "Flag this account in banking system to prevent automated transactions.",
