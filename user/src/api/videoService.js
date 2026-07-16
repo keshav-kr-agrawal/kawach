@@ -1,9 +1,13 @@
 /**
  * Video Upload & AI Moderation State Machine
- * 
+ *
  * Flow:
- * AI_CHECK_1 -> COHORT_TEST -> PUBLIC_APPROVED
- *                          \-> REPORTED_SUSPICIOUS -> AI_CHECK_2 -> PUBLIC_APPROVED/REJECTED
+ * AI_CHECK_1 -> DEPT_ROUTING -> COHORT_TEST -> PUBLIC_APPROVED
+ *                                          \-> REPORTED_SUSPICIOUS -> AI_CHECK_2 -> PUBLIC_APPROVED/REJECTED
+ *
+ * The verdict at each decision point comes from the report's real classifier
+ * output (Pipeline 4 /full-analysis runs at upload time in SecureCameraView).
+ * The staged progression is UI pacing only — outcomes are never random.
  */
 
 export const VIDEO_STATUS = {
@@ -58,7 +62,31 @@ export const getStatusColor = (status) => {
   }
 };
 
-// Simulated workflow progression
+const getApiBase = () =>
+  (import.meta.env.VITE_CLASSIFIER_API_URL || 'http://localhost:8001/classify').replace(/\/classify$/, '');
+
+/**
+ * Deterministic moderation verdict from the report's real classifier fields
+ * (populated at upload time by /full-analysis).
+ *
+ * AI_GENERATED             -> REJECTED
+ * AUTHENTIC + trust >= 40  -> PUBLIC_APPROVED
+ * INCONCLUSIVE / low trust -> REPORTED_SUSPICIOUS (human/secondary review)
+ */
+export const deriveModerationVerdict = (report) => {
+  const verdict = report.aiVerdict || report.ai_verdict || 'INCONCLUSIVE';
+  const trust = report.trustScore ?? report.trust_score ?? 0;
+
+  if (verdict === 'AI_GENERATED') return VIDEO_STATUS.REJECTED;
+  if (verdict === 'AUTHENTIC' && trust >= 40) return VIDEO_STATUS.PUBLIC_APPROVED;
+  return VIDEO_STATUS.REPORTED_SUSPICIOUS;
+};
+
+/**
+ * Staged workflow progression. The visual staging (one state every 4s) is UI
+ * pacing; every decision point reads the report's real classifier output via
+ * deriveModerationVerdict — no random outcomes.
+ */
 export const simulateWorkflowProgress = (video, onUpdate) => {
   let currentStatus = video.status;
 
@@ -70,22 +98,55 @@ export const simulateWorkflowProgress = (video, onUpdate) => {
       currentStatus = VIDEO_STATUS.COHORT_TEST;
       onUpdate({ ...video, status: currentStatus });
     } else if (currentStatus === VIDEO_STATUS.COHORT_TEST) {
-      // 80% chance of approval, 20% flagged
-      currentStatus = Math.random() > 0.2 ? VIDEO_STATUS.PUBLIC_APPROVED : VIDEO_STATUS.REPORTED_SUSPICIOUS;
+      currentStatus = deriveModerationVerdict(video);
       onUpdate({ ...video, status: currentStatus });
+      if (currentStatus !== VIDEO_STATUS.REPORTED_SUSPICIOUS) clearInterval(interval);
     } else if (currentStatus === VIDEO_STATUS.REPORTED_SUSPICIOUS) {
       currentStatus = VIDEO_STATUS.AI_CHECK_2;
       onUpdate({ ...video, status: currentStatus });
     } else if (currentStatus === VIDEO_STATUS.AI_CHECK_2) {
-      // AI check 2 determines final verdict
-      currentStatus = Math.random() > 0.3 ? VIDEO_STATUS.PUBLIC_APPROVED : VIDEO_STATUS.REJECTED;
+      // Secondary check: same real classifier data, stricter trust bar.
+      const trust = video.trustScore ?? video.trust_score ?? 0;
+      const verdict = video.aiVerdict || video.ai_verdict || 'INCONCLUSIVE';
+      currentStatus = (verdict !== 'AI_GENERATED' && trust >= 25)
+        ? VIDEO_STATUS.PUBLIC_APPROVED
+        : VIDEO_STATUS.REJECTED;
       onUpdate({ ...video, status: currentStatus });
       clearInterval(interval);
     } else {
       clearInterval(interval);
     }
-  }, 4000); // Progress states every 4 seconds for immediate visualization in the prototype
+  }, 4000);
 
   return () => clearInterval(interval);
 };
 
+/**
+ * Re-run the real deepfake classifier (Pipeline 1 /classify) against a stored
+ * video URL — used when citizens flag a published video as suspicious.
+ *
+ * Returns the classifier response, or null if the video/classifier is
+ * unreachable. Callers must treat null as "still under review" — never
+ * fabricate a verdict when the real pipeline is offline.
+ */
+export const reclassifyVideoUrl = async (videoUrl) => {
+  try {
+    const videoRes = await fetch(videoUrl);
+    if (!videoRes.ok) throw new Error(`video fetch failed: ${videoRes.status}`);
+    const blob = await videoRes.blob();
+
+    const fd = new FormData();
+    const ext = (videoUrl.split('?')[0].split('.').pop() || 'mp4').toLowerCase();
+    const safeExt = ['mp4', 'avi', 'mov', 'mkv', 'webm'].includes(ext) ? ext : 'mp4';
+    fd.append('file', blob, `flagged_video.${safeExt}`);
+
+    const res = await fetch(`${getApiBase()}/classify`, { method: 'POST', body: fd });
+    if (!res.ok) throw new Error(`classify failed: ${res.status}`);
+    const data = await res.json();
+    console.log('[RECLASSIFY] Real forensic verdict:', data);
+    return data;
+  } catch (err) {
+    console.warn('[RECLASSIFY] Classifier unreachable — leaving video under review (no fake verdict):', err);
+    return null;
+  }
+};

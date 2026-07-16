@@ -167,3 +167,8 @@ class HealthResponse(BaseModel):
     device: str
     pipelines_active: int = 0
     version: str = "2.1.0"
+    # Real-vs-mock transparency: if deepfake weights failed to load, /classify
+    # and /full-analysis return mock results — this must be visible, not silent.
+    deepfake_mode: str = "unknown"  # "real" | "mock_fallback"
+    routing_mode: str = "unknown"   # "gemini" | "keyword_fallback"
+    gemini_model: str = ""

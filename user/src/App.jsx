@@ -47,7 +47,7 @@ import HealthDashboardView from './components/department/health/HealthDashboardV
 import DisasterDashboardView from './components/department/disaster/DisasterDashboardView';
 import AdminView from './components/admin/AdminView';
 
-import { simulateWorkflowProgress, VIDEO_STATUS } from './api/videoService';
+import { simulateWorkflowProgress, reclassifyVideoUrl, VIDEO_STATUS } from './api/videoService';
 
 const ALL_FLASHCARDS = [
   {
@@ -838,6 +838,8 @@ export default function App() {
   };
 
   const handleReportVideo = async (videoId) => {
+    let flaggedReport = null;
+
     setUserReports((prev) => {
       return prev.map((r) => {
         if (r.id === videoId) {
@@ -847,28 +849,8 @@ export default function App() {
           let nextStatus = r.status;
           if (isSuspicious) {
             nextStatus = VIDEO_STATUS.REPORTED_SUSPICIOUS;
-            console.log(`[MODERATION] Video ${videoId} flagged as fake ${nextFlags} times. Shifting to REPORTED_SUSPICIOUS.`);
-
-            setTimeout(async () => {
-              const finalStatus = Math.random() > 0.4 ? VIDEO_STATUS.PUBLIC_APPROVED : VIDEO_STATUS.REJECTED;
-              setUserReports((currentList) =>
-                currentList.map((item) => {
-                  if (item.id === videoId) {
-                    return { ...item, status: finalStatus, flagsCount: 0 };
-                  }
-                  return item;
-                })
-              );
-
-              try {
-                await supabase
-                  .from('citizen_reports')
-                  .update({ status: finalStatus })
-                  .eq('id', videoId);
-              } catch (err) {
-                console.error('[SUPABASE] Error syncing final moderation status:', err);
-              }
-            }, 6000);
+            flaggedReport = { ...r, flagsCount: nextFlags };
+            console.log(`[MODERATION] Video ${videoId} flagged as fake ${nextFlags} times. Re-running real forensic classification.`);
           }
 
           // Sync immediate flag status to database
@@ -883,6 +865,50 @@ export default function App() {
         return r;
       });
     });
+
+    // Threshold crossed: re-run the REAL deepfake classifier on the stored
+    // video. If the classifier is unreachable, the video stays
+    // REPORTED_SUSPICIOUS (honest pending-review state) — no fabricated verdict.
+    if (flaggedReport?.videoUrl) {
+      const result = await reclassifyVideoUrl(flaggedReport.videoUrl);
+      if (!result) return;
+
+      const finalStatus = result.verdict === 'AI_GENERATED'
+        ? VIDEO_STATUS.REJECTED
+        : VIDEO_STATUS.PUBLIC_APPROVED;
+
+      setUserReports((currentList) =>
+        currentList.map((item) => {
+          if (item.id === videoId) {
+            return {
+              ...item,
+              status: finalStatus,
+              flagsCount: 0,
+              aiVerdict: result.verdict,
+              fakeProb: result.fake_probability,
+              confidenceLevel: result.confidence_level,
+              trustScore: result.trust_score ?? item.trustScore
+            };
+          }
+          return item;
+        })
+      );
+
+      try {
+        await supabase
+          .from('citizen_reports')
+          .update({
+            status: finalStatus,
+            ai_verdict: result.verdict,
+            fake_prob: result.fake_probability,
+            confidence_level: result.confidence_level,
+            trust_score: result.trust_score ?? null
+          })
+          .eq('id', videoId);
+      } catch (err) {
+        console.error('[SUPABASE] Error syncing final moderation status:', err);
+      }
+    }
   };
 
   return (

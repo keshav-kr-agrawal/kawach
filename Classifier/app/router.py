@@ -3,6 +3,10 @@ import json
 from typing import Dict, Any
 import google.generativeai as genai
 
+# Gemini 1.5 is fully shut down (404s on every call) — default to 2.5-flash,
+# overridable via env so future model migrations don't need a code change.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+
 # ── Keyword Routing Map — 10 Indian Civic Departments ─────────────────────
 # Each entry has keywords, routing metadata, sub_category, and resolution estimate.
 KEYWORD_MAPPING = [
@@ -232,7 +236,7 @@ def route_report_text(
 
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel(GEMINI_MODEL)
 
         prompt = f"""You are the central AI dispatcher for KAWACH, India's civic incident reporting platform.
 Analyze the citizen report below and route it to the correct government department.
