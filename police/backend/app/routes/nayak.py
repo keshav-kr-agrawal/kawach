@@ -232,10 +232,10 @@ def generate_fallback_chat_reply(user_msg: str, db: Session) -> str:
             + citation_text
         )
         
-    elif "arrest" in msg_lower or "cbi" in msg_lower or "police" in msg_lower or "scam" in msg_lower:
+    elif "arrest" in msg_lower or "cbi" in msg_lower or "police" in msg_lower or "scam" in msg_lower or "extortion" in msg_lower or "blackmail" in msg_lower or "photos" in msg_lower or "money" in msg_lower:
         return (
             "⚠️ **DIGITAL ARREST EXTORTION WARNING:**\n\n"
-            "If you receive a Skype/WhatsApp video call claiming you are under 'digital arrest' by customs or CBI, **HANG UP IMMEDIATELY.** \n"
+            "If you receive a Skype/WhatsApp video call claiming you are under 'digital arrest' by customs or CBI, or if someone threatens you with extortion/blackmail, **HANG UP IMMEDIATELY.** \n"
             "**Official Guardrail:** Government officials and police will NEVER place citizens under 'digital arrest' over a phone call, nor will they ask you to transfer funds to a private account."
             + citation_text
         )
