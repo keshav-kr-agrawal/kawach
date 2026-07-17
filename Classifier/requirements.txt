@@ -15,3 +15,5 @@ google-generativeai
 ultralytics>=8.0.0
 transformers>=4.40.0
 safetensors
+# Pipeline 7 — Counterfeit Currency (serial-number OCR check)
+easyocr

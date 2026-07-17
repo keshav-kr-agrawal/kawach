@@ -172,3 +172,4 @@ class HealthResponse(BaseModel):
     deepfake_mode: str = "unknown"  # "real" | "mock_fallback"
     routing_mode: str = "unknown"   # "gemini" | "keyword_fallback"
     gemini_model: str = ""
+    currency_mode: str = "unknown"  # "cnn+heuristic" | "heuristic_only"

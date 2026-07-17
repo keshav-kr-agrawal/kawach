@@ -115,9 +115,14 @@ export default function MultiDepartmentView() {
   const fetchReports = async () => {
     try {
       setLoading(true);
+      // Anonymity boundary: never fetch uploader_uuid past the citizen app
       const { data, error } = await supabase
         .from('citizen_reports')
-        .select('*')
+        .select(
+          'id, title, description, category, status, lat, lng, video_url, timestamp, ' +
+          'routed_department, routing_priority, routing_reason, escalation_required, ' +
+          'ai_verdict, confidence_level, trust_score, civic_urgency_score, sub_category'
+        )
         .order('timestamp', { ascending: false });
 
       if (error) throw error;

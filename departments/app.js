@@ -37,12 +37,19 @@ function exitDashboard() {
   document.getElementById('selection-screen').classList.remove('hidden');
 }
 
+// Anonymity boundary: department dashboards must never receive citizen/device
+// identifiers (uploader_uuid). Explicit column list instead of select('*').
+const DEPT_SAFE_COLUMNS =
+  'id, title, description, category, status, lat, lng, video_url, timestamp, ' +
+  'routed_department, routing_priority, routing_reason, escalation_required, ' +
+  'ai_verdict, confidence_level, trust_score, civic_urgency_score, sub_category';
+
 async function fetchDeptReports() {
   showLoading(true);
   try {
     const { data, error } = await supabaseClient
       .from('citizen_reports')
-      .select('*')
+      .select(DEPT_SAFE_COLUMNS)
       .eq('routed_department', activeDeptCode)
       .order('timestamp', { ascending: false });
 

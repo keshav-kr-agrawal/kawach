@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-07-17T09:31:08.161815+00:00",
+  "arch": "efficientnet_b0",
+  "train_samples": 6304,
+  "val_samples": 1351,
+  "test_samples": 1352,
+  "best_val_macro_f1": 0.9808,
+  "overall": {
+    "n": 1352,
+    "accuracy": 0.9867,
+    "fake_precision": 0.9639,
+    "fake_recall": 0.9816,
+    "fake_f1": 0.9726,
+    "auc": 0.9978
+  },
+  "per_denomination": {
+    "10": {
+      "n": 378,
+      "accuracy": 0.9921,
+      "fake_precision": 1.0,
+      "fake_recall": 0.987,
+      "fake_f1": 0.9935,
+      "auc": 1.0
+    },
+    "100": {
+      "n": 103,
+      "accuracy": 1.0,
+      "fake_precision": 1.0,
+      "fake_recall": 1.0,
+      "fake_f1": 1.0,
+      "auc": 1.0
+    },
+    "20": {
+      "n": 146,
+      "accuracy": 1.0,
+      "fake_precision": 1.0,
+      "fake_recall": 1.0,
+      "fake_f1": 1.0,
+      "auc": 1.0
+    },
+    "200": {
+      "n": 88,
+      "accuracy": 1.0,
+      "fake_precision": 1.0,
+      "fake_recall": 1.0,
+      "fake_f1": 1.0,
+      "auc": 1.0
+    },
+    "2000": {
+      "n": 47,
+      "accuracy": 0.8936,
+      "fake_precision": 0.8,
+      "fake_recall": 0.8571,
+      "fake_f1": 0.8276,
+      "auc": 0.9221
+    },
+    "50": {
+      "n": 133,
+      "accuracy": 1.0,
+      "fake_precision": 1.0,
+      "fake_recall": 1.0,
+      "fake_f1": 1.0,
+      "auc": 1.0
+    },
+    "500": {
+      "n": 220,
+      "accuracy": 0.9909,
+      "fake_precision": 0.9851,
+      "fake_recall": 0.9851,
+      "fake_f1": 0.9851,
+      "auc": 0.9984
+    },
+    "unknown": {
+      "n": 237,
+      "accuracy": 0.9662,
+      "fake_precision": 0.0,
+      "fake_recall": 0.0,
+      "fake_f1": 0.0
+    }
+  },
+  "datasets_used": [
+    "devanandjoly/indian-currency-images-for-fake-currency-detection",
+    "iayushanand/currency-dataset500-inr-note-real-fake",
+    "jayaprakashpondy/indian-currency-dataset",
+    "mdladla/fake-currency-data",
+    "preetrank/indian-currency-real-vs-fake-notes-dataset",
+    "sreeharisureshkaggle/fake-currency-detection-dataset"
+  ],
+  "raw_images_per_dataset": {
+    "devanandjoly/indian-currency-images-for-fake-currency-detection": 3960,
+    "iayushanand/currency-dataset500-inr-note-real-fake": 995,
+    "jayaprakashpondy/indian-currency-dataset": 355,
+    "mdladla/fake-currency-data": 0,
+    "preetrank/indian-currency-real-vs-fake-notes-dataset": 8761,
+    "sreeharisureshkaggle/fake-currency-detection-dataset": 132
+  },
+  "note": "Quote per-denomination numbers, never the blended overall figure alone. If train_samples is small, treat accuracy as provisional (see section 2/4 warnings)."
+}

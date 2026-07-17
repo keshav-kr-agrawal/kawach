@@ -85,7 +85,7 @@ def main():
     for filename in DEEPFAKE_WEIGHT_FILES:
         target = weights_dir / filename
         if target.exists():
-            print(f"  ✓ {filename} already exists, skipping.")
+            print(f"  [OK] {filename} already exists, skipping.")
             continue
         url = f"{DEEPFAKE_BASE_URL}/{filename}"
         download_url(url, target)
@@ -99,7 +99,7 @@ def main():
         if target.exists():
             size_mb = target.stat().st_size / (1024 * 1024)
             if size_mb > 1:  # Only skip if it's a real file (not a stub)
-                print(f"  ✓ {item['local_path']} ({size_mb:.1f}MB) already exists, skipping.")
+                print(f"  [OK] {item['local_path']} ({size_mb:.1f}MB) already exists, skipping.")
                 continue
 
         print(f"\n  [{item['repo_id']}] → {item['filename']}")
@@ -116,7 +116,7 @@ def main():
     print(f"  Found {len(model_files)} model file(s) > 1MB")
     for f in sorted(model_files):
         size = f.stat().st_size / (1024 * 1024)
-        print(f"    ✓ {f.relative_to(weights_dir)} ({size:.1f}MB)")
+        print(f"    [OK] {f.relative_to(weights_dir)} ({size:.1f}MB)")
 
     print("\n✅ All downloads complete. KAWACH is ready.\n")
 

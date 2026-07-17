@@ -77,9 +77,16 @@ No fixed deadline — phases are ordered by dependency and demo risk, not by day
 
 **Goal: the accuracy claim in the deck is specific and defensible, not a vague blanket number.**
 
-- [ ] **4.1** [MANUAL] Gather or confirm a small labeled test set of real/fake note images per denomination (₹100/₹200/₹500/₹2000) — check if `Classifier/weights/` already implies a specific dataset it was trained/validated on and reuse that.
-- [ ] **4.2** [AI] Write a small evaluation script that reports accuracy/precision/recall **per denomination**, not blended, and save the output for the deck.
-- [ ] **4.3** [AI] (Optional, if time allows) Add a lightweight second-opinion heuristic (e.g. security-thread region correlation via classical CV) alongside the CNN verdict; when the two disagree, report lower confidence instead of silently picking one — cheap way to add rigor without training a new model.
+**Status update 2026-07-17:** exploration confirmed **no currency model existed anywhere in the repo** — the architecture docs described one but nothing was implemented, and no ready pretrained INR-counterfeit model exists on HF Hub (research: published results use transfer learning — MobileNetV2/InceptionV3, 94–99% — on Kaggle FICN datasets). Built from scratch as **Classifier Pipeline 7**:
+
+- [x] **4.0** [AI] `POST /classify-currency` (`Classifier/app/currency_detector.py`): CNN slot (`weights/currency/currency_cnn.pt`) fused with three always-available classical security-feature checks — security-thread band detection, microprint Laplacian sharpness, print-noise profile. CNN/heuristic disagreement ⇒ INCONCLUSIVE; `model_mode` disclosed in every response and in `/health` (`currency_mode`). Heuristic-only mode caps confidence at MEDIUM — the tool under-claims by design (false positives are the PS's stated kill metric).
+- [ ] **4.1** [MANUAL — **the one thing blocking the CNN**] Download a labeled real/fake INR dataset from Kaggle (needs login) and unzip so images land in `Classifier/datasets/currency/train/real/` and `train/fake/`:
+  1. **Best**: [sreeharisureshkaggle/fake-currency-detection-dataset](https://www.kaggle.com/datasets/sreeharisureshkaggle/fake-currency-detection-dataset) — ₹500 + ₹2000, real/fake + per-security-feature templates
+  2. [iayushanand/currency-dataset500-inr-note-real-fake](https://www.kaggle.com/datasets/iayushanand/currency-dataset500-inr-note-real-fake) — ₹500 only
+  3. [preetrank/indian-currency-real-vs-fake-notes-dataset](https://www.kaggle.com/datasets/preetrank/indian-currency-real-vs-fake-notes-dataset)
+  Keep denomination tokens (500/2000/…) in filenames or folder names — the eval script uses them for per-denomination metrics.
+- [x] **4.2** [AI] `Classifier/train_currency_model.py` written and ready: MobileNetV3-small transfer learning (small on purpose — must serve on HF Spaces free CPU), seeded 80/20 split, saves weights + `eval_report.json` with **per-denomination** accuracy/precision/recall. Run `python train_currency_model.py` after 4.1; the service auto-loads the CNN on next restart (`currency_mode` flips to `cnn+heuristic`).
+- [x] **4.3** [AI] Second-opinion heuristic layer — built into Pipeline 7 from day one (the three classical checks above), not bolted on later.
 
 ---
 

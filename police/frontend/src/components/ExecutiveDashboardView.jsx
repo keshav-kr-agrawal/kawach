@@ -20,9 +20,10 @@ function ExecutiveDashboardView({ token, user }) {
   useEffect(() => {
     async function loadRealTimeStats() {
       try {
+        // Anonymity boundary: never fetch uploader_uuid past the citizen app
         const { data, error } = await supabase
           .from('citizen_reports')
-          .select('*');
+          .select('id, status, routed_department, routing_priority, lat, lng, timestamp');
 
         if (error) throw error;
 

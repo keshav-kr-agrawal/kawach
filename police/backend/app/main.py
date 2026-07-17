@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports, fraud_shield, ingestion, osint_scraper, webhooks, nayak
+from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports, fraud_shield, ingestion, osint_scraper, webhooks, nayak, digital_arrest
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -35,6 +35,7 @@ app.include_router(ingestion.router, prefix=f"{settings.API_V1_STR}/ingestion", 
 app.include_router(osint_scraper.router, prefix=f"{settings.API_V1_STR}/osint", tags=["OSINT"])
 app.include_router(webhooks.router, prefix=f"{settings.API_V1_STR}/webhooks", tags=["Webhooks"])
 app.include_router(nayak.router, prefix=f"{settings.API_V1_STR}/nayak", tags=["Nayak Citizen Assistant"])
+app.include_router(digital_arrest.router, prefix=f"{settings.API_V1_STR}/digital-arrest", tags=["Digital Arrest Live Monitor"])
 
 @app.get("/")
 def read_root():

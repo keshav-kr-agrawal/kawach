@@ -551,6 +551,77 @@ def handle_nayak_chat(
         "message": {"role": "assistant", "content": reply_txt}
     }
 
+CLASSIFIER_URL = os.environ.get("CLASSIFIER_URL", "http://localhost:8001")
+
+
+def _classify_media_for_real(media_url: str, media_type: str) -> dict:
+    """
+    Fetch the media and run it through the real Classifier microservice:
+    video -> /classify (deepfake forensics), image -> /classify-currency
+    (counterfeit screening). If the media or classifier is unreachable the
+    verdict honestly says PENDING_ANALYSIS — never a fabricated score.
+    """
+    try:
+        media_res = requests.get(media_url, timeout=30)
+        media_res.raise_for_status()
+        blob = media_res.content
+
+        if media_type == "video":
+            r = requests.post(
+                f"{CLASSIFIER_URL}/classify",
+                files={"file": ("nayak_upload.mp4", blob, "video/mp4")},
+                timeout=600,
+            )
+            r.raise_for_status()
+            data = r.json()
+            return {
+                "is_authenticated": data.get("verdict") == "AUTHENTIC",
+                "score": round((1.0 - data.get("fake_probability", 0.5)) * 100, 1),
+                "verdict": data.get("verdict"),
+                "confidence": data.get("confidence_level"),
+                "trust_score": data.get("trust_score"),
+                "details": (
+                    f"Deepfake forensics: {data.get('verdict')} "
+                    f"(fake probability {data.get('fake_probability', 0):.2f}, "
+                    f"{data.get('faces_detected', 0)} face(s) across {data.get('frames_analyzed', 0)} frames)."
+                ),
+                "source": "classifier:/classify",
+            }
+
+        if media_type == "image":
+            r = requests.post(
+                f"{CLASSIFIER_URL}/classify-currency",
+                files={"file": ("nayak_note.jpg", blob, "image/jpeg")},
+                timeout=60,
+            )
+            r.raise_for_status()
+            data = r.json()
+            findings = "; ".join(c["finding"] for c in data.get("security_checks", [])[:2])
+            return {
+                "is_authenticated": data.get("verdict") in ("LIKELY_GENUINE", "GENUINE_FEATURES"),
+                "score": round((1.0 - data.get("fake_probability", 0.5)) * 100, 1),
+                "verdict": data.get("verdict"),
+                "confidence": data.get("confidence"),
+                "model_mode": data.get("model_mode"),
+                "details": f"Currency screening ({data.get('model_mode')}): {data.get('verdict')}. {findings}",
+                "source": "classifier:/classify-currency",
+            }
+
+        return {"is_authenticated": None, "score": None,
+                "details": f"No classifier pipeline for media_type '{media_type}' yet.",
+                "source": "none"}
+
+    except Exception as e:
+        print(f"[NAYAK] Real classification failed ({media_type}): {e}")
+        return {
+            "is_authenticated": None,
+            "score": None,
+            "verdict": "PENDING_ANALYSIS",
+            "details": "Classifier service unreachable — media stored, analysis pending. No verdict fabricated.",
+            "source": "unreachable",
+        }
+
+
 @router.post("/upload")
 def handle_nayak_upload(
     req: MediaUploadRequest,
@@ -558,17 +629,14 @@ def handle_nayak_upload(
     user_id: str = Depends(get_nayak_user_id)
 ):
     upload_id = str(uuid.uuid4())
-    
-    # Default verdict
-    verdict = {"is_authenticated": True, "score": 100.0, "details": "File uploaded successfully."}
-    
-    # Integrate existing Classifier microservice in Phase 2
-    # If media is video/image, we could post to Classifier's full-analysis endpoint
-    if req.media_type == "video":
-        verdict = {"is_authenticated": False, "score": 12.5, "details": "Flagged as potential synthetic media/deepfake by EfficientNet ensemble."}
-    elif req.media_type == "image":
-        verdict = {"is_authenticated": True, "score": 98.4, "details": "Authentic currency note features match. Denomination verified."}
-        
+
+    if req.media_type in ("video", "image"):
+        verdict = _classify_media_for_real(req.media_url, req.media_type)
+    else:
+        verdict = {"is_authenticated": None, "score": None,
+                   "details": "Stored. Text/link/audio content is analyzed in-chat, not at upload.",
+                   "source": "none"}
+
     upload = NayakUserUpload(
         id=upload_id,
         user_id=user_id,
@@ -579,7 +647,7 @@ def handle_nayak_upload(
     )
     db.add(upload)
     db.commit()
-    
+
     return {
         "id": upload_id,
         "media_type": req.media_type,

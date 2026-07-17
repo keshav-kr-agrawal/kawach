@@ -15,6 +15,7 @@ from .model_loader import load_models
 from .classifier import predict_on_video
 from .scene_analyzer import SceneAnalyzer
 from .priority_validator import PriorityValidator
+from .currency_detector import CurrencyDetector
 from .trust_scorer import compute_trust_score, compute_civic_urgency_score
 from .schemas import (
     ClassifyResponse, HealthResponse,
@@ -33,13 +34,18 @@ models = []
 face_extractor = None
 scene_analyzer: Optional[SceneAnalyzer] = None
 priority_validator = None
+currency_detector: Optional[CurrencyDetector] = None
 input_size = 380
-frames_per_video = 32
+# 32 frames is the DFDC-winning default (use on HF Spaces 16GB); drop to 16
+# via env on low-RAM dev machines — MTCNN + dual-B7 on 32 frames can exhaust
+# 8GB. Chunked inference (INFER_BATCH_SIZE, classifier.py) bounds model memory
+# either way.
+frames_per_video = int(os.environ.get("FRAMES_PER_VIDEO", "32"))
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global models, face_extractor, scene_analyzer, priority_validator
+    global models, face_extractor, scene_analyzer, priority_validator, currency_detector
 
     print(f"\n{'='*60}")
     print(f"  KAWACH AI Classifier v2.1 — Startup (device: {device})")
@@ -54,19 +60,24 @@ async def lifespan(app: FastAPI):
     video_read_fn = lambda path: video_reader.read_frames(path, num_frames=frames_per_video)
     face_extractor = FaceExtractor(video_read_fn, device=device)
     models.extend(load_models(weights_dir, device))
-    print(f"  ✓ {len(models)} deepfake model(s) loaded")
+    print(f"  [OK] {len(models)} deepfake model(s) loaded")
 
     # Pipeline 3 — Scene detection
     print("\n[P3] Loading scene detection models...")
     scene_analyzer = SceneAnalyzer(weights_dir=weights_dir, device=device)
     scene_count = (1 if scene_analyzer.yolo_model else 0) + (1 if scene_analyzer.trash_model else 0)
-    print(f"  ✓ {scene_count} scene model(s) ready")
+    print(f"  [OK] {scene_count} scene model(s) ready")
 
     # Priority validator (DistilBERT)
     print("\n[P2] Loading DistilBERT priority validator...")
     priority_validator = PriorityValidator(model_dir=weights_dir)
     pv_ready = priority_validator.model is not None
-    print(f"  {'✓' if pv_ready else '⚠'} DistilBERT {'ready' if pv_ready else 'unavailable (degraded)'}")
+    print(f"  {'[OK]' if pv_ready else '[WARN]'} DistilBERT {'ready' if pv_ready else 'unavailable (degraded)'}")
+
+    # Pipeline 7 — Counterfeit currency detection
+    print("\n[P7] Loading counterfeit currency detector...")
+    currency_detector = CurrencyDetector(weights_dir=weights_dir, device=device)
+    print(f"  [OK] Currency detector ready (mode: {currency_detector.mode})")
 
     print(f"\n{'='*60}")
     print("  KAWACH startup complete — 6 endpoints live")
@@ -124,6 +135,7 @@ async def health():
         deepfake_mode="real" if len(models) > 0 else "mock_fallback",
         routing_mode="gemini" if os.environ.get("GEMINI_API_KEY") else "keyword_fallback",
         gemini_model=GEMINI_MODEL,
+        currency_mode=currency_detector.mode if currency_detector else "unavailable",
     )
 
 
@@ -717,3 +729,50 @@ async def validate_report(file: UploadFile = File(...)):
                 os.remove(temp_filepath)
             except Exception:
                 pass
+
+
+# ─── Pipeline 7: Counterfeit Currency Detection ──────────────────────────────
+
+@app.post("/classify-currency", tags=["Pipeline 7 — Counterfeit Currency"])
+async def classify_currency(
+    file: UploadFile = File(...),
+    capture_mode: str = "visible",  # "visible" | "uv" — see currency_detector.py docstring
+):
+    """
+    Real/fake screening verdict on a photographed Indian banknote. Directly
+    implements the ET PS's "Counterfeit Currency Identification Agent" bullet:
+    microprint analysis, security-thread verification, serial-number pattern
+    validation (RBI's documented ascending-numeral feature), and UV feature
+    checking — the last one honestly gated behind `capture_mode="uv"` since a
+    normal-light photo cannot simulate a UV response.
+
+    Fuses a fine-tuned CNN (when weights/currency/currency_cnn.pt exists) with
+    the classical security-feature checks above. When sources disagree the
+    verdict is INCONCLUSIVE — a citizen-facing tool must under-claim.
+    `model_mode` in the response states exactly which sources produced it.
+    """
+    ext = file.filename.lower().rsplit(".", 1)[-1]
+    if ext not in {"jpg", "jpeg", "png", "webp", "bmp"}:
+        raise HTTPException(status_code=400, detail="Invalid file type. Upload a note photo (jpg/png/webp).")
+    if currency_detector is None:
+        raise HTTPException(status_code=503, detail="Currency detector not initialized.")
+    if capture_mode not in ("visible", "uv"):
+        raise HTTPException(status_code=400, detail="capture_mode must be 'visible' or 'uv'.")
+
+    import numpy as np
+    import cv2
+
+    start_time = time.time()
+    data = await file.read()
+    img = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
+    if img is None:
+        raise HTTPException(status_code=400, detail="Could not decode image.")
+
+    try:
+        result = currency_detector.analyze(img, capture_mode=capture_mode)
+    except Exception as e:
+        print(f"[CURRENCY] Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Currency analysis failed: {str(e)}")
+
+    result["processing_time_ms"] = round((time.time() - start_time) * 1000, 1)
+    return result
