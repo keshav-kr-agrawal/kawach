@@ -80,7 +80,7 @@ class TestNoApiKeyNayak(unittest.TestCase):
         
         # Verify that it includes the fallback warning and citation details
         self.assertIn("EXTORTION", content.upper())
-        self.assertIn("📚", content)
+        self.assertIn("📖", content)
         print("[TEST] Chatbot fallback response for blackmail/extortion query:\n", content[:250], "...\n")
 
 if __name__ == "__main__":
