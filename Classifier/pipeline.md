@@ -1,8 +1,8 @@
 # KAWACH — Full System Architecture & Pipeline Reference
 
 > **Project:** KAWACH — AI-Driven Community Incident Reporting App (India)
-> **Last Updated:** June 2026 · v2.1
-> **Status:** Production-Ready ✅ — 6 AI Pipelines / Endpoints Live
+> **Last Updated:** July 2026 · v2.2
+> **Status:** Production-Ready ✅ — 7 AI Pipelines / Endpoints Live
 
 ---
 
@@ -16,6 +16,7 @@
 7. [Pipeline 4 — Unified Full Analysis](#7-pipeline-4--unified-full-analysis)
 8. [Pipeline 5 — Predictive Hotspot Analysis ⭐ NEW](#8-pipeline-5--predictive-hotspot-analysis)
 9. [Pipeline 6 — Quick Image Validate ⭐ NEW](#9-pipeline-6--quick-image-validate)
+9b. [Pipeline 7 — Counterfeit Currency Detection ⭐ NEW](#9b-pipeline-7--counterfeit-currency-detection)
 10. [Trust Score & Civic Urgency Score ⭐ KEY USP](#10-trust-score--civic-urgency-score)
 11. [End-to-End Report Submission Flow](#11-end-to-end-report-submission-flow)
 12. [Video Status State Machine](#12-video-status-state-machine)
@@ -37,6 +38,7 @@ KAWACH is a civic incident reporting Progressive Web App (PWA) that allows India
 - **[Pipeline 4]** Run all three pipelines in one unified call for maximum efficiency
 - **[Pipeline 5 — NEW]** Predict civic hotspots from geographic report patterns using Gemini + statistical fusion
 - **[Pipeline 6 — NEW]** Quickly validate a single image before full submission (lightweight, mobile-optimised)
+- **[Pipeline 7 — NEW]** Screen a photographed Indian banknote for counterfeits — trained CNN + microprint/security-thread/serial-number/UV checks
 - Every response now includes a **trust_score** (0–100) and **civic_urgency_score** (0–100)
 
 The system is entirely **serverless** and built on PaaS/SaaS platforms — no dedicated backend server needed.
@@ -61,6 +63,8 @@ The system is entirely **serverless** and built on PaaS/SaaS platforms — no de
       │
       ├──► [HuggingFace /validate-report]─► (Pipeline 6: Single-frame quick civic scan)
       │
+      ├──► [HuggingFace /classify-currency]► (Pipeline 7: EfficientNet-B0 + 4 classical security checks)
+      │
       └──► [Supabase PostgreSQL] ──────────► (Persistent Report Storage)
 ```
 
@@ -74,9 +78,9 @@ The system is entirely **serverless** and built on PaaS/SaaS platforms — no de
 | UI Styling          | CSS-in-JS (inline styles)      | Dark-mode premium civic design                           |
 | Frontend Host       | Vercel                         | Global CDN, HTTPS, CI/CD                                 |
 | Video Upload        | Cloudinary                     | Secure video upload, CDN delivery                        |
-| AI Microservice     | Hugging Face Spaces            | FastAPI server for 6 AI pipelines                        |
+| AI Microservice     | Hugging Face Spaces            | FastAPI server for 7 AI pipelines                        |
 | Deepfake Model      | EfficientNet-B7 + MTCNN        | Frame-level face forensics (Pipeline 1)                  |
-| LLM Dispatcher      | Google Gemini 1.5-flash        | Zero-shot civic routing + hotspot prediction (P2, P5)    |
+| LLM Dispatcher      | Google Gemini 2.5-flash        | Zero-shot civic routing + hotspot prediction (P2, P5)    |
 | Priority Validator  | DistilBERT (civic fine-tuned)  | Dual-model priority consensus (Pipeline 2)               |
 | Road Damage Model   | YOLO12s (RDD2022)              | Pothole & crack detection with bbox coverage (Pipeline 3)|
 | Waste Classifier    | TrashNet SigLIP                | Garbage & waste detection (Pipeline 3)                   |
@@ -117,7 +121,7 @@ Classifier/
 ├── requirements.txt
 ├── download_weights.py
 └── app/
-    ├── main.py             # FastAPI — 6 endpoints
+    ├── main.py             # FastAPI — 7 endpoints
     ├── schemas.py          # Pydantic models (all pipelines)
     ├── classifier.py       # EfficientNet-B7 ensemble deepfake prediction
     ├── face_extractor.py   # MTCNN face detection + cropping
@@ -230,7 +234,7 @@ Gemini API available AND >= 2 reports?
         ▼
 [HF Space: POST /route]
         │
-        ├──► [Gemini 1.5-flash] — zero-shot JSON classification
+        ├──► [Gemini 2.5-flash] — zero-shot JSON classification
         │       ↓ returns: department, sub_category, priority,
         │                  escalation_required, estimated_resolution_days
         │
@@ -369,7 +373,7 @@ category: "Infrastructure"
 
         │ (if GEMINI_API_KEY and ≥ 2 reports)
         ▼
-[Gemini 1.5-flash Trend Analysis]
+[Gemini 2.5-flash Trend Analysis]
         ├── Urban pattern identification
         ├── Predicted next emerging issue
         └── Specific department action recommendation
@@ -449,6 +453,83 @@ file: <image.jpg>
   "trust_score": 69.4
 }
 ```
+
+---
+
+## 9b. Pipeline 7 — Counterfeit Currency Detection
+
+> **⭐ NEW in v2.2 — ET PS "Counterfeit Currency Identification Agent" requirement**
+
+**Goal:** Screen a photographed Indian banknote for counterfeits, covering the exact four checks the problem statement names: microprint analysis, security-thread verification, serial-number pattern validation, and UV feature simulation.
+
+**Endpoint:** `POST /classify-currency`
+
+### Signal sources (fused, never silently guessed)
+1. **Trained CNN** (EfficientNet-B0) — the learned "does this look real" signal.
+2. **Security-thread band detection** — classical CV, checks for the dark windowed thread band.
+3. **Microprint sharpness** — Laplacian-variance analysis of fine print detail (reproductions lose this).
+4. **Print-noise profile** — detects inkjet/laser dot-pattern noise absent from genuine intaglio printing.
+5. **Serial-number ascending-numeral check** — RBI's own documented telescopic-numbering security feature (Mahatma Gandhi series notes print the number-panel digits in ascending size left-to-right); verified via EasyOCR + column ink-height profiling, no model needed.
+6. **UV fluorescence check** — **honestly gated**: only runs when the caller passes `capture_mode="uv"` with a photo actually taken under UV light. A normal-light phone photo cannot simulate UV response, so this returns `not_applicable` rather than a fabricated verdict.
+
+When the CNN and the classical checks disagree, the verdict downgrades to `INCONCLUSIVE` — the tool is built to under-claim, since the ET PS evaluation focus explicitly scores false-positive rate.
+
+### Training data & accuracy (trained model, not a placeholder)
+
+Trained on Kaggle (T4 GPU) via `Classifier/kaggle_train_currency.ipynb` — EfficientNet-B0 transfer learning, merged from **6 public INR real/fake datasets**, perceptual-hash deduplicated to prevent train/test leakage, domain-realistic augmentation (perspective warp, motion blur, JPEG compression, lighting jitter — simulating real phone photos), progressive fine-tuning with early stopping. Held-out test set (never touched during training/validation), **n = 1,352**:
+
+| Metric | Score |
+|---|---|
+| Overall accuracy | **98.67%** |
+| Fake precision | 96.39% |
+| Fake recall | 98.16% |
+| AUC | 0.998 |
+
+**Per-denomination accuracy** (quote these individually — never the blended number alone):
+
+| Denomination | Accuracy | Test n |
+|---|---|---|
+| ₹10 | 99.2% | 378 |
+| ₹20 | 100% | 146 |
+| ₹50 | 100% | 133 |
+| ₹100 | 100% | 103 |
+| ₹200 | 100% | 88 |
+| ₹500 | 99.1% | 220 |
+| ₹2000 | 89.4% | 47 |
+
+₹2000 is the honest weak spot — the smallest test sample of the set, reflecting thinner fake-₹2000 coverage in the public source datasets. This is a data-volume issue, not an architecture issue; the classical checks still fuse in on ₹2000 notes to reduce reliance on the CNN alone. Full breakdown (confusion matrix, ROC, threshold sweep) lives in `Classifier/weights/currency/eval_report.json`, regenerated each time the model is retrained.
+
+**Research note:** no trustworthy pretrained INR-counterfeit model exists publicly (checked HF Hub API + GitHub) — every option found was either zero-download/no-provenance weights or trained on a handful of images with no reported accuracy. This is a from-scratch training run on merged public data, not a fine-tune of an existing counterfeit-detection model.
+
+### API Request
+```http
+POST /classify-currency
+Content-Type: multipart/form-data
+
+file: <note_photo.jpg>
+capture_mode: visible   # or "uv" for a UV-lit photo
+```
+
+### API Response
+```json
+{
+  "verdict": "LIKELY_GENUINE",
+  "confidence": "HIGH",
+  "fake_probability": 0.024,
+  "model_mode": "cnn+heuristic",
+  "security_checks": [
+    {"feature": "security_thread", "score": 1.0, "finding": "..."},
+    {"feature": "microprint_sharpness", "score": 0.85, "finding": "..."},
+    {"feature": "print_noise_profile", "score": 0.9, "finding": "..."},
+    {"feature": "serial_number_pattern", "score": 1.0, "finding": "..."},
+    {"feature": "uv_fluorescence", "score": null, "finding": "not_applicable — ..."}
+  ],
+  "cnn_fake_probability": 0.024,
+  "disclaimer": "Screening aid only — not a legal determination. ..."
+}
+```
+
+`model_mode` is also surfaced on `GET /health` as `currency_mode` (`cnn+heuristic` once the CNN is trained and deployed, `heuristic_only` otherwise) — always check this before a demo.
 
 ---
 
@@ -645,8 +726,9 @@ ALTER TABLE citizen_reports
 | POST   | `/full-analysis`   | 4        | All 3 pipelines unified — recommended for reports  |
 | POST   | `/predict-hotspot` | 5 ⭐     | Geographic hotspot prediction (NEW)                |
 | POST   | `/validate-report` | 6 ⭐     | Quick single-frame civic image validation (NEW)    |
+| POST   | `/classify-currency` | 7 ⭐   | Counterfeit INR banknote screening (NEW)           |
 
-### GET /health (v2.1)
+### GET /health (v2.2)
 ```json
 {
   "status": "ok",
@@ -654,8 +736,12 @@ ALTER TABLE citizen_reports
   "scene_models_loaded": 2,
   "priority_validator_loaded": true,
   "device": "cpu",
-  "pipelines_active": 6,
-  "version": "2.1.0"
+  "pipelines_active": 7,
+  "version": "2.2.0",
+  "deepfake_mode": "real",
+  "routing_mode": "gemini",
+  "gemini_model": "gemini-2.5-flash",
+  "currency_mode": "cnn+heuristic"
 }
 ```
 
@@ -747,7 +833,7 @@ ALTER TABLE citizen_reports
 |---------------------------------------|------------------------------------------------------------------------|
 | Serverless PaaS only                  | No DevOps overhead; scales with citizen volume automatically           |
 | Hugging Face for AI microservice      | Free CPU tier; Docker-based; built-in versioning                       |
-| Gemini 1.5-flash for routing          | Fastest Gemini; free tier; native JSON mode; sub-category support      |
+| Gemini 2.5-flash for routing          | Fastest Gemini; free tier; native JSON mode; sub-category support      |
 | Multi-keyword scoring fallback        | More robust than first-match; works offline without API key            |
 | Temporal consistency tracking         | Per-frame detection tracking reveals persistent vs isolated issues     |
 | Trust score fusion (3-pipeline)       | Single credibility number improves prioritisation at scale             |

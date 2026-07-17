@@ -82,6 +82,19 @@ Last updated: 2026-07-17 (Phases 0-3 AI-tasks done; **currency CNN trained & dep
 
 ---
 
+## Citizen-Flow Completion (2026-07-17 — from the full-flow audit; see plan file "Nayak-Centred Citizen Flow")
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| CF.A | Foundation: `nayakService.js` (env API base + X-User-Id), `reportService.js` (single shared insert), `mediaService.js` (real Cloudinary/Supabase upload) | Done | Kills hardcoded localhost:8000 + default-citizen-uuid; **invariant verified: `.insert` on citizen_reports exists only in reportService.js** |
+| CF.B | Chat media upload made real + verdict bubbles + Nayak upload memory | Done | Was sending fabricated `uploads/<name>` path — now real bytes→URL→classifier; backend injects last-5 upload verdicts into LLM context (and fallback replies) |
+| CF.C | Nayak escalation → citizen-confirmed report (missing "Path A") | Done | `propose_report` enriched (dept/severity/evidence/nearby-similar via `get_area_incidents`), returned as top-level `proposal`, rendered as confirmation card; File→`createReport(source='nayak_chat')`+`link-report` endpoint sets `NayakUserUpload.linked_report_id`; deterministic proposal also fires in no-Gemini fallback when last upload was flagged. Never auto-files |
+| CF.D | 🚨 Emergency button in chat header + modal | Done | Category/description/evidence → CRITICAL dispatch; AI routing advisory-only (files even with classifier down) |
+| CF.E | Feed community escalation | Done | ≥5 upvotes on approved post → AI reportability re-check → same row flagged `escalation_required` + priority≥HIGH (no second report); pills in feed + ⬆ ESCALATED badge in departments dashboard |
+| CF.F | Flag → temp removal → human verification | Done | 2+ flags: hidden from feed (owner sees "under review") + map; AI reclassify now advisory-only; new AdminView "Content Moderation" tab (Supabase queue, Approve & Restore / Confirm Removal) |
+| CF.G | Hardening | Done | in-flight send/attach guards (session race), history-load retry bar, geolocation in chat (Bengaluru fallback), honest audio/doc scope message. Vite build green |
+| CF.manual | Supabase schema | **User** | Optional but recommended: `ALTER TABLE citizen_reports ADD COLUMN source text, ADD COLUMN nayak_session_id text;` — inserts auto-retry without these columns until added |
+
 ## Nayak Assistant (parallel track — see `plan/nayak_assistant_plan.md`)
 
 *Owned separately from the phases above; sequence and detail live in the dedicated plan file. Tracked here so both work streams are visible in one place.*

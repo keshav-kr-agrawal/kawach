@@ -48,6 +48,8 @@ import DisasterDashboardView from './components/department/disaster/DisasterDash
 import AdminView from './components/admin/AdminView';
 
 import { simulateWorkflowProgress, reclassifyVideoUrl, VIDEO_STATUS } from './api/videoService';
+import { createReport, REPORT_SOURCES } from './api/reportService';
+import { routeReport } from './api/routingService';
 
 const ALL_FLASHCARDS = [
   {
@@ -681,52 +683,8 @@ export default function App() {
     // Automatically navigate back to the proximity feed
     navigate('/user/feed');
 
-    // 2. Save the report to Supabase database
-    try {
-      const { error } = await supabase
-        .from('citizen_reports')
-        .insert([{
-          id: newReport.id,
-          title: newReport.title,
-          description: newReport.description,
-          category: newReport.category,
-          uploader_uuid: newReport.uploaderUuid,
-          status: newReport.status,
-          lat: newReport.lat,
-          lng: newReport.lng,
-          video_url: newReport.videoUrl,
-          emergency_override: newReport.emergencyOverride,
-          trim_start: newReport.trimStart,
-          trim_end: newReport.trimEnd,
-          views: newReport.views || 0,
-          upvotes: newReport.upvotes || 0,
-          timestamp: new Date().toISOString(),
-          routed_department: newReport.routedDepartment || null,
-          routing_priority: newReport.routingPriority || null,
-          routing_reason: newReport.routingReason || null,
-          escalation_required: newReport.escalationRequired || false,
-          ai_verdict: newReport.aiVerdict || null,
-          fake_prob: newReport.fakeProb ?? null,
-          confidence_level: newReport.confidenceLevel || null,
-          faces_detected: newReport.facesDetected ?? null,
-          sub_category: newReport.subCategory || null,
-          estimated_resolution_days: newReport.estimatedResolutionDays ?? null,
-          trust_score: newReport.trustScore ?? null,
-          civic_urgency_score: newReport.civicUrgencyScore ?? null,
-          scene_detected: newReport.sceneDetected ?? null,
-          detected_issues: newReport.detectedIssues || null,
-          temporal_consistency: newReport.temporalConsistency ?? null,
-          dominant_class: newReport.dominantClass || null
-        }]);
-
-      if (error) {
-        console.error('[SUPABASE] Error saving new report to database:', error.message);
-      } else {
-        console.log('[SUPABASE] Report successfully saved to cloud database!');
-      }
-    } catch (err) {
-      console.error('[SUPABASE] Exception during insert:', err);
-    }
+    // 2. Save the report via the single shared creation path
+    await createReport({ ...newReport, source: newReport.source || REPORT_SOURCES.CAMERA });
 
     // 3. Sync the simulated AI processing pipeline to database
     if (!newReport.emergencyOverride) {
@@ -796,9 +754,15 @@ export default function App() {
     }
   };
 
+  // Community escalation: at this many upvotes, an approved feed post is
+  // AI-checked and flagged to its department (escalation on the SAME row —
+  // never a second report; the single-insert invariant stays intact).
+  const COMMUNITY_ESCALATION_THRESHOLD = 5;
+
   const handleUpvoteReport = async (reportId) => {
     let liked = false;
     let nextUpvotes = 0;
+    let target = null;
 
     const likedList = JSON.parse(localStorage.getItem('kawach_liked_reports') || '[]');
     if (likedList.includes(reportId)) {
@@ -815,7 +779,8 @@ export default function App() {
       prev.map((r) => {
         if (r.id === reportId) {
           nextUpvotes = Math.max(0, (r.upvotes || 0) + (liked ? 1 : -1));
-          return { ...r, upvotes: nextUpvotes };
+          target = { ...r, upvotes: nextUpvotes };
+          return target;
         }
         return r;
       })
@@ -834,6 +799,47 @@ export default function App() {
       }
     } catch (err) {
       console.error('[SUPABASE] Exception during upvote sync:', err);
+    }
+
+    // Threshold crossed on an approved, not-yet-escalated post → AI
+    // reportability check (real classifier, keyword fallback inside
+    // routeReport) → flag the existing row for department attention.
+    if (
+      liked && target &&
+      nextUpvotes >= COMMUNITY_ESCALATION_THRESHOLD &&
+      !target.escalationRequired &&
+      target.status === VIDEO_STATUS.PUBLIC_APPROVED
+    ) {
+      try {
+        const routed = await routeReport(target.title, target.description, target.category);
+        const priorityRank = { CRITICAL: 3, HIGH: 2, NORMAL: 1, LOW: 0 };
+        const current = priorityRank[target.routingPriority] ?? 1;
+        const upgraded = Math.max(current, priorityRank[routed?.priority] ?? 0, priorityRank.HIGH);
+        const newPriority = Object.keys(priorityRank).find(k => priorityRank[k] === upgraded) || 'HIGH';
+        const escalationNote = `Community-escalated: ${nextUpvotes} upvotes. ${routed?.routing_reason || ''}`.trim();
+
+        setUserReports((prev) =>
+          prev.map((r) => r.id === reportId
+            ? { ...r, escalationRequired: true, routingPriority: newPriority, routingReason: escalationNote }
+            : r)
+        );
+        const { error } = await supabase
+          .from('citizen_reports')
+          .update({
+            escalation_required: true,
+            routing_priority: newPriority,
+            routing_reason: escalationNote,
+            routed_department: routed?.department || target.routedDepartment || null
+          })
+          .eq('id', reportId);
+        if (error) {
+          console.error('[ESCALATION] Sync failed:', error.message);
+        } else {
+          console.log(`[ESCALATION] Report ${reportId} community-escalated at ${nextUpvotes} upvotes → ${routed?.department || target.routedDepartment} (${newPriority})`);
+        }
+      } catch (err) {
+        console.error('[ESCALATION] Community escalation failed:', err);
+      }
     }
   };
 
@@ -867,23 +873,19 @@ export default function App() {
     });
 
     // Threshold crossed: re-run the REAL deepfake classifier on the stored
-    // video. If the classifier is unreachable, the video stays
-    // REPORTED_SUSPICIOUS (honest pending-review state) — no fabricated verdict.
+    // video as an ADVISORY signal for the human moderator. The video stays
+    // REPORTED_SUSPICIOUS (temp-removed from feed/map) until an admin decides
+    // in the Content Moderation queue — AI never issues the final verdict on
+    // community-flagged content.
     if (flaggedReport?.videoUrl) {
       const result = await reclassifyVideoUrl(flaggedReport.videoUrl);
-      if (!result) return;
-
-      const finalStatus = result.verdict === 'AI_GENERATED'
-        ? VIDEO_STATUS.REJECTED
-        : VIDEO_STATUS.PUBLIC_APPROVED;
+      if (!result) return; // classifier unreachable — admin reviews without the advisory
 
       setUserReports((currentList) =>
         currentList.map((item) => {
           if (item.id === videoId) {
             return {
               ...item,
-              status: finalStatus,
-              flagsCount: 0,
               aiVerdict: result.verdict,
               fakeProb: result.fake_probability,
               confidenceLevel: result.confidence_level,
@@ -898,15 +900,15 @@ export default function App() {
         await supabase
           .from('citizen_reports')
           .update({
-            status: finalStatus,
             ai_verdict: result.verdict,
             fake_prob: result.fake_probability,
             confidence_level: result.confidence_level,
             trust_score: result.trust_score ?? null
           })
           .eq('id', videoId);
+        console.log(`[MODERATION] Advisory AI verdict stored for ${videoId} (${result.verdict}) — awaiting human review.`);
       } catch (err) {
-        console.error('[SUPABASE] Error syncing final moderation status:', err);
+        console.error('[SUPABASE] Error syncing advisory verdict:', err);
       }
     }
   };

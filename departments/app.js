@@ -134,6 +134,11 @@ function renderDashboard() {
       ? `<span class="badge ${sla.isBreached ? 'sla-breached' : 'sla-ok'}">${sla.isBreached ? '🚨 ' : '⏳ '}${sla.label}</span>`
       : '';
 
+    // Community/priority escalation flag (upvote-threshold or Nayak/emergency)
+    const escalationBadge = report.escalation_required
+      ? `<span class="badge sla-breached" style="animation:none;">⬆ ESCALATED</span>`
+      : '';
+
     // Date parsing
     const dateStr = report.timestamp ? new Date(report.timestamp).toLocaleString() : 'Just now';
 
@@ -147,6 +152,7 @@ function renderDashboard() {
             <span class="badge ${isResolved ? 'status-resolved' : 'status-pending'}">
               ${isResolved ? '✓ Resolved' : '⚡ Active Alert'}
             </span>
+            ${escalationBadge}
             ${slaBadge}
           </div>
         </div>

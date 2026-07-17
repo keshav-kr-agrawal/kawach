@@ -12,7 +12,7 @@ license: mit
 
 > **Problem Statement:** *"Build a platform that enables citizens to identify, report, validate, track, and resolve community issues through collaboration, data, and intelligent automation."*
 >
-> **What this microservice does:** Every civic report goes through up to **5 AI models** before a single byte reaches the database. Deepfake check → Department routing → Visual scene corroboration → Unified trust scoring → Predictive hotspot analysis.
+> **What this microservice does:** Every civic report goes through up to **6 AI models** before a single byte reaches the database. Deepfake check → Department routing → Visual scene corroboration → Unified trust scoring → Predictive hotspot analysis → Counterfeit currency screening.
 
 **Base URL:** `https://hikity-kawach-classifier.hf.space`
 
@@ -29,6 +29,7 @@ license: mit
 | `POST /full-analysis` | 4 | All 3 pipelines in one call (recommended) |
 | `POST /predict-hotspot` | 5 ⭐ | Geographic hotspot prediction from report patterns |
 | `POST /validate-report` | 6 ⭐ | Quick single-image civic scan |
+| `POST /classify-currency` | 7 ⭐ | Counterfeit INR banknote screening (98.67% test accuracy) |
 
 ---
 
@@ -228,7 +229,7 @@ Below is exactly what happens inside the microservice from the moment a video la
 | `priority_validator.py` | Priority upgrade | DistilBERT independently scores urgency, upgrades if higher than Gemini |
 | `scene_analyzer.py` | Visual detection | YOLO + TrashNet per-frame, temporal consistency engine |
 | `trust_scorer.py` | Signal fusion | Combines all pipeline outputs → trust_score + civic_urgency_score |
-| `schemas.py` | API contracts | Pydantic models for all 6 endpoints |
+| `schemas.py` | API contracts | Pydantic models for all 7 endpoints |
 | `main.py` | FastAPI app | Routes, lifespan model loading, pipeline orchestration |
 
 ---
@@ -252,7 +253,7 @@ Flow:
   ① Priority-weighted scoring across all recent reports
      risk_score = avg_weight × 10 + min(report_count × 3, 60)
 
-  ② Gemini 1.5-flash trend analysis (if API key + ≥2 reports)
+  ② Gemini 2.5-flash trend analysis (if API key + ≥2 reports)
      → urban pattern identification
      → predicted next emerging civic issue
      → specific department action recommendation
@@ -291,6 +292,37 @@ POST /validate-report  (image JPG/PNG or video — extracts 1 frame)
 
 ---
 
+## 💵 Pipeline 7 — Counterfeit Currency Detection
+
+> ET PS "Counterfeit Currency Identification Agent" requirement — microprint, security thread, serial-number pattern, and UV feature checks, exactly as specified.
+
+```
+POST /classify-currency  (note photo JPG/PNG, optional capture_mode=uv)
+
+  ① CNN (EfficientNet-B0, trained) — learned real/fake signal
+  ② security-thread band detection (classical CV)
+  ③ microprint sharpness — Laplacian variance (classical CV)
+  ④ print-noise profile — inkjet/laser dot pattern (classical CV)
+  ⑤ serial-number ascending-numeral check — RBI's documented telescopic-
+     numbering feature, via EasyOCR + column ink-height profiling
+  ⑥ UV fluorescence — only runs if capture_mode="uv" with a UV-lit photo;
+     otherwise returns not_applicable (never fakes a UV verdict)
+  → CNN + heuristics agree: confident verdict. Disagree: INCONCLUSIVE.
+```
+
+**Trained on 6 merged public INR datasets** (Kaggle, T4 GPU, `kaggle_train_currency.ipynb`), perceptual-hash deduplicated, held-out test set never touched during training:
+
+| Metric | Score | | Denomination | Accuracy (n) |
+|---|---|---|---|---|
+| Overall accuracy | **98.67%** | | ₹10 | 99.2% (378) |
+| Fake precision | 96.39% | | ₹20 / ₹50 / ₹100 / ₹200 | 100% (88–146) |
+| Fake recall | 98.16% | | ₹500 | 99.1% (220) |
+| AUC | 0.998 | | ₹2000 | 89.4% (47) — thinnest test sample |
+
+Full breakdown in `Classifier/weights/currency/eval_report.json`. No trustworthy pretrained INR-counterfeit model exists publicly (checked HF Hub + GitHub) — this is a from-scratch training run, not a fine-tune of an existing model.
+
+---
+
 ## 🏆 Key USPs
 
 | # | USP | Why it matters |
@@ -311,10 +343,12 @@ POST /validate-report  (image JPG/PNG or video — extracts 1 frame)
 |---|---|---|---|
 | EfficientNet-B7 NS (×2) | [selimsef/dfdc_deepfake_challenge](https://github.com/selimsef/dfdc_deepfake_challenge) | ~267MB ×2 | Deepfake detection |
 | MTCNN | facenet-pytorch | Built-in | Face detection |
-| Gemini 1.5-flash | Google AI | API | Dept routing + hotspot |
+| Gemini 2.5-flash | Google AI | API | Dept routing + hotspot (env-overridable via `GEMINI_MODEL`) |
 | DistilBERT civic | [mrigaanksh/priority-classification-distilbert](https://huggingface.co/mrigaanksh/priority-classification-distilbert) | ~268MB | Priority validation |
 | YOLO12s RDD2022 | [rezzzq/yolo12s-road-damage-rdd2022](https://huggingface.co/rezzzq/yolo12s-road-damage-rdd2022) | ~19MB | Road damage detection |
 | TrashNet SigLIP | [prithivMLmods/Trash-Net](https://huggingface.co/prithivMLmods/Trash-Net) | ~372MB | Waste classification |
+| EfficientNet-B0 (currency) | Trained in-house — `kaggle_train_currency.ipynb` | ~16MB | Counterfeit INR screening — 98.67% test accuracy (n=1,352) on 6 merged public datasets |
+| EasyOCR | JaidedAI/EasyOCR | ~64MB | Serial-number ascending-numeral security check |
 
 ---
 
@@ -425,7 +459,7 @@ Set in: **HF Space → Settings → Variables and Secrets**
 | Container | Docker on Python 3.10-slim |
 | Host | Hugging Face Spaces (CPU Basic) |
 | Deepfake Detection | PyTorch · EfficientNet-B7 · MTCNN (facenet-pytorch) |
-| LLM Routing + Hotspot | Google Gemini 1.5-flash |
+| LLM Routing + Hotspot | Google Gemini 2.5-flash |
 | Priority Validation | DistilBERT (HuggingFace Transformers) |
 | Road Damage | YOLO12s (Ultralytics) |
 | Waste Classification | SigLIP (HuggingFace Transformers) |

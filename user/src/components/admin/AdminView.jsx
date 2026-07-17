@@ -1,14 +1,57 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, GitMerge, ListFilter, AlertTriangle, RefreshCw, CheckCircle2, XCircle, BarChart3, Server, UserCheck, Timer } from 'lucide-react';
+import { ShieldCheck, GitMerge, ListFilter, AlertTriangle, RefreshCw, CheckCircle2, XCircle, BarChart3, Server, UserCheck, Timer, Flag } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { supabase } from '../../supabaseClient';
 
 function AdminView({ token, user }) {
   const [activeTab, setActiveTab] = useState('superadmin');
   const [merges, setMerges] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [flaggedContent, setFlaggedContent] = useState([]);
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Community-flagged videos awaiting HUMAN verdict. AI reclassification is
+  // shown as advisory only — the moderator decides (design: multi-flag →
+  // temp removal → human verification, never AI auto-removal).
+  const fetchFlaggedContent = async () => {
+    try {
+      setLoading(true);
+      setErrorMsg('');
+      const { data, error } = await supabase
+        .from('citizen_reports')
+        .select('id, title, description, category, status, video_url, timestamp, routed_department, routing_priority, ai_verdict, fake_prob, confidence_level, trust_score, upvotes')
+        .eq('status', 'REPORTED_SUSPICIOUS')
+        .order('timestamp', { ascending: false });
+      if (error) throw new Error(error.message);
+      setFlaggedContent(data || []);
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to load flagged content.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleModerationDecision = async (reportId, approve) => {
+    const newStatus = approve ? 'PUBLIC_APPROVED' : 'REJECTED';
+    // Optimistic removal from the queue; revert on failure
+    const prev = flaggedContent;
+    setFlaggedContent(list => list.filter(r => r.id !== reportId));
+    try {
+      const { error } = await supabase
+        .from('citizen_reports')
+        .update({ status: newStatus })
+        .eq('id', reportId);
+      if (error) throw new Error(error.message);
+      setSuccessMsg(approve
+        ? `Report ${reportId} approved and restored to the public feed.`
+        : `Report ${reportId} removal confirmed.`);
+    } catch (err) {
+      setFlaggedContent(prev);
+      setErrorMsg(`Moderation update failed: ${err.message}`);
+    }
+  };
 
   const fetchMerges = async () => {
     try {
@@ -49,6 +92,8 @@ function AdminView({ token, user }) {
       fetchMerges();
     } else if (activeTab === 'audit') {
       fetchAuditLogs();
+    } else if (activeTab === 'moderation') {
+      fetchFlaggedContent();
     }
   }, [activeTab, token]);
 
@@ -111,6 +156,17 @@ function AdminView({ token, user }) {
         >
           <ListFilter className="w-4 h-4" />
           <span>Immutable System Security Audits</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('moderation')}
+          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            activeTab === 'moderation'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          <Flag className="w-4 h-4" />
+          <span>Content Moderation{flaggedContent.length > 0 ? ` (${flaggedContent.length})` : ''}</span>
         </button>
       </div>
 
@@ -406,6 +462,76 @@ function AdminView({ token, user }) {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {!loading && activeTab === 'moderation' && (
+          <div className="space-y-4 animate-fade-in select-text">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                  <Flag className="w-4 h-4 text-rose-500" />
+                  Community-Flagged Content — Human Verification Queue
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Videos flagged 2+ times are temp-removed from the public feed and map. The AI verdict below is
+                  <strong> advisory only</strong> — your decision is final.
+                </p>
+              </div>
+              <button onClick={fetchFlaggedContent} className="flex items-center gap-1.5 text-[11px] font-bold text-blue-600 border border-blue-200 rounded-xl px-3 py-1.5 hover:bg-blue-50">
+                <RefreshCw className="w-3 h-3" /> Refresh
+              </button>
+            </div>
+
+            {flaggedContent.length === 0 && (
+              <div className="text-center py-16 text-xs text-slate-400">
+                <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-300" />
+                Queue clear — no content awaiting review.
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {flaggedContent.map(item => (
+                <div key={item.id} className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                  {item.video_url && (
+                    <video src={item.video_url} controls muted playsInline className="w-full max-h-48 object-cover bg-black" />
+                  )}
+                  <div className="p-4 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs font-extrabold text-slate-800">{item.title || 'Untitled report'}</span>
+                      <span className="text-[9px] font-mono text-slate-400 shrink-0">{item.id}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 line-clamp-2">{item.description || 'No description.'}</p>
+
+                    {/* AI advisory panel — clearly labeled, never the final word */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-[10px] space-y-1">
+                      <span className="font-extrabold text-slate-500 uppercase tracking-wide">🤖 AI Advisory (not a verdict)</span>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-slate-600">
+                        <span>Verdict: <strong className={item.ai_verdict === 'AI_GENERATED' ? 'text-rose-600' : 'text-emerald-600'}>{item.ai_verdict || 'unavailable'}</strong></span>
+                        {typeof item.fake_prob === 'number' && <span>Fake prob: <strong>{(item.fake_prob * 100).toFixed(0)}%</strong></span>}
+                        {typeof item.trust_score === 'number' && <span>Trust: <strong>{item.trust_score}</strong></span>}
+                        {item.confidence_level && <span>Confidence: <strong>{item.confidence_level}</strong></span>}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={() => handleModerationDecision(item.id, true)}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-extrabold py-2.5 rounded-xl"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Approve & Restore
+                      </button>
+                      <button
+                        onClick={() => handleModerationDecision(item.id, false)}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-extrabold py-2.5 rounded-xl"
+                      >
+                        <XCircle className="w-3.5 h-3.5" /> Confirm Removal
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

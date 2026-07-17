@@ -211,9 +211,100 @@ def call_agent_tool(tool_name: str, args: dict, db: Session, api_key: str = None
         }
     return {"error": "Unknown tool called"}
 
+def get_recent_session_uploads(db: Session, session_id: str, limit: int = 5):
+    """Most-recent-first uploads for a session — the chat's evidence memory."""
+    if not session_id:
+        return []
+    return (
+        db.query(NayakUserUpload)
+        .filter(NayakUserUpload.session_id == session_id)
+        .order_by(NayakUserUpload.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+
+def summarize_uploads_for_context(uploads) -> str:
+    """Compact upload-verdict block injected into the LLM context so Nayak can
+    answer 'was the note I sent real?' — closes the stored-but-never-read gap."""
+    if not uploads:
+        return ""
+    lines = ["Recent media the citizen uploaded in this session (most recent first):"]
+    for u in uploads:
+        v = u.classifier_verdict or {}
+        lines.append(
+            f"- [{u.media_type}] verdict={v.get('verdict', 'unknown')} "
+            f"score={v.get('score')} details={str(v.get('details', ''))[:160]}"
+        )
+    return "\n".join(lines)
+
+
+# Department + severity suggestion for report proposals (keyword map mirrors
+# the Classifier router's 10-department scheme — keep in sync with router.py)
+_DEPT_KEYWORDS = [
+    (["counterfeit", "fake note", "currency", "fake curren"], "POLICE", "HIGH"),
+    (["digital arrest", "extortion", "blackmail", "impersonat", "cbi", "scam", "fraud", "phishing", "upi"], "POLICE", "CRITICAL"),
+    (["theft", "robbery", "assault", "kidnap", "violence", "harassment", "stalking"], "POLICE", "HIGH"),
+    (["fire", "gas leak", "explosion"], "FIRE", "CRITICAL"),
+    (["accident", "traffic", "signal", "rash driving"], "TRAFFIC", "HIGH"),
+    (["garbage", "waste", "dump", "sewage"], "SANITATION", "NORMAL"),
+    (["pothole", "road damage", "construction", "building"], "CONSTRUCTION", "NORMAL"),
+    (["water", "pipe", "leak"], "WATER", "NORMAL"),
+    (["electric", "wire", "transformer", "power"], "ELECTRICITY", "HIGH"),
+    (["pollution", "noise"], "ENVIRONMENT", "NORMAL"),
+]
+
+
+def suggest_department(crime_type: str):
+    t = (crime_type or "").lower()
+    for keywords, dept, severity in _DEPT_KEYWORDS:
+        if any(k in t for k in keywords):
+            return dept, severity
+    return "POLICE", "HIGH"  # cyber/crime chat default
+
+
+def enrich_proposal(prefilled: dict, db: Session, session_id: str, lat, lng) -> dict:
+    """Turn the LLM's bare propose_report draft into everything the frontend
+    confirmation card needs: department, severity, evidence, nearby context."""
+    dept, severity = suggest_department(prefilled.get("category", ""))
+    uploads = get_recent_session_uploads(db, session_id, limit=1)
+    evidence_url, upload_id = None, None
+    if uploads:
+        evidence_url, upload_id = uploads[0].media_url, uploads[0].id
+
+    nearby_count = 0
+    if lat is not None and lng is not None:
+        try:
+            incidents = run_get_area_incidents(lat, lng, 5.0, db)
+            nearby_count = len(incidents) if isinstance(incidents, list) else 0
+        except Exception as e:
+            print(f"[NAYAK] area check failed during proposal enrichment: {e}")
+
+    return {
+        **prefilled,
+        "suggested_department": dept,
+        "severity": severity,
+        "evidence_media_url": evidence_url,
+        "upload_id": upload_id,
+        "nearby_similar_count": nearby_count,
+        "requires_user_confirmation": True,
+    }
+
+
 # Fallback Conversational Response Generator (when Gemini key is missing)
-def generate_fallback_chat_reply(user_msg: str, db: Session) -> str:
+def generate_fallback_chat_reply(user_msg: str, db: Session, session_id: str = None) -> str:
     msg_lower = user_msg.lower()
+
+    # 0. Reference the latest upload verdict, if any — the citizen usually asks
+    # about the thing they just attached.
+    upload_note = ""
+    uploads = get_recent_session_uploads(db, session_id, limit=1)
+    if uploads:
+        v = uploads[0].classifier_verdict or {}
+        upload_note = (
+            f"\n\n🔎 **Your last upload ({uploads[0].media_type}):** "
+            f"{v.get('verdict', 'unknown')} — {str(v.get('details', ''))[:180]}\n"
+        )
     
     # 1. Query RAG to get matching citations
     citations = retrieve_law_chunks(user_msg, db, None, top_k=2)
@@ -272,7 +363,7 @@ def generate_fallback_chat_reply(user_msg: str, db: Session) -> str:
             "3. **UPI Fraud & Refunds** (RBI customer liability guidelines)"
         )
 
-    return f"{reply}{citation_text}\n---\n*Disclaimer: Educational advisory, not formal legal representation.*"
+    return f"{reply}{upload_note}{citation_text}\n---\n*Disclaimer: Educational advisory, not formal legal representation.*"
 
 # --- FastAPI Endpoints ---
 
@@ -345,7 +436,7 @@ def handle_nayak_chat(
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         print("[NAYAK] No GEMINI_API_KEY — running honest fallback.")
-        reply_txt = generate_fallback_chat_reply(req.message, db)
+        reply_txt = generate_fallback_chat_reply(req.message, db, session_id)
         bot_reply = NayakMessage(
             session_id=session_id,
             role="assistant",
@@ -353,13 +444,30 @@ def handle_nayak_chat(
         )
         db.add(bot_reply)
         db.commit()
-        
+
+        # Deterministic escalation offer even without the LLM: if the latest
+        # upload in this session was flagged suspicious, offer to file — the
+        # citizen still confirms, nothing auto-submits.
+        proposal = None
+        recent = get_recent_session_uploads(db, session_id, limit=1)
+        if recent:
+            v = recent[0].classifier_verdict or {}
+            flagged = v.get("is_authenticated") is False or str(v.get("verdict", "")).upper() in (
+                "LIKELY_COUNTERFEIT", "SUSPECT_FEATURES", "AI_GENERATED")
+            if flagged:
+                proposal = enrich_proposal({
+                    "category": "Counterfeit Currency" if recent[0].media_type == "image" else "Suspicious Media / Fraud",
+                    "rationale": f"Automated scan flagged your {recent[0].media_type} upload: {str(v.get('details',''))[:180]}",
+                    "narrative": "Citizen-submitted media flagged as suspicious by KAWACH automated screening.",
+                }, db, session_id, req.lat, req.lng)
+
         return {
             "session_id": session_id,
             "message": {
                 "role": "assistant",
                 "content": reply_txt
-            }
+            },
+            "proposal": proposal
         }
         
     # 5. Gemini Agent Loop
@@ -436,7 +544,8 @@ def handle_nayak_chat(
         }
     ]
     
-    # System Instruction
+    # System Instruction (+ evidence memory: recent upload verdicts)
+    uploads_context = summarize_uploads_for_context(get_recent_session_uploads(db, session_id))
     system_instruction = (
         "You are Nayak, KAWACH's agentic citizen assistant. Your objective is to help citizens verify scams, "
         "understand their legal rights, check local safety conditions, and auto-draft reports for cybercrime holding.\n"
@@ -444,7 +553,13 @@ def handle_nayak_chat(
         "1. Never fabricate legal citations. If no laws are retrieved, explicitly offer to refer them to a helpline.\n"
         "2. Cite official source (Act + Section + Last Verified Date) for every claim.\n"
         "3. Provide standard disclaimer: 'This is educational advisory, not professional legal representation.'\n"
-        "4. Never auto-submit reports. Suggest pre-filling a report and call the propose_report tool if a scam is detected."
+        "4. Never auto-submit reports. Suggest pre-filling a report and call the propose_report tool if a scam is detected.\n"
+        "5. Escalation protocol: when an uploaded media verdict or text analysis indicates fraud, counterfeit currency, "
+        "or a public hazard, FIRST call get_area_incidents with the citizen's coordinates to check for similar nearby "
+        "reports, THEN call propose_report so the citizen can review and confirm filing. Mention nearby similar "
+        "incidents in your reply when they exist — community corroboration matters.\n"
+        + (f"\n{uploads_context}\n" if uploads_context else "")
+        + (f"\nCitizen's current location: lat={req.lat}, lng={req.lng}\n" if req.lat is not None else "")
     )
     
     # Construct Gemini contents list from chat history
@@ -491,7 +606,17 @@ def handle_nayak_chat(
                 
                 # Execute tool call locally
                 tool_result = call_agent_tool(tool_name, tool_args, db, api_key)
-                
+
+                # propose_report drafts get enriched with department, severity,
+                # session evidence, and nearby-similar context before they
+                # reach the citizen's confirmation card.
+                proposal = None
+                if tool_name == "propose_report" and "prefilled_report" in tool_result:
+                    proposal = enrich_proposal(
+                        tool_result["prefilled_report"], db, session_id, req.lat, req.lng)
+                    tool_result = {"prefilled_report": proposal,
+                                   "requires_user_confirmation": True}
+
                 # Save tool message to DB
                 tool_msg = NayakMessage(
                     session_id=session_id,
@@ -502,10 +627,12 @@ def handle_nayak_chat(
                 )
                 db.add(tool_msg)
                 db.commit()
-                
-                # Send tool response back to Gemini to finalize reply
+
+                # Send tool response back to Gemini to finalize reply.
+                # (Per the Gemini REST API, functionResponse parts are sent
+                # with role "user".)
                 tool_part = {
-                    "role": "user", # or "function"
+                    "role": "user",
                     "parts": [
                         {
                             "functionResponse": {
@@ -536,7 +663,8 @@ def handle_nayak_chat(
                     db.commit()
                     return {
                         "session_id": session_id,
-                        "message": {"role": "assistant", "content": model_reply}
+                        "message": {"role": "assistant", "content": model_reply},
+                        "proposal": proposal
                     }
             else:
                 model_reply = parts[0].get("text", "I'm sorry, I was unable to compile an answer.")
@@ -555,7 +683,7 @@ def handle_nayak_chat(
         print(f"[NAYAK] Gemini agent loop error: {e}")
         
     # If anything breaks, return fallback
-    reply_txt = generate_fallback_chat_reply(req.message, db)
+    reply_txt = generate_fallback_chat_reply(req.message, db, session_id)
     bot_reply = NayakMessage(
         session_id=session_id,
         role="assistant",
@@ -671,6 +799,40 @@ def handle_nayak_upload(
         "media_url": req.media_url,
         "verdict": verdict
     }
+
+
+class LinkReportRequest(BaseModel):
+    report_id: str
+
+
+@router.post("/uploads/{upload_id}/link-report")
+def link_upload_to_report(
+    upload_id: str,
+    req: LinkReportRequest,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_nayak_user_id)
+):
+    """Ties a chat upload to the citizen_reports row it became evidence for —
+    the chat↔report bridge that makes a filed report reconstructable."""
+    upload = db.query(NayakUserUpload).filter(
+        NayakUserUpload.id == upload_id,
+        NayakUserUpload.user_id == user_id
+    ).first()
+    if not upload:
+        raise HTTPException(status_code=404, detail="Upload not found")
+
+    upload.linked_report_id = req.report_id
+    db.add(AuditLog(
+        username=user_id,
+        role="Citizen",
+        action="NAYAK_REPORT_LINKED",
+        details={"upload_id": upload_id, "report_id": req.report_id,
+                 "session_id": upload.session_id},
+        ip_address="10.25.0.1"
+    ))
+    db.commit()
+    return {"ok": True, "upload_id": upload_id, "linked_report_id": req.report_id}
+
 
 @router.get("/search")
 def search_law_rulebook(

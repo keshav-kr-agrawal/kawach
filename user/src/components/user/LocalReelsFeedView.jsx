@@ -277,6 +277,20 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
           </div>
         )}
 
+        {/* Temp-removed pending human moderation — visible only to the uploader */}
+        {reel.status === 'REPORTED_SUSPICIOUS' && (
+          <div className="bg-amber-500/90 backdrop-blur-md text-black text-xs px-3 py-1.5 rounded-full w-max font-black">
+            ⏳ UNDER REVIEW — hidden from the public feed pending moderation
+          </div>
+        )}
+
+        {/* Community-escalated to department */}
+        {reel.escalationRequired && (
+          <div className="bg-orange-500/90 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full w-max font-black">
+            ⬆ ESCALATED TO {reel.routedDepartment || 'DEPARTMENT'}
+          </div>
+        )}
+
         {/* Compact dept + priority pills row */}
         {reel.routedDepartment && (
           <div className="flex flex-wrap items-center gap-1.5 pointer-events-auto">
@@ -368,9 +382,16 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
   const [reportStatusMessage, setReportStatusMessage] = useState('');
   const [isMuted, setIsMuted] = useState(true);
 
-  // Merge approved user uploads and sort strictly by distance
+  // Merge approved user uploads and sort strictly by distance.
+  // REPORTED_SUSPICIOUS = temp-removed pending human moderation: hidden from
+  // everyone except its own uploader, who sees an "under review" state
+  // (map hides it too — SnapMapView filter).
+  const myUuid = localStorage.getItem('kawach_uploader_uuid');
   const allReels = userReports
-    .filter(r => r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'DEPT_ROUTING' || r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2' || r.status === 'REPORTED_SUSPICIOUS')
+    .filter(r =>
+      r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'DEPT_ROUTING' ||
+      r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2' ||
+      (r.status === 'REPORTED_SUSPICIOUS' && r.uploaderUuid === myUuid))
     .map(r => ({
       id: r.id,
       title: r.title,
@@ -388,6 +409,7 @@ export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVid
       routedDepartment: r.routedDepartment,
       routingPriority: r.routingPriority,
       routingReason: r.routingReason,
+      escalationRequired: r.escalationRequired,
       subCategory: r.subCategory,
       estimatedResolutionDays: r.estimatedResolutionDays,
       trustScore: r.trustScore,
