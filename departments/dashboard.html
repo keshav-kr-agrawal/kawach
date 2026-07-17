@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAWACH: Department Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="cyber-grid"></div>
+  <div class="glow-radial-1"></div>
+
+  <header class="main-header">
+    <div class="brand">
+      <div class="brand-logo"><i data-lucide="building-2"></i></div>
+      <div class="brand-text">
+        <h1>KAWACH</h1>
+        <span>MUNICIPAL & CIVIC DEPARTMENTS PLATFORM</span>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html" class="btn-back-home"><i data-lucide="arrow-left"></i> All Departments</a>
+    </nav>
+  </header>
+
+  <main class="console-container">
+    <div class="screen-view">
+      <div class="dashboard-header">
+        <a href="index.html" class="btn-back"><i data-lucide="arrow-left"></i> Change Department</a>
+        <div class="active-badge" id="active-dept-name">Loading…</div>
+      </div>
+
+      <!-- KPI Metrics Row (shared shell — identical for every department) -->
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-content">
+            <span class="metric-label">Assigned Issues</span>
+            <h3 class="metric-val" id="stats-total">0</h3>
+          </div>
+          <div class="metric-icon blue"><i data-lucide="alert-circle"></i></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-content">
+            <span class="metric-label">Active Alerts</span>
+            <h3 class="metric-val" id="stats-active">0</h3>
+          </div>
+          <div class="metric-icon orange"><i data-lucide="activity"></i></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-content">
+            <span class="metric-label">SLA Breached</span>
+            <h3 class="metric-val" id="stats-breached">0</h3>
+          </div>
+          <div class="metric-icon orange"><i data-lucide="timer-off"></i></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-content">
+            <span class="metric-label">Issues Resolved</span>
+            <h3 class="metric-val" id="stats-resolved">0</h3>
+          </div>
+          <div class="metric-icon green"><i data-lucide="check-circle-2"></i></div>
+        </div>
+      </div>
+
+      <div class="content-split">
+        <div class="reports-section">
+          <h3>Routed Citizens Reports</h3>
+          <div id="reports-loading" class="spinner-container">
+            <div class="spinner"></div>
+            <span>Fetching live Supabase pipeline...</span>
+          </div>
+          <div id="reports-empty" class="empty-view hidden">
+            <i data-lucide="check-square"></i>
+            <h4>All Clear!</h4>
+            <p>No active incidents or safety alerts are currently routed to this department.</p>
+          </div>
+          <div id="reports-list" class="reports-grid"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>

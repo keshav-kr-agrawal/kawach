@@ -95,6 +95,18 @@ Last updated: 2026-07-17 (Phases 0-3 AI-tasks done; **currency CNN trained & dep
 | CF.G | Hardening | Done | in-flight send/attach guards (session race), history-load retry bar, geolocation in chat (Bengaluru fallback), honest audio/doc scope message. Vite build green |
 | CF.manual | Supabase schema | **User** | Optional but recommended: `ALTER TABLE citizen_reports ADD COLUMN source text, ADD COLUMN nayak_session_id text;` — inserts auto-retry without these columns until added |
 
+## Departments Restructure + Deployment Wiring (2026-07-17)
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| DP.1 | `user/.env` production-ready in git | Done | Already tracked (predates gitignore rule) — Vercel builds read it; classifier URL = HF Space; `VITE_POLICE_API_URL` documented for future Render deploy |
+| DP.2 | 10 per-department config files + registry (`departments/js/config/`) | Done | All spec §6.2 departments; CONSTRUCTION split Roads/Buildings by sub_category; Fire `minPriority: CRITICAL` |
+| DP.3 | Shared SLA & escalation engine (`js/core/sla.js`) | Done | Single module for tiers/floors/breach math — node-tested (fire floor + breach timing verified) |
+| DP.4 | One dashboard shell (`dashboard.html?dept=<id>`) | Done | Spec principle #3 — replaces per-dept hand-building; added SLA-breached KPI |
+| DP.5 | Master Admin console (`admin.html`) | Done | City totals, per-dept pressure grid (breach-sorted), live escalation feed (breach+escalated) |
+| DP.6 | Retire `departments/app.js` | Done | Deleted; logic split into core/config modules; all 15 modules parse-checked |
+| DP.next | Deploy `police/backend` to Render (unblocks Nayak on the live site) | **User** | Render free web service; set `DATABASE_URL` to Supabase Postgres connection string + `GEMINI_API_KEY` + `CLASSIFIER_URL=https://hikity-kawach-classifier.hf.space`; then set `VITE_POLICE_API_URL` in user/.env |
+
 ## Nayak Assistant (parallel track — see `plan/nayak_assistant_plan.md`)
 
 *Owned separately from the phases above; sequence and detail live in the dedicated plan file. Tracked here so both work streams are visible in one place.*

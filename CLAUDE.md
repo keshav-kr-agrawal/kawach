@@ -62,7 +62,15 @@ Don't trust a feature name alone — check this table before describing somethin
 - **Community moderation**: ≥5 upvotes ⇒ AI recheck + `escalation_required` on the SAME row (never a new report); 2+ flags ⇒ temp-removed from feed/map (owner sees "under review"), AI reclassify is advisory only, human decides in AdminView's "Content Moderation" tab (Supabase-backed).
 - **Config**: `VITE_POLICE_API_URL` in `user/.env`; chat identity = `kawach_uploader_uuid` via `getAnonUserId()` (same id as camera flow).
 
-**Departments dashboard (`departments/`)**: genuinely functional against live Supabase — real read (filtered by `routed_department`) and real write (`resolveReport` sets `status: 'RESOLVED'`). Not a mockup, just framework-free. **Added 2026-07-16**: per-report SLA countdown/breach badge (`computeSla` in `app.js` — CRITICAL 15min / HIGH 4h / NORMAL 24h / LOW 72h per build spec §6.3; breached reports pulse red).
+**Departments dashboard (`departments/`)** — restructured 2026-07-17 into the build-spec §6 architecture (`app.js` deleted, superseded):
+- `js/config/depts/*.js` — one tiny config file per municipal department (all 10 from spec §6.2: PWD-Roads, PWD-Buildings, Electricity, Water, Sanitation, Pollution&Noise, Traffic, Fire, Health, Education), each declaring `matchCodes` (classifier `routed_department` values), optional `subCategories` split (PWD Roads vs Buildings share CONSTRUCTION, disambiguated by sub_category; unlabeled → Roads via `claimUnlabeled`), and optional `minPriority` SLA floor (Fire = CRITICAL, per spec "always top SLA tier"). Add a department = add one file + one import in `js/config/registry.js`.
+- `js/core/sla.js` — the SHARED SLA & escalation engine (15min/4h/24h/72h tiers, `computeSla`, `effectivePriority` floor logic). Never re-implement SLA math per department.
+- `js/core/supabase.js` — shared client + `DEPT_SAFE_COLUMNS` (identity-free; the anonymity boundary lives here).
+- `dashboard.html` + `js/dashboard.js` — the ONE parameterized shell (`?dept=<id>`), spec principle #3. KPIs incl. SLA-breached count, per-report SLA countdown + ⬆ ESCALATED badges, resolve action, 60s badge refresh.
+- `admin.html` + `js/admin.js` — Master Admin: city totals, per-department pressure grid (sorted by breaches), live escalation feed (breach + escalated, worst first), 2-min auto-refresh.
+- Routing + SLA logic covered by a node test (pothole→Roads, building_collapse→Buildings, unlabeled→Roads, Fire floor forces 15-min tier). ES modules — serve over http (`npx serve departments`), file:// won't load them.
+
+**Deployment reality (2026-07-17)**: `user/` → Vercel (`kawach-two.vercel.app`); `Classifier/` → HF Space `Hikity/kawach-classifier` (`https://hikity-kawach-classifier.hf.space` — verified live with deepfake `real`, routing `gemini`, currency `cnn+heuristic`). **`user/.env` is intentionally COMMITTED to git** (it predates the root .gitignore rule; only publishable keys — supabase anon, cloudinary preset, public API URLs) so Vercel builds pick it up automatically. `police/backend` is NOT hosted yet — Nayak chat degrades honestly on the live site until it's deployed (Render free tier + `DATABASE_URL` pointed at Supabase Postgres, then update `VITE_POLICE_API_URL`).
 
 ## Non-negotiable design principles (from `plan/kawach_build_spec.md`, keep enforcing these while building)
 

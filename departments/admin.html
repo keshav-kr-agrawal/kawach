@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAWACH: Master Admin — Cross-Department Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-top: 14px; }
+    .admin-dept-card { background: var(--panel, #1a1e25); border: 1px solid var(--line, #2c323d); border-radius: 14px; padding: 14px 16px; }
+    .admin-dept-card h4 { margin: 0 0 8px; font-size: 13px; font-family: 'Outfit', sans-serif; }
+    .admin-dept-nums { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; }
+    .admin-dept-nums b { font-size: 16px; display: block; font-family: 'Outfit', sans-serif; }
+    .num-breached b { color: #ef4444; }
+    .num-escalated b { color: #f97316; }
+    .num-resolved b { color: #10b981; }
+    .feed-section { margin-top: 26px; }
+    .feed-section h3 { font-size: 14px; margin-bottom: 10px; }
+    .feed-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line, #2c323d); border-radius: 10px; margin-bottom: 8px; font-size: 12px; }
+    .feed-row .dept-tag { font-weight: 800; font-size: 10px; padding: 2px 8px; border-radius: 8px; background: rgba(59,130,246,0.12); }
+    .feed-row .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .goto-link { font-size: 10px; font-weight: 700; text-decoration: none; color: #3b82f6; }
+  </style>
+</head>
+<body>
+
+  <div class="cyber-grid"></div>
+  <div class="glow-radial-1"></div>
+
+  <header class="main-header">
+    <div class="brand">
+      <div class="brand-logo"><i data-lucide="shield"></i></div>
+      <div class="brand-text">
+        <h1>KAWACH ADMIN</h1>
+        <span>MASTER CROSS-DEPARTMENT OVERSIGHT</span>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html" class="btn-back-home"><i data-lucide="building-2"></i> Departments</a>
+      <a href="/" class="btn-back-home"><i data-lucide="home"></i> Portal Hub</a>
+    </nav>
+  </header>
+
+  <main class="console-container">
+    <div class="screen-view">
+      <div class="welcome-banner">
+        <h2>City-Wide Command Overview</h2>
+        <p>Every department's live load, SLA breaches, and escalations — one screen. Data refreshes from Supabase; identity-free by design.</p>
+      </div>
+
+      <!-- City totals -->
+      <div class="metrics-row">
+        <div class="metric-card"><div class="metric-content"><span class="metric-label">Total Reports</span><h3 class="metric-val" id="t-total">0</h3></div><div class="metric-icon blue"><i data-lucide="database"></i></div></div>
+        <div class="metric-card"><div class="metric-content"><span class="metric-label">Active</span><h3 class="metric-val" id="t-active">0</h3></div><div class="metric-icon orange"><i data-lucide="activity"></i></div></div>
+        <div class="metric-card"><div class="metric-content"><span class="metric-label">SLA Breached</span><h3 class="metric-val" id="t-breached">0</h3></div><div class="metric-icon orange"><i data-lucide="timer-off"></i></div></div>
+        <div class="metric-card"><div class="metric-content"><span class="metric-label">Escalated</span><h3 class="metric-val" id="t-escalated">0</h3></div><div class="metric-icon orange"><i data-lucide="trending-up"></i></div></div>
+        <div class="metric-card"><div class="metric-content"><span class="metric-label">Resolved</span><h3 class="metric-val" id="t-resolved">0</h3></div><div class="metric-icon green"><i data-lucide="check-circle-2"></i></div></div>
+      </div>
+
+      <div id="reports-loading" class="spinner-container">
+        <div class="spinner"></div>
+        <span>Aggregating all department queues…</span>
+      </div>
+
+      <!-- Per-department concentration grid -->
+      <div class="admin-grid" id="admin-grid"></div>
+
+      <!-- Live escalation feed -->
+      <div class="feed-section">
+        <h3>🔺 Live Escalation Feed <span style="font-weight:400;font-size:11px;opacity:.7;">(community-escalated + emergency + SLA-breach, unresolved, worst first)</span></h3>
+        <div id="escalation-feed"></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
