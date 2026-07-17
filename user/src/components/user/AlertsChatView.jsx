@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Send, Bot, User, RefreshCw, AlertTriangle, Paperclip } from 'lucide-react';
 
 export default function AlertsChatView() {
   const [messages, setMessages] = useState([
@@ -15,6 +15,7 @@ export default function AlertsChatView() {
   const [sessionId, setSessionId] = useState(null);
   const [userId, setUserId] = useState('default-citizen-uuid');
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -143,6 +144,91 @@ export default function AlertsChatView() {
       ]);
     } finally {
       setCheckingRumor(false);
+    }
+  };
+
+  const handleAttachClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Determine media type
+    let mediaType = 'text';
+    if (file.type.startsWith('image/')) mediaType = 'image';
+    else if (file.type.startsWith('video/')) mediaType = 'video';
+    else if (file.type.startsWith('audio/')) mediaType = 'audio';
+
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const userMsgId = 'user-file-' + Date.now();
+    
+    // Add user message to chat indicating attachment
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: userMsgId,
+        sender: 'user',
+        text: `📁 **Attached ${mediaType.toUpperCase()}:** ${file.name}`,
+        timestamp: timestamp
+      }
+    ]);
+
+    setCheckingRumor(true);
+
+    try {
+      const res = await fetch('http://localhost:8000/api/nayak/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': userId
+        },
+        body: JSON.stringify({
+          media_url: `uploads/${file.name}`,
+          media_type: mediaType,
+          session_id: sessionId
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const verdict = data.verdict;
+        
+        let botText = `🛡️ **KAWACH SCANNER VERDICT:**\n\n`;
+        if (verdict.is_authenticated) {
+          botText += `✅ **VERIFIED AUTHENTIC** (Confidence: ${(verdict.score).toFixed(1)}%)\n\n`;
+        } else {
+          botText += `❌ **FLAG SUSPICIOUS** (Trust Score: ${(verdict.score).toFixed(1)}%)\n\n`;
+        }
+        botText += `**Details:** ${verdict.details}`;
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: 'bot-file-' + Date.now(),
+            sender: 'bot',
+            text: botText,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
+      } else {
+        throw new Error("HTTP " + res.status);
+      }
+    } catch (err) {
+      console.error("[NAYAK] File scan failed:", err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: 'bot-file-err-' + Date.now(),
+          sender: 'bot',
+          text: "⚠️ **SCANNING ERROR:**\n\nUnable to reach the active KAWACH media verification nodes. Please verify the backend is running.",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    } finally {
+      setCheckingRumor(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -406,6 +492,36 @@ export default function AlertsChatView() {
         alignItems: 'center',
         background: '#ffffff'
       }}>
+        {/* Hidden File Input */}
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleFileUpload} 
+          style={{ display: 'none' }} 
+        />
+        
+        {/* Attachment Button */}
+        <button
+          onClick={handleAttachClick}
+          title="Attach media to scan"
+          style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '50%',
+            backgroundColor: '#f8fafc',
+            color: '#64748B',
+            border: '1px solid #e2e8f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            minHeight: '44px',
+            minWidth: '44px'
+          }}
+        >
+          <Paperclip size={16} />
+        </button>
+
         <input 
           type="text" 
           value={inputText}

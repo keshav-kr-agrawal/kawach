@@ -155,48 +155,55 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
     setSimulationResult(result);
   };
 
-  // AI query search RAG simulator
-  const handleSearchQuerySubmit = (e) => {
+  // AI query search RAG database
+  const handleSearchQuerySubmit = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
     setAiLoading(true);
     setAiAnswer(null);
 
-    setTimeout(() => {
-      const cleanQuery = searchQuery.toLowerCase();
-      let answer = {
-        title: `Search Result: "${searchQuery}"`,
-        summary: 'Relevant legal citation retrieved from Section 65B Certified Law Databases.',
-        act: 'Indian Penal Code / Bharatiya Nyaya Sanhita',
-        details: 'A citizen has the fundamental right of private defense of body and property as detailed under Section 96 to 106. No officer can forcefully harass or detenuate you without registered case files.',
-        action: 'Request the officer for case diaries or official grounds of search. Record video proof if safety parameters are crossed.',
-        citations: ['BNS Section 35(1)', 'CrPC Section 50']
-      };
-
-      if (cleanQuery.includes('key') || cleanQuery.includes('bike') || cleanQuery.includes('traffic')) {
-        answer = {
-          title: 'Traffic Stop Regulations',
-          summary: 'Confiscating vehicle keys by traffic police officers.',
-          act: 'Motor Vehicles Act, 1988',
-          details: 'Confiscating or plucking the keys from a running vehicle is not legally sanctioned and represents illegal restraint.',
-          action: 'Ask politely for the challan invoice. Refuse to hand over the ignition keys.',
-          citations: ['MVA Section 130', 'KSP Traffic SOP #14']
-        };
-      } else if (cleanQuery.includes('cyber') || cleanQuery.includes('fraud') || cleanQuery.includes('scam') || cleanQuery.includes('money')) {
-        answer = {
-          title: 'Financial Cyber Crime Recovery',
-          summary: 'Reporting unauthorized financial transfers and cyber fraud.',
-          act: 'Information Technology Act, Section 66D',
-          details: 'Under RBI rules, immediate notification of card/net banking fraud locks citizen liability and initiates interbank transaction freezing.',
-          action: 'Lodge transaction IDs instantly on National Helpline 1930 to trigger cyber node blocks.',
-          citations: ['RBI Circular DBR.No.Leg.BC.78', 'IT Act 2000']
-        };
+    try {
+      const res = await fetch(`http://localhost:8000/api/nayak/search?query=${encodeURIComponent(searchQuery)}`);
+      if (res.ok) {
+        const results = await res.json();
+        if (results && results.length > 0) {
+          const topResult = results[0];
+          setAiAnswer({
+            title: topResult.title || 'Law Section Detail',
+            summary: topResult.citizen_scenario || 'Relevant legal citation retrieved from Section 65B Certified Law Databases.',
+            act: topResult.act || 'Indian Penal Code / Bharatiya Nyaya Sanhita',
+            details: topResult.citizen_explanation || topResult.official_text,
+            action: topResult.recommended_action || 'Verify applicability with legal counsel.',
+            citations: results.map(r => `${r.act.split(',')[0]} Sec ${r.section}`),
+            penalty: topResult.penalty_summary || 'Refer to the act penal codes.'
+          });
+        } else {
+          setAiAnswer({
+            title: 'No Direct Citations Found',
+            summary: 'The search did not return a precise match in the core safety registry.',
+            act: 'General Legal Context',
+            details: 'No specific sections matching the query were retrieved. Please check spelling, tags, or search general topics like "cheating", "bribe", or "keys".',
+            action: 'Consult the helpline or browse specific categories below.',
+            citations: []
+          });
+        }
+      } else {
+        throw new Error("HTTP error " + res.status);
       }
-
-      setAiAnswer(answer);
+    } catch (err) {
+      console.error("[LEGAL-LIBRARY] Search failed:", err);
+      setAiAnswer({
+        title: 'Connection Offline',
+        summary: 'Unable to reach the legal knowledge grid.',
+        act: 'System Degraded',
+        details: 'The local KAWACH backend database is offline or unreachable. Using offline mock guidelines is recommended.',
+        action: 'Ensure the FastAPI backend on port 8000 is active.',
+        citations: ['SYSTEM OFFLINE']
+      });
+    } finally {
       setAiLoading(false);
-    }, 1000);
+    }
   };
 
   return (

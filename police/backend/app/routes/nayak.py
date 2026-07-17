@@ -219,43 +219,60 @@ def generate_fallback_chat_reply(user_msg: str, db: Session) -> str:
     citations = retrieve_law_chunks(user_msg, db, None, top_k=2)
     citation_text = ""
     if citations:
-        citation_text = "\n\n📚 **Relevant Legal Citations:**\n"
+        citation_text = "\n\n📖 **Your Legal Rights & Citations:**\n"
         for c in citations:
-            citation_text += f"- **{c['act']}, Section {c['section']} ({c['title']}):** {c['citizen_explanation']}\n  *Action:* {c['recommended_action']}\n"
+            explanation = c['citizen_explanation']
+            # Clean and shorten boilerplate explanations
+            if "regulates" in explanation and "Officially, it states that:" in explanation:
+                parts = explanation.split("Officially, it states that:")
+                summary = parts[0].replace("regulates", "covers").strip()
+                if len(parts) > 1:
+                    detail = parts[1].strip()
+                    if len(detail) > 120:
+                        detail = detail[:120] + "..."
+                    explanation = f"{summary} ({detail})"
             
-    # 2. Check for matching intents
+            citation_text += (
+                f"🔹 **{c['act']} - Section {c['section']} ({c['title']})**\n"
+                f"  • *Summary:* {explanation}\n"
+                f"  • *Action to take:* {c['recommended_action']}\n\n"
+            )
+            
+    # 2. Check for matching intents and construct simple bulleted layout
     if "rumor" in msg_lower or "kidnap" in msg_lower or "fake" in msg_lower:
-        return (
-            "🚨 **RUMOR VERIFICATION REPORT:**\n\n"
-            "We have audited recent alerts in the area. Rumors regarding 'kidnapping gangs' in Bengaluru have been **verified as hoaxes** by the Bengaluru City Police. "
-            "Please do not circulate unverified WhatsApp forwards."
-            + citation_text
+        reply = (
+            "🚨 **RUMOR VERIFICATION: HOAX**\n\n"
+            "• **Status:** The viral claims alleging kidnapping groups in this area are verified hoaxes.\n"
+            "• **Source:** Official statements from the City Police Command.\n"
+            "• **Action:** Do not forward or share unverified alerts on social channels."
         )
         
-    elif "arrest" in msg_lower or "cbi" in msg_lower or "police" in msg_lower or "scam" in msg_lower:
-        return (
-            "⚠️ **DIGITAL ARREST EXTORTION WARNING:**\n\n"
-            "If you receive a Skype/WhatsApp video call claiming you are under 'digital arrest' by customs or CBI, **HANG UP IMMEDIATELY.** \n"
-            "**Official Guardrail:** Government officials and police will NEVER place citizens under 'digital arrest' over a phone call, nor will they ask you to transfer funds to a private account."
-            + citation_text
+    elif "arrest" in msg_lower or "cbi" in msg_lower or "police" in msg_lower or "scam" in msg_lower or "extortion" in msg_lower or "blackmail" in msg_lower or "photos" in msg_lower or "money" in msg_lower:
+        reply = (
+            "⚠️ **IMMEDIATE SCAM ALERT**\n\n"
+            "• **Type:** Extortion / Impersonation / Digital Arrest Scam\n"
+            "• **Action:** **HANG UP IMMEDIATELY.** Do not join WhatsApp/Skype/Zoom video calls.\n"
+            "• **Safety Rule:** Police or government agencies will never place you under 'digital arrest' or demand funds transfer."
         )
         
     elif "safe" in msg_lower or "route" in msg_lower or "hsr" in msg_lower or "incident" in msg_lower:
-        return (
-            "🗺️ **SITUATIONAL SAFETY BRIEFING:**\n\n"
-            "Checking local coordinates. 80ft Road is clear and well-lit. Outer Ring Road currently experiences minor traffic delays. "
-            "Always follow active updates from city traffic authorities."
-            + citation_text
+        reply = (
+            "🗺️ **SITUATIONAL SAFETY ADVISORY**\n\n"
+            "• **Status:** Local routes are clear. Major roads are well-lit and safe.\n"
+            "• **Cautions:** Minor traffic slow-down reported on Outer Ring Road earlier.\n"
+            "• **Advisory:** safe to travel. Monitor official traffic notices."
         )
         
-    return (
-        "✅ **KAWACH Safety Assistant:**\n\n"
-        "How can I help you protect your digital safety today? You can ask me about:\n"
-        "- Impersonation or 'digital arrest' phone scams.\n"
-        "- Legal safety rights during traffic police stops.\n"
-        "- Bank UPI fraud liability guidelines."
-        + citation_text
-    )
+    else:
+        reply = (
+            "🛡️ **KAWACH SAFETY ASSISTANT**\n\n"
+            "How can I help protect your digital safety today? Ask me about:\n"
+            "1. **Digital Arrests** (Fake department calls)\n"
+            "2. **Traffic Stop Rights** (Spot checks and key snatching rules)\n"
+            "3. **UPI Fraud & Refunds** (RBI customer liability guidelines)"
+        )
+
+    return f"{reply}{citation_text}\n---\n*Disclaimer: Educational advisory, not formal legal representation.*"
 
 # --- FastAPI Endpoints ---
 
@@ -654,3 +671,14 @@ def handle_nayak_upload(
         "media_url": req.media_url,
         "verdict": verdict
     }
+
+@router.get("/search")
+def search_law_rulebook(
+    query: str,
+    db: Session = Depends(get_db)
+):
+    query_clean = query.strip()
+    if not query_clean:
+        return []
+    results = retrieve_law_chunks(query_clean, db, None, top_k=3)
+    return results
