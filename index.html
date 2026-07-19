@@ -382,7 +382,7 @@
     }
 
     /* police console link: overridable once deployed (localStorage KAWACH_POLICE_URL) */
-    const policeUrl = localStorage.getItem('KAWACH_POLICE_URL');
+    const policeUrl = localStorage.getItem('KAWACH_POLICE_URL') || (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? 'police/frontend/index.html' : null);
     if (policeUrl) document.querySelectorAll('a[href="http://localhost:5173/"]').forEach((a) => { a.href = policeUrl; });
   </script>
 </body>

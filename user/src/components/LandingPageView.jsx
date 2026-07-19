@@ -55,12 +55,19 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
 
   const handleEnterPolice = () => {
     autoProvisionSession('POLICE');
-    navigate('/department/police');
+    const customUrl = localStorage.getItem('KAWACH_POLICE_URL');
+    if (customUrl) {
+      window.location.href = customUrl;
+    } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      window.location.href = 'http://localhost:5173/';
+    } else {
+      window.location.href = '/police/frontend/index.html';
+    }
   };
 
   const handleEnterCivic = () => {
     autoProvisionSession('FIRE');
-    navigate('/department/fire');
+    window.location.href = '/departments/index.html';
   };
 
   const handleOfficialSubmit = (e) => {
@@ -73,15 +80,11 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
       autoProvisionSession(dept);
 
       if (dept === 'POLICE') {
-        navigate('/department/police');
-      } else if (dept === 'FIRE') {
-        navigate('/department/fire');
-      } else if (dept === 'HEALTH') {
-        navigate('/department/health');
-      } else if (dept === 'DISASTER') {
-        navigate('/department/disaster');
+        handleEnterPolice();
       } else if (dept === 'ADMIN') {
-        navigate('/admin');
+        window.location.href = '/departments/admin.html';
+      } else {
+        window.location.href = `/departments/dashboard.html?dept=${dept.toLowerCase()}`;
       }
     }, 600);
   };
