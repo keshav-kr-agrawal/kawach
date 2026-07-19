@@ -1,17 +1,64 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Map, Phone, Camera, MessageSquare, Compass } from 'lucide-react';
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const tabs = [
-    { id: 'map', label: 'Map', icon: Map, path: '/user/map' },
-    { id: 'services', label: 'Services', icon: Phone, path: '/user/services' },
-    { id: 'camera', label: 'Camera', icon: Camera, path: '/user/camera' },
-    { id: 'chat', label: 'Chat', icon: MessageSquare, path: '/user/chat' },
-    { id: 'feed', label: 'Feed', icon: Compass, path: '/user/feed' }
+    { 
+      id: 'map', 
+      label: 'Map', 
+      path: '/user/map',
+      renderIcon: (isActive) => (
+        <svg viewBox="0 0 24 24" fill={isActive ? '#09090b' : 'none'} stroke={isActive ? '#09090b' : 'rgba(9, 9, 11, 0.65)'} strokeWidth={isActive ? '2.5' : '2'} className="w-5 h-5 transition-all">
+          <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+          <line x1="8" y1="2" x2="8" y2="18"/>
+          <line x1="16" y1="6" x2="16" y2="22"/>
+        </svg>
+      )
+    },
+    { 
+      id: 'services', 
+      label: 'Directory', 
+      path: '/user/services',
+      renderIcon: (isActive) => (
+        <svg viewBox="0 0 24 24" fill={isActive ? '#09090b' : 'none'} stroke={isActive ? '#09090b' : 'rgba(9, 9, 11, 0.65)'} strokeWidth={isActive ? '2.5' : '2'} className="w-5 h-5 transition-all">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+        </svg>
+      )
+    },
+    { 
+      id: 'camera', 
+      label: 'Capture', 
+      path: '/user/camera',
+      renderIcon: (isActive) => (
+        <svg viewBox="0 0 24 24" fill={isActive ? '#09090b' : 'none'} stroke={isActive ? '#09090b' : 'rgba(9, 9, 11, 0.65)'} strokeWidth={isActive ? '2.5' : '2'} className="w-5 h-5 transition-all">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      )
+    },
+    { 
+      id: 'chat', 
+      label: 'Shield', 
+      path: '/user/chat',
+      renderIcon: (isActive) => (
+        <svg viewBox="0 0 24 24" fill={isActive ? '#09090b' : 'none'} stroke={isActive ? '#09090b' : 'rgba(9, 9, 11, 0.65)'} strokeWidth={isActive ? '2.5' : '2'} className="w-5 h-5 transition-all">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      )
+    },
+    { 
+      id: 'feed', 
+      label: 'Feed', 
+      path: '/user/feed',
+      renderIcon: (isActive) => (
+        <svg viewBox="0 0 24 24" fill={isActive ? '#09090b' : 'none'} stroke={isActive ? '#09090b' : 'rgba(9, 9, 11, 0.65)'} strokeWidth={isActive ? '2.5' : '2'} className="w-5 h-5 transition-all">
+          <polygon points="12 2 19 21 12 17 5 21 12 2"/>
+        </svg>
+      )
+    }
   ];
 
   // Determine active tab ID based on route
@@ -62,7 +109,7 @@ export default function BottomNav() {
               backgroundColor: '#ffffff', // White sliding indicator circle
               top: '6px',
               left: `calc(${activeIndex * 20}% + (20% - 44px) / 2)`,
-              transition: 'left 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)', // Organic bounce transition
+              transition: 'left 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
               zIndex: 1,
               boxShadow: '0 6px 20px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06)',
               pointerEvents: 'none'
@@ -72,7 +119,6 @@ export default function BottomNav() {
 
         {/* Navigation tabs */}
         {tabs.map((tab) => {
-          const Icon = tab.icon;
           const isActive = activeTab === tab.id;
 
           return (
@@ -96,7 +142,6 @@ export default function BottomNav() {
                 paddingTop: '6px'
               }}
             >
-              {/* Subtle 3px Floating Icon wrapper */}
               <div style={{
                 transform: isActive ? 'translateY(-3px) scale(1.18)' : 'translateY(0) scale(1)',
                 transition: 'transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
@@ -108,15 +153,7 @@ export default function BottomNav() {
                 borderRadius: '50%',
                 backgroundColor: 'transparent'
               }}>
-                <Icon 
-                  size={22} 
-                  strokeWidth={isActive ? 2.5 : 2} 
-                  fill={isActive ? '#09090b' : 'none'} 
-                  color={isActive ? '#09090b' : 'rgba(9, 9, 11, 0.6)'}
-                  style={{
-                    transition: 'color 0.3s ease, fill 0.3s ease'
-                  }}
-                />
+                {tab.renderIcon(isActive)}
               </div>
               
               {/* Label inside the yellow bar */}
@@ -124,8 +161,8 @@ export default function BottomNav() {
                 fontSize: '9px',
                 marginTop: '1px',
                 fontWeight: isActive ? '800' : '600',
-                opacity: isActive ? 1 : 0.6,
-                fontFamily: 'Outfit, sans-serif',
+                opacity: isActive ? 1 : 0.65,
+                fontFamily: 'Sora, sans-serif',
                 letterSpacing: '0.01em',
                 color: '#09090b',
                 transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',

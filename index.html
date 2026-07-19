@@ -4,12 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KAWACH: Unified Threat Intelligence & Public Safety Portal</title>
-  <!-- Google Fonts: Outfit and Inter -->
+  <!-- Google Fonts: Sora and Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Sora:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
   <link rel="stylesheet" href="style.css">
 </head>
@@ -32,9 +30,22 @@
       </div>
     </div>
     <nav class="nav-links">
-      <a href="#about"><i data-lucide="info"></i> About System</a>
-      <a href="#pillars"><i data-lucide="layout-grid"></i> 29 Pillars</a>
-      <a href="#gate" class="btn-login-shortcut"><i data-lucide="fingerprint"></i> Access Gate</a>
+      <a href="#about">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        About System
+      </a>
+      <a href="#pillars">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        29 Pillars
+      </a>
+      <!-- Secure Mode Toggle -->
+      <button class="btn-mode-toggle" id="theme-toggle" title="Toggle Secure System Mode">
+        <span class="toggle-badge">🛡️ MODE: SECURE</span>
+      </button>
+      <a href="#gate" class="btn-login-shortcut">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Access Gate
+      </a>
     </nav>
   </header>
 
@@ -43,7 +54,11 @@
     <!-- Hero Showcase Section -->
     <section class="hero-section">
       <div class="hero-badge">
-        <i data-lucide="radio" class="pulse-icon"></i> Active Deployment: Bengaluru Command
+        <span class="pulse-beacon">
+          <span class="beacon-glow"></span>
+          <span class="beacon-dot"></span>
+        </span>
+        Active Deployment: Bengaluru Command
       </div>
       <h2 class="hero-title">
         Bridging the Trust Gap Between <br>
@@ -73,7 +88,7 @@
     <section class="login-gate-section" id="gate">
       <div style="display: flex; flex-direction: column; gap: 30px; width: 100%;">
         <div class="section-header" style="align-items: center; text-align: center; margin-bottom: 10px;">
-          <i data-lucide="fingerprint" style="font-size: 32px; color: var(--accent-color);"></i>
+          <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-color)" stroke-width="2" style="width: 36px; height: 36px;"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zM9 7a3 3 0 0 1 6 0v3H9V7zm3 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>
           <h2>Decoupled Secure Entry Gateways</h2>
           <p>Select your secure portal below to connect with your state-wide threat intelligence node.</p>
         </div>
@@ -84,67 +99,94 @@
             <div class="gateway-accent-bar"></div>
             <div>
               <div class="gateway-icon-wrapper">
-                <i data-lucide="users"></i>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               </div>
               <h3>Citizen Sentinel</h3>
               <p class="gateway-desc">
                 Secure, anonymous safety reporting grid for the public. Report neighborhood incidents in Ghost Mode, watch live proximity feeds, and check local safety indexes with complete metadata scrubbing.
               </p>
               <div class="gateway-features">
-                <div class="feature-tag"><i data-lucide="map-pin"></i> Proximity Alerts</div>
-                <div class="feature-tag"><i data-lucide="eye-off"></i> Ghost Mode</div>
-                <div class="feature-tag"><i data-lucide="shield-check"></i> Safe Zone GIS</div>
+                <div class="feature-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Proximity Alerts
+                </div>
+                <div class="feature-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  Ghost Mode
+                </div>
+                <div class="feature-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 11 13 15 9"/></svg>
+                  Safe Zone GIS
+                </div>
               </div>
             </div>
-            <a href="http://localhost:5175/#/" class="btn-gateway btn-citizen">
+            <a href="http://localhost:5175/" class="btn-gateway btn-citizen" style="background: #ffd900; color: #09090b; border-color: #ffd900;">
               <span>Access Citizen Portal</span>
-              <i data-lucide="arrow-right"></i>
+              <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
           </div>
 
           <!-- Police Gate Card -->
-          <div class="gateway-card police-gate">
-            <div class="gateway-accent-bar"></div>
+          <div class="gateway-card police-gate" style="border-top: 3px solid #ffd900;">
+            <div class="gateway-accent-bar" style="background: #ffd900;"></div>
             <div>
-              <div class="gateway-icon-wrapper">
-                <i data-lucide="shield"></i>
+              <div class="gateway-icon-wrapper" style="background: rgba(255, 217, 0, 0.15); color: #d8b000;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </div>
               <h3>Police Command Center</h3>
               <p class="gateway-desc">
                 Authorized intranet command console for law enforcement officers. Analyze repeat offender recidivism, trace digital arrest scams, track ANPR hotspots, and coordinate dispatches in real-time.
               </p>
               <div class="gateway-features">
-                <div class="feature-tag"><i data-lucide="network"></i> Link Analysis</div>
-                <div class="feature-tag"><i data-lucide="fingerprint"></i> Biometric RAG</div>
-                <div class="feature-tag"><i data-lucide="camera"></i> CCTV Analytics</div>
+                <div class="feature-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                  Link Analysis
+                </div>
+                <div class="feature-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5z"/></svg>
+                  Biometric RAG
+                </div>
+                <div class="feature-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  CCTV Analytics
+                </div>
               </div>
             </div>
-            <a href="http://localhost:5175/#/portals" class="btn-gateway btn-police">
+            <a href="http://localhost:5175/" class="btn-gateway btn-police" style="background: #ffd900; color: #09090b; border-color: #ffd900;">
               <span>Enter Command Console</span>
-              <i data-lucide="arrow-right"></i>
+              <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
           </div>
 
           <!-- Civic Departments Card -->
-          <div class="gateway-card departments-gate" style="border-top: 3px solid #10b981;">
-            <div class="gateway-accent-bar" style="background: #10b981;"></div>
+          <div class="gateway-card departments-gate" style="border-top: 3px solid #ffd900;">
+            <div class="gateway-accent-bar" style="background: #ffd900;"></div>
             <div>
-              <div class="gateway-icon-wrapper" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
-                <i data-lucide="building-2"></i>
+              <div class="gateway-icon-wrapper" style="background: rgba(255, 217, 0, 0.15); color: #d8b000;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="16"/><line x1="15" y1="22" x2="15" y2="16"/><path d="M8 6h2M14 6h2M8 10h2M14 10h2"/></svg>
               </div>
               <h3>Civic Departments</h3>
               <p class="gateway-desc">
                 Authorized dispatch dashboard for municipal departments (Health, Electricity, Water, Sanitation, Fire, etc.). Review automated AI reports, inspect deepfake verdicts, and update resolved case statuses.
               </p>
               <div class="gateway-features">
-                <div class="feature-tag"><i data-lucide="zap"></i> Power & Water</div>
-                <div class="feature-tag"><i data-lucide="trash-2"></i> Sanitation Hub</div>
-                <div class="feature-tag"><i data-lucide="heart-pulse"></i> Medical Alerts</div>
+                <div class="feature-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  Power & Water
+                </div>
+                <div class="feature-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  Sanitation Hub
+                </div>
+                <div class="feature-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                  Medical Alerts
+                </div>
               </div>
             </div>
-            <a href="http://localhost:5175/#/portals" class="btn-gateway" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #059669;">
+            <a href="http://localhost:3000/" class="btn-gateway" style="background: #ffd900; color: #09090b; border-color: #ffd900;">
               <span>Access Civic Panels</span>
-              <i data-lucide="arrow-right"></i>
+              <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
           </div>
         </div>
@@ -152,7 +194,9 @@
         <!-- Interactive Law Library / Rule Book Banner -->
         <div class="rulebook-banner">
           <div class="rulebook-content">
-            <div class="rulebook-icon"><i data-lucide="book-open"></i></div>
+            <div class="rulebook-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5z"/></svg>
+            </div>
             <div class="rulebook-text">
               <h3>Citizen Interactive Rule Book & Law Library</h3>
               <p>Know your legal rights in 60 seconds. Review police protocols, arrest guidelines, and digital fraud protections compiled directly from the Bharatiya Nyaya Sanhita (BNS).</p>
@@ -160,7 +204,7 @@
           </div>
           <a href="http://localhost:5175/#/user/library" class="btn-rulebook">
             <span>Explore Rule Book</span>
-            <i data-lucide="external-link"></i>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px; margin-left: 4px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           </a>
         </div>
       </div>
@@ -169,13 +213,15 @@
     <!-- Geographic Deployment details (About the Place) -->
     <section class="about-section" id="about">
       <div class="section-header">
-        <i data-lucide="map-pin"></i>
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-color)" stroke-width="2" style="width: 28px; height: 28px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         <h2>Geospatial Footprint: Bengaluru Grid</h2>
       </div>
 
       <div class="about-grid">
         <div class="about-card">
-          <div class="card-icon"><i data-lucide="navigation"></i></div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          </div>
           <h3>Localized Proximity Spheres</h3>
           <p>
             Fully optimized for high-density hubs including <strong>Koramangala</strong>, <strong>Indiranagar</strong>, and <strong>HSR Layout</strong>. Video pins and incident feeds utilize Leaflet and CartoDB Voyager light tiles to pinpoint emergency hubs within 15 meters.
@@ -183,7 +229,9 @@
         </div>
 
         <div class="about-card">
-          <div class="card-icon"><i data-lucide="shield-alert"></i></div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
           <h3>Emergency Interlock</h3>
           <p>
             Emergency dispatches from the public bypass standard cohort verification pipelines and are auto-routed directly to district SP dashboards with immediate alert rings and localized sound triggers.
@@ -191,7 +239,9 @@
         </div>
 
         <div class="about-card">
-          <div class="card-icon"><i data-lucide="eye-off"></i></div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </div>
           <h3>Anonymized Audit Trails</h3>
           <p>
             Every citizen upload is assigned a Section 65B Audit-Hash (e.g. <code>SHA-256</code> logs) containing proof-of-location metadata, ensuring legal admissibility in courts while securing reporter identities.
@@ -203,7 +253,7 @@
     <!-- The 29 Pillars of the Architecture -->
     <section class="pillars-section" id="pillars">
       <div class="section-header">
-        <i data-lucide="layout-grid"></i>
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-color)" stroke-width="2" style="width: 28px; height: 28px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         <h2>System Architecture: The 29 Strategic Pillars</h2>
         <p>A comprehensive system of state safety and intelligence pipelines built for Indian Law Enforcement & Citizens.</p>
       </div>
@@ -419,8 +469,13 @@
 
   <!-- JS Logic for Theme Shifting & Portal Redirection -->
   <script>
-    // Initialize icons
-    lucide.createIcons();
+    // Theme Mode Shifter (UIMAX premium detail)
+    const themeToggle = document.getElementById('theme-toggle');
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('police-mode');
+      const isPolice = document.body.classList.contains('police-mode');
+      themeToggle.querySelector('.toggle-badge').textContent = isPolice ? '⚡ MODE: TACTICAL' : '🛡️ MODE: SECURE';
+    });
 
     // Dynamically update localhost links to match current hostname and port environment
     document.querySelectorAll('a').forEach(link => {

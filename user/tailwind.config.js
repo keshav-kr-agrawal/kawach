@@ -7,11 +7,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        snapYellow: "#eab308",
-        policeSlate: "#0f172a",
+        snapYellow: "#ffd900",
+        policeSlate: "#ffffff",
+        uimaxBase: "#ffffff",
+        uimaxAccent: "#ffd900",
+        uimaxDarkBase: "#ffffff",
+        uimaxDarkAccent: "#ffd900",
       },
       fontFamily: {
-        sans: ['Inter', 'Outfit', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+        sora: ['"Sora"', 'sans-serif'],
         outfit: ['Outfit', 'sans-serif'],
       }
     },
