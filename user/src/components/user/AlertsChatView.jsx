@@ -9,17 +9,20 @@ const EMERGENCY_CATEGORIES = ['Infrastructure', 'Violence/Loitering', 'Theft/Pro
 const DEFAULT_COORDS = { lat: 12.9716, lng: 77.5946 }; // Bengaluru fallback
 
 const NAYAK_SERVICES = [
+  // Category: DIGITAL_SAFETY (🛡️ Digital Safety & Forensics)
   {
     id: 'currency',
+    category: 'DIGITAL_SAFETY',
     label: 'Counterfeit Currency Detector',
     icon: '💵',
-    badge: 'Computer Vision & RBI Rules',
+    badge: 'CNN & RBI Rulebook',
     type: 'upload',
     accept: 'image/*',
     prompt: '💵 Upload photo of ₹500 or ₹200 note for Computer Vision counterfeit scan...'
   },
   {
     id: 'deepfake',
+    category: 'DIGITAL_SAFETY',
     label: 'Deepfake & Face Swap Inspector',
     icon: '🎭',
     badge: 'MTCNN + EfficientNet-B7',
@@ -29,6 +32,7 @@ const NAYAK_SERVICES = [
   },
   {
     id: 'scam-script',
+    category: 'DIGITAL_SAFETY',
     label: 'Digital Arrest & Call Spoof Verifier',
     icon: '📞',
     badge: 'Voiceprint & Speech AI',
@@ -36,93 +40,39 @@ const NAYAK_SERVICES = [
     query: 'I received a video/voice call claiming to be CBI / ED threatening digital arrest. Is this a scam?'
   },
   {
-    id: 'sim-swap',
-    label: 'SMS Header & SIM Swap Audit',
-    icon: '📱',
-    badge: 'TRAI DLT Engine',
-    type: 'query',
-    query: 'Check SMS header code e.g. AX-SDBANK or phone number +91 9876543210 for SIM swap / phishing reports.'
-  },
-  {
-    id: 'upi-fraud',
-    label: 'UPI & QR Code Fraud Scanner',
-    icon: '💳',
-    badge: 'NCRP & UPI Graph AI',
-    type: 'upload',
-    accept: 'image/*',
-    prompt: '💳 Upload QR Code image or paste UPI VPA ID to verify cyber fraud risk...'
-  },
-  {
-    id: 'id-verifier',
-    label: 'Fake Govt ID & Seal Verifier',
-    icon: '📄',
-    badge: 'Aadhaar / PAN OCR',
-    type: 'upload',
-    accept: 'image/*',
-    prompt: '📄 Upload photo of police badge, court order, or suspect ID card for forgery analysis...'
-  },
-  {
-    id: 'vehicle-rc',
-    label: 'Vehicle Plate & RC Scanner',
-    icon: '🚗',
-    badge: 'Parivahan Vahan API',
-    type: 'upload',
-    accept: 'image/*',
-    prompt: '🚗 Upload photo of vehicle license plate or type RC number for stolen vehicle check...'
-  },
-  {
-    id: 'blood-icu',
-    label: 'Emergency Blood & ICU Bed Finder',
-    icon: '🩸',
-    badge: 'Health Grid AI',
-    type: 'query',
-    query: 'Find verified blood bank inventory (O-negative, A+) and available hospital ICU beds near me.'
-  },
-  {
-    id: 'power-hazard',
-    label: 'Electrical Power Hazard Detector',
-    icon: '⚡',
-    badge: 'BESCOM Discom AI',
-    type: 'upload',
-    accept: 'image/*',
-    prompt: '⚡ Upload photo of hanging live wires, transformer spark, or electrical fire hazard...'
-  },
-  {
-    id: 'water-leak',
-    label: 'Water Main Leak & Pollution AI',
-    icon: '🌊',
-    badge: 'BWSSB Hydro Grid',
-    type: 'upload',
-    accept: 'image/*',
-    prompt: '🌊 Upload photo of pipeline burst, sewage overflow, or contaminated water supply...'
-  },
-  {
-    id: 'pothole-pwd',
-    label: 'Pothole & PWD Damage Classifier',
-    icon: '🛣️',
-    badge: 'YOLO12s Vision',
-    type: 'upload',
-    accept: 'image/*',
-    prompt: '🛣️ Upload photo of road pothole, cave-in, or broken bridge for automated PWD routing...'
-  },
-  {
     id: 'fraud-ring',
-    label: 'Cyber Fraud Ring Mapper',
+    category: 'DIGITAL_SAFETY',
+    label: 'Cyber Fraud Ring & Mule Mapper',
     icon: '🕸️',
     badge: 'Louvain Graph AI',
     type: 'query',
     query: 'Analyze recent cyber fraud numbers and check if there is an active fraud ring targeting my area.'
   },
+
+  // Category: GEO_SAFETY (🗺️ Emergency & Geo Safety)
   {
     id: 'geospatial',
-    label: 'Geospatial Crime & Safety Grid',
+    category: 'GEO_SAFETY',
+    label: 'Geospatial Crime & Patrol Grid',
     icon: '🗺️',
     badge: 'DBSCAN Geo AI',
     type: 'query',
     query: 'Show geospatial safety intelligence and verified incident density near my current GPS location.'
   },
   {
+    id: 'sos-dispatch',
+    category: 'GEO_SAFETY',
+    label: 'Direct Emergency Dispatch SOS',
+    icon: '🚨',
+    badge: '112 Police & Fire Routing',
+    type: 'query',
+    query: 'EMERGENCY SOS: Require immediate police patrol and emergency unit dispatch to my location.'
+  },
+
+  // Category: LEGAL (⚖️ BNS Legal Rulebooks)
+  {
     id: 'legal-rights',
+    category: 'LEGAL',
     label: 'Legal Rights & Cop Powers',
     icon: '⚖️',
     badge: 'BNS 2026 Rulebook',
@@ -130,96 +80,42 @@ const NAYAK_SERVICES = [
     query: 'What are my constitutional rights during police vehicle checks under BNS and Motor Vehicles Act?'
   },
   {
-    id: 'sos-dispatch',
-    label: 'Direct Emergency Dispatch SOS',
-    icon: '🚨',
-    badge: '112 Police & Fire Routing',
+    id: 'vehicle-rights',
+    category: 'LEGAL',
+    label: 'Vehicle Stop & Traffic Law Rights',
+    icon: '🚗',
+    badge: 'Motor Vehicles Act',
     type: 'query',
-    query: 'EMERGENCY SOS: Require immediate police patrol and emergency unit dispatch to my location.'
-  }
-];
+    query: 'What documents am I required to show during a late-night police traffic stop under Motor Vehicles Act?'
+  },
 
-const USABILITY_REFINERIES = [
+  // Category: WORK_SHORTCUTS (🛠️ Citizen Work Shortcuts)
   {
     id: 'voice-dictate',
+    category: 'WORK_SHORTCUTS',
     label: 'Voice-to-Report Dictation',
     icon: '🎙️',
     badge: 'Hands-Free AI',
-    action: 'query',
+    type: 'query',
     query: '🎙️ Voice Dictation Mode: Speak your complaint in Hindi, Kannada, or English. Nayak will format a BNS report draft.'
   },
   {
-    id: 'ocr-crop',
-    label: 'Document OCR Text Extractor',
-    icon: '📸',
-    badge: 'Text Scanner',
-    action: 'upload',
-    accept: 'image/*',
-    prompt: '📸 Upload photo of notice, receipt, or handwritten note for instant OCR text extraction...'
-  },
-  {
     id: 'bilingual-pdf',
+    category: 'WORK_SHORTCUTS',
     label: 'Bilingual Station Complaint Generator',
     icon: '📝',
     badge: 'Station Draft',
-    action: 'query',
+    type: 'query',
     query: 'Draft an official police complaint letter in English & Kannada formatted for submission at the local SP office.'
   },
   {
-    id: 'landmark-pin',
-    label: 'GPS Landmark & Jurisdiction Pinpoint',
-    icon: '📍',
-    badge: 'Live GPS',
-    action: 'locate',
-    query: 'Pinpoint my exact GPS location, nearest police station boundary, and emergency dispatch landmark.'
-  },
-  {
     id: 'cyber-1930',
+    category: 'WORK_SHORTCUTS',
     label: 'National Cyber Crime (1930) Helper',
     icon: '🔍',
     badge: 'Helpline 1930',
-    action: 'query',
+    type: 'query',
     query: 'Prepare cyber fraud report payload formatted for the National Cyber Crime Portal (1930 helpline).'
-  },
-  {
-    id: 'stitch-evidence',
-    label: 'Multi-Image Evidence Package Stitcher',
-    icon: '🧾',
-    badge: 'Dossier Prep',
-    action: 'query',
-    query: 'Combine my uploaded bank receipts, WhatsApp screenshots, and call logs into one court-ready evidence package.'
-  },
-  {
-    id: 'translator',
-    label: 'Instant 5-Language Legal Translator',
-    icon: '🌐',
-    badge: 'Multi-Lingual',
-    action: 'query',
-    query: 'Translate the BNS legal provisions and rights into Kannada, Hindi, Tamil, and Telugu.'
-  },
-  {
-    id: 'sos-contacts',
-    label: 'Emergency Family Location Blast',
-    icon: '📢',
-    badge: 'SMS & WhatsApp',
-    action: 'query',
-    query: 'Send my live GPS location and safety status alert to my registered emergency contacts.'
-  },
-  {
-    id: 'saved-cards',
-    label: 'Offline Saved Law Cards & Verdicts',
-    icon: '🔖',
-    badge: 'Offline Vault',
-    action: 'query',
-    query: 'Show my saved BNS rights cards, currency check verdicts, and police vehicle check guidelines.'
-  },
-  {
-    id: 'sla-countdown',
-    label: 'Live Ticket SLA Countdown Tracker',
-    icon: '⏱️',
-    badge: 'SLA Countdown',
-    action: 'query',
-    query: 'Show real-time resolution countdown timers for my open civic and police reports.'
   }
 ];
 
@@ -367,7 +263,12 @@ export default function AlertsChatView() {
   const [emFile, setEmFile] = useState(null);
   const [emDispatching, setEmDispatching] = useState(false);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
   const messagesEndRef = useRef(null);
+
+  const displayedServices = selectedCategory === 'ALL'
+    ? NAYAK_SERVICES
+    : NAYAK_SERVICES.filter((s) => s.category === selectedCategory);
   const fileInputRef = useRef(null);
   const emFileInputRef = useRef(null);
 
@@ -805,69 +706,52 @@ export default function AlertsChatView() {
                 </div>
               </div>
 
-              {/* Render Key AI Services & Usability Refineries row-wise immediately after the first default welcome message */}
+              {/* Render Interactive Category Dropdown & Filtered Services */}
               {index === 0 && (
-                <div className="my-4 space-y-4 max-w-md w-full">
-                  {/* 15 AI Forensic Refineries */}
-                  <div className="space-y-2">
-                    <div className="text-[10px] font-black text-[#b08850] uppercase tracking-wider font-mono flex items-center gap-1.5 px-1">
-                      <span>⚡</span> AI Forensic Refineries (Tap to Scan or Consult):
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      {NAYAK_SERVICES.map((s) => (
-                        <button
-                          key={s.id}
-                          onClick={() => handleServiceClick(s)}
-                          className="w-full flex items-center justify-between p-3 bg-white hover:bg-amber-50/80 border border-amber-400/35 rounded-2xl shadow-2xs hover:shadow-xs transition-all hover:border-[#b08850] text-left active:scale-[0.99] cursor-pointer group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl p-2 bg-amber-100/60 rounded-xl group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
-                            <div>
-                              <div className="font-sora text-xs font-black text-ink flex items-center gap-2">
-                                {s.label}
-                              </div>
-                              <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                                {s.type === 'upload' ? '📷 Tap to select photo or video for instant AI scan' : '⚖️ Tap to consult Nayak legal rulebook'}
-                              </p>
-                            </div>
-                          </div>
-                          <span className="text-[9px] font-mono font-extrabold text-[#b08850] bg-amber-400/20 px-2 py-1 rounded-lg shrink-0 uppercase tracking-wider">
-                            {s.badge}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                <div className="my-4 p-4 bg-amber-50/80 border border-amber-400/35 rounded-2xl max-w-md w-full shadow-2xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2.5 border-b border-amber-400/20">
+                    <span className="text-[10px] font-black text-[#b08850] uppercase tracking-wider font-mono flex items-center gap-1.5">
+                      <span>⚡</span> Select AI Refinery &amp; Tool:
+                    </span>
+                    
+                    {/* Category Dropdown */}
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="bg-white border border-amber-400/40 rounded-xl px-2.5 py-1 text-xs font-bold text-ink focus:outline-none focus:border-[#b08850] shadow-2xs cursor-pointer"
+                    >
+                      <option value="ALL">📁 All Refineries ({NAYAK_SERVICES.length})</option>
+                      <option value="DIGITAL_SAFETY">🛡️ Digital Safety &amp; Forensics</option>
+                      <option value="GEO_SAFETY">🗺️ Emergency &amp; Geo Safety</option>
+                      <option value="LEGAL">⚖️ BNS Legal Rulebooks</option>
+                      <option value="WORK_SHORTCUTS">🛠️ Citizen Work Shortcuts</option>
+                    </select>
                   </div>
 
-                  {/* 10 Citizen Usability & Work-Easability Refineries */}
-                  <div className="space-y-2 pt-3 border-t border-amber-400/20">
-                    <div className="text-[10px] font-black text-slate-700 uppercase tracking-wider font-mono flex items-center gap-1.5 px-1">
-                      <span>🛠️</span> Citizen Work-Easability Shortcuts (1-Tap Work Refineries):
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      {USABILITY_REFINERIES.map((s) => (
-                        <button
-                          key={s.id}
-                          onClick={() => handleServiceClick(s)}
-                          className="w-full flex items-center justify-between p-3 bg-slate-50/90 hover:bg-amber-100/40 border border-slate-300/60 rounded-2xl shadow-2xs hover:shadow-xs transition-all hover:border-slate-800 text-left active:scale-[0.99] cursor-pointer group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl p-2 bg-slate-200/70 rounded-xl group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
-                            <div>
-                              <div className="font-sora text-xs font-black text-ink flex items-center gap-2">
-                                {s.label}
-                              </div>
-                              <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                                🛠️ Tap to launch automated citizen shortcut
-                              </p>
+                  {/* Services List inside selected category */}
+                  <div className="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
+                    {displayedServices.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => handleServiceClick(s)}
+                        className="w-full flex items-center justify-between p-3 bg-white hover:bg-amber-100/60 border border-amber-400/30 rounded-xl shadow-2xs transition-all hover:border-[#b08850] text-left active:scale-[0.99] cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-xl p-2 bg-amber-100/70 rounded-xl group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
+                          <div className="truncate">
+                            <div className="font-sora text-xs font-black text-ink truncate">
+                              {s.label}
                             </div>
+                            <p className="text-[10px] text-slate-500 font-semibold mt-0.5 truncate">
+                              {s.type === 'upload' ? '📷 Tap to select file for AI scan' : '⚖️ Tap to launch automated AI query'}
+                            </p>
                           </div>
-                          <span className="text-[9px] font-mono font-extrabold text-slate-700 bg-slate-200 px-2 py-1 rounded-lg shrink-0 uppercase tracking-wider">
-                            {s.badge}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                        </div>
+                        <span className="text-[9px] font-mono font-extrabold text-[#b08850] bg-amber-400/20 px-2 py-1 rounded-lg shrink-0 uppercase tracking-wider ml-2">
+                          {s.badge}
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
