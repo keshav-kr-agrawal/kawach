@@ -13,6 +13,13 @@ from app.routes.nayak_rag import retrieve_law_chunks, get_embedding
 
 router = APIRouter()
 
+# "gemini-2.5-flash" is blocked for accounts created after Google's cutoff
+# (confirmed 2026-07-19: this key gets a 404 "no longer available to new
+# users" on both 2.5-flash and 2.5-flash-lite). "gemini-flash-latest" is
+# Google's self-updating alias — always resolves to a current, non-deprecated
+# flash model, so this never needs touching again as models rotate.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
+
 # Input Models
 class ChatRequest(BaseModel):
     session_id: Optional[str] = None
@@ -91,7 +98,7 @@ def run_check_link(url: str, api_key: str = None) -> dict:
         
     if api_key:
         try:
-            gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+            gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={api_key}"
             headers = {"Content-Type": "application/json"}
             payload = {
                 "contents": [{"parts": [{"text": f"Analyze the link: '{url}'. Determine if this looks like a fake government portal, phishing link, or scam site. Answer in JSON format: {{'verdict': 'official|suspicious|confirmed_fake', 'confidence': float, 'reasons': ['reason1', ...]}}."}]}],
@@ -133,7 +140,7 @@ def run_classify_text(text_content: str, api_key: str = None) -> dict:
         
     if api_key:
         try:
-            gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+            gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={api_key}"
             headers = {"Content-Type": "application/json"}
             payload = {
                 "contents": [{"parts": [{"text": f"Analyze this text message: '{text_content}'. Determine if it is a digital arrest scam, UPI phishing scam, or lottery scam. Respond in JSON: {{'is_scam': bool, 'confidence': float, 'matched_pattern': str, 'reasoning': str}}."}]}],
@@ -471,7 +478,7 @@ def handle_nayak_chat(
         }
         
     # 5. Gemini Agent Loop
-    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     
     # Define tool schema for Gemini function calling
