@@ -329,6 +329,23 @@ export default function AlertsChatView() {
     }
   };
 
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image') !== -1 || item.type.indexOf('video') !== -1) {
+        const blob = item.getAsFile();
+        if (blob) {
+          e.preventDefault();
+          processFile(blob);
+          return;
+        }
+      }
+    }
+  };
+
   const handleSend = async (e) => {
     e?.preventDefault();
     const query = inputText.trim();
@@ -475,6 +492,7 @@ export default function AlertsChatView() {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onPaste={handlePaste}
       className="flex-1 flex flex-col h-full bg-white font-sans text-ink overflow-hidden select-text relative"
     >
       
