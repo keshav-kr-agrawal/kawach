@@ -785,14 +785,31 @@ def _classify_media_for_real(media_url: str, media_type: str) -> dict:
             )
             r.raise_for_status()
             data = r.json()
-            findings = "; ".join(c["finding"] for c in data.get("security_checks", [])[:2])
+            verdict = data.get("verdict")
+            # v2 pipeline verdicts (see plan/currency_pipeline_v2_plan.md):
+            # only real/fake verdicts map to a boolean — gate exits
+            # (NOT_A_CURRENCY_NOTE / INSUFFICIENT_QUALITY) and INCONCLUSIVE
+            # stay None so the chat never renders them as "flagged suspicious".
+            if verdict in ("LIKELY_GENUINE", "GENUINE_FEATURES"):
+                is_auth = True
+            elif verdict in ("LIKELY_COUNTERFEIT", "SUSPECT_FEATURES"):
+                is_auth = False
+            else:
+                is_auth = None
+            fake_prob = data.get("fake_probability")
+            findings = "; ".join(
+                c["finding"] for c in data.get("security_checks", [])[:2] if c.get("score") is not None
+            )
+            details = f"Currency screening ({data.get('model_mode')}): {verdict}. {findings}".strip()
+            if data.get("guidance"):
+                details += f" {data['guidance']}"
             return {
-                "is_authenticated": data.get("verdict") in ("LIKELY_GENUINE", "GENUINE_FEATURES"),
-                "score": round((1.0 - data.get("fake_probability", 0.5)) * 100, 1),
-                "verdict": data.get("verdict"),
+                "is_authenticated": is_auth,
+                "score": round((1.0 - fake_prob) * 100, 1) if fake_prob is not None else None,
+                "verdict": verdict,
                 "confidence": data.get("confidence"),
                 "model_mode": data.get("model_mode"),
-                "details": f"Currency screening ({data.get('model_mode')}): {data.get('verdict')}. {findings}",
+                "details": details,
                 "source": "classifier:/classify-currency",
             }
 

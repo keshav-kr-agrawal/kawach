@@ -752,10 +752,16 @@ async def classify_currency(
     checking — the last one honestly gated behind `capture_mode="uv"` since a
     normal-light photo cannot simulate a UV response.
 
-    Fuses a fine-tuned CNN (when weights/currency/currency_cnn.pt exists) with
-    the classical security-feature checks above. When sources disagree the
-    verdict is INCONCLUSIVE — a citizen-facing tool must under-claim.
-    `model_mode` in the response states exactly which sources produced it.
+    v2 pipeline (plan/currency_pipeline_v2_plan.md): image-quality gate
+    (INSUFFICIENT_QUALITY + retake tip — bad lighting never reads as fake),
+    note-presence gate (NOT_A_CURRENCY_NOTE — a white sheet/random object is
+    never forced into a real-vs-fake score), one shared OCR pass feeding a
+    text-integrity check (catches substituted wording like 'CHILDREN BANK'),
+    then tiered fusion: structural checks (serial, text) can veto, weak
+    proxies (thread band, sharpness, noise) only corroborate, and the CNN is
+    advisory (its 0.30-0.70 range is treated as no-read). A single visible-
+    light photo never yields HIGH-confidence GENUINE — that requires a
+    passing UV capture. `model_mode` states exactly which sources ran.
     """
     ext = file.filename.lower().rsplit(".", 1)[-1]
     if ext not in {"jpg", "jpeg", "png", "webp", "bmp"}:
