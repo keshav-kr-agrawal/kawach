@@ -583,9 +583,9 @@ export default function AlertsChatView() {
         </div>
       )}
 
-      {/* Header — Compact on phone to maximize vertical chat height */}
-      <div className="px-3.5 py-2 bg-white border-b border-amber-400/20 flex items-center justify-between flex-none md:px-6 md:py-3">
-        <div className="hidden md:block">
+      {/* Header — Hidden on mobile to maximize vertical chat space */}
+      <div className="hidden md:flex px-6 py-3 bg-white border-b border-amber-400/20 items-center justify-between flex-none">
+        <div>
           <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
             LAW-BACKED LEGAL &amp; THREAT COUNSEL
           </span>
@@ -593,15 +593,12 @@ export default function AlertsChatView() {
             Nayak <span className="font-serif italic font-normal text-[#b08850] pr-1">AI Counsel</span>
           </h2>
         </div>
-        <div className="md:hidden flex items-center gap-1.5">
-          <span className="text-xs font-black text-ink font-sora">⚖️ Nayak AI</span>
-        </div>
 
         <button
           onClick={() => setEmergencyOpen(true)}
-          className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-[11px] flex items-center gap-1 shadow-xs uppercase tracking-wider font-sora animate-pulse"
+          className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs uppercase tracking-wider font-sora animate-pulse"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           Emergency SOS
         </button>
       </div>

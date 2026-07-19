@@ -216,7 +216,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     <div className="flex-1 flex flex-col h-full bg-white font-sans overflow-hidden select-text relative">
       
       {/* Header */}
-      <div className="px-6 py-4 bg-white border-b border-amber-400/20 flex-none flex items-center justify-between z-20">
+      <div className="hidden md:flex px-6 py-4 bg-white border-b border-amber-400/20 flex-none items-center justify-between z-20">
         <div>
           <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
             ANONYMOUS EVIDENCE RECORDING
