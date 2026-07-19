@@ -11,43 +11,113 @@ const DEFAULT_COORDS = { lat: 12.9716, lng: 77.5946 }; // Bengaluru fallback
 const NAYAK_SERVICES = [
   {
     id: 'currency',
-    label: 'Counterfeit Currency Detection',
+    label: 'Counterfeit Currency Detector',
     icon: '💵',
-    badge: 'Computer Vision',
+    badge: 'Computer Vision & RBI Rules',
     type: 'upload',
     accept: 'image/*',
     prompt: '💵 Upload photo of ₹500 or ₹200 note for Computer Vision counterfeit scan...'
   },
   {
     id: 'deepfake',
-    label: 'Deepfake Identification',
+    label: 'Deepfake & Face Swap Inspector',
     icon: '🎭',
-    badge: 'MTCNN + CNN',
+    badge: 'MTCNN + EfficientNet-B7',
     type: 'upload',
     accept: 'video/*,image/*',
-    prompt: '🎭 Upload video clip for AI facial deepfake analysis...'
+    prompt: '🎭 Upload video clip or photo for AI facial deepfake analysis...'
   },
   {
     id: 'scam-script',
-    label: 'Scam Script & Voice Spoofing',
+    label: 'Digital Arrest & Call Spoof Verifier',
     icon: '📞',
-    badge: 'NLP & Speech AI',
+    badge: 'Voiceprint & Speech AI',
     type: 'query',
     query: 'I received a video/voice call claiming to be CBI / ED threatening digital arrest. Is this a scam?'
   },
   {
+    id: 'sim-swap',
+    label: 'SMS Header & SIM Swap Audit',
+    icon: '📱',
+    badge: 'TRAI DLT Engine',
+    type: 'query',
+    query: 'Check SMS header code e.g. AX-SDBANK or phone number +91 9876543210 for SIM swap / phishing reports.'
+  },
+  {
+    id: 'upi-fraud',
+    label: 'UPI & QR Code Fraud Scanner',
+    icon: '💳',
+    badge: 'NCRP & UPI Graph AI',
+    type: 'upload',
+    accept: 'image/*',
+    prompt: '💳 Upload QR Code image or paste UPI VPA ID to verify cyber fraud risk...'
+  },
+  {
+    id: 'id-verifier',
+    label: 'Fake Govt ID & Seal Verifier',
+    icon: '📄',
+    badge: 'Aadhaar / PAN OCR',
+    type: 'upload',
+    accept: 'image/*',
+    prompt: '📄 Upload photo of police badge, court order, or suspect ID card for forgery analysis...'
+  },
+  {
+    id: 'vehicle-rc',
+    label: 'Vehicle Plate & RC Scanner',
+    icon: '🚗',
+    badge: 'Parivahan Vahan API',
+    type: 'upload',
+    accept: 'image/*',
+    prompt: '🚗 Upload photo of vehicle license plate or type RC number for stolen vehicle check...'
+  },
+  {
+    id: 'blood-icu',
+    label: 'Emergency Blood & ICU Bed Finder',
+    icon: '🩸',
+    badge: 'Health Grid AI',
+    type: 'query',
+    query: 'Find verified blood bank inventory (O-negative, A+) and available hospital ICU beds near me.'
+  },
+  {
+    id: 'power-hazard',
+    label: 'Electrical Power Hazard Detector',
+    icon: '⚡',
+    badge: 'BESCOM Discom AI',
+    type: 'upload',
+    accept: 'image/*',
+    prompt: '⚡ Upload photo of hanging live wires, transformer spark, or electrical fire hazard...'
+  },
+  {
+    id: 'water-leak',
+    label: 'Water Main Leak & Pollution AI',
+    icon: '🌊',
+    badge: 'BWSSB Hydro Grid',
+    type: 'upload',
+    accept: 'image/*',
+    prompt: '🌊 Upload photo of pipeline burst, sewage overflow, or contaminated water supply...'
+  },
+  {
+    id: 'pothole-pwd',
+    label: 'Pothole & PWD Damage Classifier',
+    icon: '🛣️',
+    badge: 'YOLO12s Vision',
+    type: 'upload',
+    accept: 'image/*',
+    prompt: '🛣️ Upload photo of road pothole, cave-in, or broken bridge for automated PWD routing...'
+  },
+  {
     id: 'fraud-ring',
-    label: 'Fraud Ring Mapping',
+    label: 'Cyber Fraud Ring Mapper',
     icon: '🕸️',
-    badge: 'Graph AI',
+    badge: 'Louvain Graph AI',
     type: 'query',
     query: 'Analyze recent cyber fraud numbers and check if there is an active fraud ring targeting my area.'
   },
   {
     id: 'geospatial',
-    label: 'Geospatial Crime Grid',
+    label: 'Geospatial Crime & Safety Grid',
     icon: '🗺️',
-    badge: 'Geo AI',
+    badge: 'DBSCAN Geo AI',
     type: 'query',
     query: 'Show geospatial safety intelligence and verified incident density near my current GPS location.'
   },
@@ -55,9 +125,17 @@ const NAYAK_SERVICES = [
     id: 'legal-rights',
     label: 'Legal Rights & Cop Powers',
     icon: '⚖️',
-    badge: 'BNS 2026',
+    badge: 'BNS 2026 Rulebook',
     type: 'query',
     query: 'What are my constitutional rights during police vehicle checks under BNS and Motor Vehicles Act?'
+  },
+  {
+    id: 'sos-dispatch',
+    label: 'Direct Emergency Dispatch SOS',
+    icon: '🚨',
+    badge: '112 Police & Fire Routing',
+    type: 'query',
+    query: 'EMERGENCY SOS: Require immediate police patrol and emergency unit dispatch to my location.'
   }
 ];
 
@@ -259,7 +337,18 @@ export default function AlertsChatView() {
     if (!file || busy) return;
 
     setBusy(true);
-    const userMsg = { id: 'user-' + Date.now(), sender: 'user', text: `Attached media: ${file.name}`, timestamp: now() };
+    const previewUrl = URL.createObjectURL(file);
+    const isImg = file.type.startsWith('image/');
+    const isVid = file.type.startsWith('video/');
+    const userMsg = {
+      id: 'user-' + Date.now(),
+      sender: 'user',
+      text: `Attached media: ${file.name}`,
+      mediaUrl: previewUrl,
+      isImage: isImg,
+      isVideo: isVid,
+      timestamp: now()
+    };
     setMessages((prev) => [...prev, userMsg]);
 
     try {
@@ -569,7 +658,26 @@ export default function AlertsChatView() {
                   </div>
                   
                   {isUser ? (
-                    <p className="text-xs leading-relaxed font-semibold whitespace-pre-wrap">{m.text}</p>
+                    <div>
+                      <p className="text-xs leading-relaxed font-semibold whitespace-pre-wrap">{m.text}</p>
+                      {m.mediaUrl && (
+                        <div className="mt-2.5 rounded-xl overflow-hidden border border-amber-950/20 max-w-xs shadow-xs bg-slate-900">
+                          {!m.isVideo && (m.isImage || m.mediaUrl.startsWith('blob:') || m.mediaUrl.startsWith('data:image') || m.mediaUrl.match(/\.(jpeg|jpg|png|webp|gif)/i)) ? (
+                            <img 
+                              src={m.mediaUrl} 
+                              alt="Uploaded Evidence" 
+                              className="w-full h-auto max-h-56 object-cover rounded-xl transition-transform hover:scale-105" 
+                            />
+                          ) : (
+                            <video 
+                              src={m.mediaUrl} 
+                              controls 
+                              className="w-full h-auto max-h-56 object-cover rounded-xl" 
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <MarkdownMessage content={m.text} />
                   )}
