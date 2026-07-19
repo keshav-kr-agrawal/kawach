@@ -20,6 +20,29 @@ router = APIRouter()
 # flash model, so this never needs touching again as models rotate.
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
 
+
+@router.get("/_debug_env")
+def _debug_env():
+    """
+    TEMPORARY diagnostic route — remove once the live Nayak fallback bug is
+    resolved. Reports what the running process actually sees, without leaking
+    the full API key. Added 2026-07-19 to break a debugging deadlock where
+    Render's log viewer wasn't showing expected [NAYAK] print output.
+    """
+    import sys
+    key = os.environ.get("GEMINI_API_KEY", "")
+    return {
+        "gemini_key_present": bool(key),
+        "gemini_key_length": len(key),
+        "gemini_key_prefix": key[:6] if key else None,
+        "gemini_key_suffix": key[-4:] if key else None,
+        "gemini_model": GEMINI_MODEL,
+        "python_utf8_env": os.environ.get("PYTHONUTF8"),
+        "python_unbuffered_env": os.environ.get("PYTHONUNBUFFERED"),
+        "stdout_encoding": sys.stdout.encoding,
+        "stderr_encoding": sys.stderr.encoding,
+    }
+
 # Input Models
 class ChatRequest(BaseModel):
     session_id: Optional[str] = None
