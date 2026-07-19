@@ -8,6 +8,52 @@ import { routeReport } from '../../api/routingService';
 const EMERGENCY_CATEGORIES = ['Infrastructure', 'Violence/Loitering', 'Theft/Property', 'Traffic Warning', 'Emergency Alert'];
 const DEFAULT_COORDS = { lat: 12.9716, lng: 77.5946 }; // Bengaluru fallback
 
+const NAYAK_SERVICES = [
+  {
+    id: 'currency',
+    label: 'Fake Currency Detector',
+    icon: '💵',
+    badge: 'v2 AI',
+    type: 'upload',
+    accept: 'image/*',
+    prompt: '💵 Select a clear photo of the ₹500 or ₹200 currency note to scan...'
+  },
+  {
+    id: 'deepfake',
+    label: 'Deepfake Video Forensics',
+    icon: '📹',
+    badge: 'MTCNN+CNN',
+    type: 'upload',
+    accept: 'video/*,image/*',
+    prompt: '📹 Select a video clip to run MTCNN face consensus analysis...'
+  },
+  {
+    id: 'digital-arrest',
+    label: 'Digital Arrest Call Checker',
+    icon: '📞',
+    badge: 'Scam Shield',
+    type: 'query',
+    query: 'I received a video/voice call claiming to be CBI / ED threatening digital arrest. Can you verify this?'
+  },
+  {
+    id: 'police-powers',
+    label: 'Police Power & Motor Rules',
+    icon: '⚖️',
+    badge: 'BNS 2026',
+    type: 'query',
+    query: 'Can a traffic police officer forcibly take my ignition keys or demand spot fines under the Motor Vehicles Act?'
+  },
+  {
+    id: 'evidence',
+    label: 'Upload Media / Notice',
+    icon: '📂',
+    badge: 'Storage',
+    type: 'upload',
+    accept: 'image/*,video/*,.pdf',
+    prompt: '📂 Select a photo, video or document to upload for Nayak forensic review...'
+  }
+];
+
 function MarkdownMessage({ content }) {
   return (
     <div className="prose prose-xs max-w-none text-slate-800 space-y-1.5 leading-relaxed select-text font-sans">
@@ -316,11 +362,22 @@ export default function AlertsChatView() {
     }
   };
 
+  const handleServiceClick = (service) => {
+    if (service.type === 'upload') {
+      if (fileInputRef.current) {
+        fileInputRef.current.accept = service.accept || 'image/*,video/*';
+        fileInputRef.current.click();
+      }
+    } else if (service.type === 'query') {
+      setInputText(service.query);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full bg-white font-sans text-slate-900 overflow-hidden select-text relative">
       
       {/* Header */}
-      <div className="px-6 py-4 bg-white border-b border-yellow-400/20 flex items-center justify-between flex-none">
+      <div className="px-6 py-3 bg-white border-b border-yellow-400/20 flex items-center justify-between flex-none">
         <div>
           <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
             LAW-BACKED LEGAL & THREAT COUNSEL
@@ -337,6 +394,26 @@ export default function AlertsChatView() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           Emergency SOS
         </button>
+      </div>
+
+      {/* Nayak Quick Services & Capabilities Bar */}
+      <div className="px-4 py-2 bg-yellow-50/80 border-b border-yellow-400/20 flex items-center gap-2 overflow-x-auto scrollbar-none flex-none select-none">
+        <span className="text-[9px] font-black text-[#b08850] uppercase tracking-widest font-mono shrink-0 mr-1 flex items-center gap-1">
+          <span>⚡</span> Services:
+        </span>
+        {NAYAK_SERVICES.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => handleServiceClick(s)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-yellow-400/30 border border-yellow-400/40 rounded-xl text-xs font-bold text-slate-900 shrink-0 shadow-2xs transition-all hover:border-[#b08850] active:scale-95 cursor-pointer"
+          >
+            <span className="text-sm">{s.icon}</span>
+            <span className="font-sora text-[10px] font-black text-slate-900">{s.label}</span>
+            <span className="text-[8px] font-extrabold text-[#b08850] bg-yellow-400/20 px-1.5 py-0.5 rounded-md uppercase font-mono">
+              {s.badge}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* Messages Scroll Area */}
