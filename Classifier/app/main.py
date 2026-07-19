@@ -85,6 +85,22 @@ async def lifespan(app: FastAPI):
     currency_detector = CurrencyDetector(weights_dir=weights_dir, device=device)
     print(f"  [OK] Currency detector ready (mode: {currency_detector.mode})")
 
+    # Warm EasyOCR in the background: its lazy first-call init takes long
+    # enough on the free-tier 2vCPU host that the first currency request
+    # after every container (re)start blew past the HF proxy timeout and
+    # 500'd (observed 2026-07-19 — failures rotated across images, warm
+    # container always fine). Boot stays fast; only OCR-dependent checks
+    # degrade gracefully until the thread finishes.
+    import threading
+    from app.currency_detector import _get_ocr_reader
+
+    def _warm_ocr():
+        print("  [P7] Warming EasyOCR reader (background)...")
+        _get_ocr_reader()
+        print("  [P7] EasyOCR reader warm")
+
+    threading.Thread(target=_warm_ocr, daemon=True).start()
+
     print(f"\n{'='*60}")
     print("  KAWACH startup complete — 6 endpoints live")
     print(f"{'='*60}\n")

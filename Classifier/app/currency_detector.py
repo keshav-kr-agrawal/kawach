@@ -52,20 +52,25 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+import threading
+
 _easyocr_reader = None
+_easyocr_lock = threading.Lock()
 
 
 def _get_ocr_reader():
     """Lazy-loaded, process-wide EasyOCR reader (pure Python, no Tesseract
-    binary dependency — heavy to init, so load once)."""
+    binary dependency — heavy to init, so load once). Lock-guarded because
+    startup warms it from a background thread while requests may arrive."""
     global _easyocr_reader
-    if _easyocr_reader is None:
-        try:
-            import easyocr
-            _easyocr_reader = easyocr.Reader(["en"], gpu=torch.cuda.is_available(), verbose=False)
-        except Exception as e:
-            print(f"[CURRENCY] EasyOCR unavailable ({e}) — OCR-based checks will report not_applicable.")
-            _easyocr_reader = False  # sentinel: tried and failed, don't retry every call
+    with _easyocr_lock:
+        if _easyocr_reader is None:
+            try:
+                import easyocr
+                _easyocr_reader = easyocr.Reader(["en"], gpu=torch.cuda.is_available(), verbose=False)
+            except Exception as e:
+                print(f"[CURRENCY] EasyOCR unavailable ({e}) — OCR-based checks will report not_applicable.")
+                _easyocr_reader = False  # sentinel: tried and failed, don't retry every call
     return _easyocr_reader or None
 
 
