@@ -13,11 +13,13 @@ from app.routes.nayak_rag import retrieve_law_chunks, get_embedding
 
 router = APIRouter()
 
-# "gemini-flash-latest" resolves to gemini-3.5-flash which only has 20 req/day
-# on the free tier — exhausted instantly during testing (confirmed 2026-07-19).
-# "gemini-2.5-flash" confirmed working at standard tier with the production key.
-# Override via GEMINI_MODEL env var on Render if needed.
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+# Free-tier daily quotas are per-model, not just per-project — exhausting
+# gemini-2.5-flash (20 req/day) does NOT affect other models' buckets.
+# "gemini-flash-lite-latest" (resolves to gemini-3.1-flash-lite as of
+# 2026-07-19) is a separate, much higher-limit quota pool, confirmed working
+# with full function-calling (classify_text/propose_report chaining) intact.
+# Override via GEMINI_MODEL env var on Render if you need a different model.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-lite-latest")
 
 
 @router.get("/_debug_env")
@@ -683,9 +685,14 @@ def handle_nayak_chat(
             ))
             db.commit()
 
-            # Feed the call + its result back for the next hop. (Per the
-            # Gemini REST API, functionResponse parts are sent with role "user".)
-            payload["contents"].append({"role": "model", "parts": [{"functionCall": fn_call}]})
+            # Feed the call + its result back for the next hop. Echo the
+            # FULL original part (not just {"functionCall": fn_call}) — it
+            # carries "thoughtSignature", which gemini-flash-lite-latest
+            # requires on replay for multi-hop tool calls or it 400s with
+            # "Function call is missing a thought_signature" (confirmed
+            # 2026-07-19; gemini-2.5-flash didn't enforce this as strictly).
+            # (Per the Gemini REST API, functionResponse parts use role "user".)
+            payload["contents"].append({"role": "model", "parts": [actual_parts[0]]})
             payload["contents"].append({
                 "role": "user",
                 "parts": [{"functionResponse": {"name": tool_name, "response": {"output": tool_result}}}]
