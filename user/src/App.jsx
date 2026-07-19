@@ -325,22 +325,22 @@ function UserLayout({ userReports }) {
 
   // Mobile View
   return (
-    <div className="flex flex-col h-full w-full max-w-md mx-auto overflow-hidden relative bg-white">
-      {/* Scrollable Middle Content — each child view manages its own scroll */}
-      <div className="flex-1 overflow-hidden relative w-full">
+    <div className="flex flex-col h-full h-[100dvh] w-full max-w-md mx-auto overflow-hidden relative bg-white">
+      {/* Scrollable Middle Content — takes exactly remaining space above BottomNav */}
+      <main className="flex-1 min-h-0 w-full overflow-hidden relative bg-white">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 15 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="absolute inset-0 flex flex-col pb-[76px]"
+            exit={{ opacity: 0, x: -15 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="w-full h-full flex flex-col overflow-hidden"
           >
             <Outlet />
           </motion.div>
         </AnimatePresence>
-      </div>
+      </main>
 
       {/* Persistent Upload Tracker Banners if active uploads are in progress (only shown on Map) */}
       {userReports.filter(r => r.status !== 'PUBLIC_APPROVED' && r.status !== 'REJECTED' && r.status !== 'RESOLVED').length > 0 && isMapTab && (

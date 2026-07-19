@@ -76,13 +76,8 @@ export default function BottomNav() {
   const activeIndex = tabs.findIndex(t => t.id === activeTab);
 
   return (
-    <div className="glass-panel" style={{
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 'calc(70px + env(safe-area-inset-bottom))',
-      zIndex: 1000,
+    <div className="flex-none w-full relative z-40 select-none" style={{
+      height: 'calc(64px + env(safe-area-inset-bottom, 0px))',
       background: '#E9BA26', // Sophisticated Safety Yellow (#E9BA26)
       boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.08)',
       borderTop: '1px solid rgba(0, 0, 0, 0.06)',
@@ -91,7 +86,7 @@ export default function BottomNav() {
       <div style={{
         position: 'relative',
         width: '100%',
-        height: '70px',
+        height: '64px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-around',
