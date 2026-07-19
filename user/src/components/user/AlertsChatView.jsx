@@ -87,12 +87,17 @@ export default function AlertsChatView() {
     setBusy(true);
 
     try {
-      const res = await sendChat({ message: query, session_id: sessionId, lat: coords.lat, lng: coords.lng });
+      // Service contract: sendChat({ sessionId, ... }) and the backend replies
+      // { session_id, message: { content }, proposal } — res.reply doesn't exist.
+      const res = await sendChat({ sessionId, message: query, lat: coords.lat, lng: coords.lng });
       if (res?.session_id) {
         setSessionId(res.session_id);
         localStorage.setItem('nayak_session_id', res.session_id);
       }
-      pushBot(res.reply || 'Emergency Shield active. Statement verified against legal node.', { citations: res.citations || [] });
+      pushBot(res.message?.content || 'Emergency Shield active. Statement verified against legal node.', {
+        citations: res.citations || [],
+        proposal: res.proposal || null,
+      });
     } catch (err) {
       console.error('[CHAT SEND FAILED]', err);
       pushBot('⚠️ System notice: Server connection intermittent. Check emergency directory if urgent.');
@@ -110,6 +115,14 @@ export default function AlertsChatView() {
     setMessages((prev) => [...prev, userMsg]);
 
     try {
+      const mediaType = file.type.startsWith('image/') ? 'image'
+        : file.type.startsWith('video/') ? 'video' : 'other';
+      if (mediaType === 'other') {
+        // Honest scope: no audio/doc classifier pipeline yet — say so instead of pretending.
+        pushBot("🎙️ Audio/document analysis isn't live yet. Describe what it contains (e.g. paste the caller's words) and I'll assess the content as text.");
+        return;
+      }
+
       let activeSess = sessionId;
       if (!activeSess) {
         const initRes = await sendChat({ message: 'Media Inspection Request', lat: coords.lat, lng: coords.lng });
@@ -117,14 +130,82 @@ export default function AlertsChatView() {
         setSessionId(activeSess);
         localStorage.setItem('nayak_session_id', activeSess);
       }
-      const mediaRes = await uploadMedia(file, activeSess);
-      pushBot(mediaRes.verdict || 'File analyzed by Sentinel threat matrix. No forgery flags found.');
+
+      // 1) Upload the real bytes (Cloudinary → Supabase storage fallback)
+      const realUrl = await uploadMediaBlob(file, { filename: file.name });
+      if (!realUrl) {
+        pushBot('⚠️ Could not store your file (media storage unreachable). Nothing was analyzed — no verdict was fabricated. Please retry in a moment.');
+        return;
+      }
+
+      // 2) Backend fetches the URL and runs the real classifier
+      const mediaRes = await uploadMedia({ mediaUrl: realUrl, mediaType, sessionId: activeSess });
+      const v = mediaRes.verdict || {};
+
+      let botText = '🛡️ KAWACH SCANNER VERDICT:\n\n';
+      if (v.verdict === 'PENDING_ANALYSIS') {
+        botText += '⏳ ANALYSIS PENDING — the AI classifier is unreachable right now. Your evidence is stored; no verdict was fabricated. Ask me again in a bit.';
+      } else if (v.is_authenticated === true) {
+        botText += `✅ VERIFIED AUTHENTIC${v.score != null ? ` (score: ${Number(v.score).toFixed(1)}%)` : ''}\n\n${v.details || ''}`;
+      } else if (v.is_authenticated === false) {
+        botText += `❌ FLAGGED SUSPICIOUS${v.score != null ? ` (score: ${Number(v.score).toFixed(1)}%)` : ''}\n\n${v.details || ''}`;
+      } else {
+        botText += `ℹ️ ${v.details || 'Stored for analysis.'}`;
+      }
+      if (v.model_mode) botText += `\n\nAnalysis mode: ${v.model_mode}`;
+      pushBot(botText);
+
+      if (v.is_authenticated === false) {
+        pushBot('If you\'d like, tell me where you received this (shop, ATM, person) — I can check for similar reports near you and help you file it to the right department. Nothing is reported without your confirmation.');
+      }
     } catch (err) {
       console.error('[MEDIA ATTACH FAILED]', err);
       pushBot('⚠️ Unable to upload file for verification. Try submitting via Camera tab.');
     } finally {
       setBusy(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  // ── Proposal confirmation: the ONLY way a Nayak suggestion becomes a report ──
+  const handleProposalDecision = async (msgId, accept) => {
+    const msg = messages.find((m) => m.id === msgId);
+    if (!msg || msg.resolved) return;
+    const p = msg.proposal || {};
+    setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, resolved: accept ? 'filed' : 'declined' } : m)));
+
+    if (!accept) {
+      pushBot('Understood — nothing was filed. The evidence stays in our chat if you change your mind.');
+      return;
+    }
+
+    try {
+      const title = p.title || `Citizen report: ${p.category || 'incident'}`;
+      const description = p.description || p.rationale || 'Filed via Nayak assistant after AI screening.';
+      const routing = await routeReport(title, description, p.category);
+      const repId = newReportId();
+      const result = await createReport({
+        id: repId,
+        title,
+        description,
+        category: p.category || 'General Alert',
+        uploaderUuid: getAnonUserId(),
+        status: 'PUBLIC_APPROVED',
+        lat: coords.lat,
+        lng: coords.lng,
+        videoUrl: p.evidence_media_url || null,
+        routedDepartment: routing.department || routing.routed_department || p.suggested_department || null,
+        routingPriority: routing.priority || p.severity || 'NORMAL',
+        routingReason: routing.routing_reason || 'Nayak-proposed, citizen-confirmed.',
+        source: REPORT_SOURCES.NAYAK_CHAT,
+        nayakSessionId: sessionId,
+      });
+      if (!result.ok) throw result.error || new Error('insert failed');
+      if (p.upload_id) await linkReport(p.upload_id, repId).catch(() => {});
+      pushBot(`✅ REPORT FILED — ID ${repId}\n\nDepartment: ${routing.department || p.suggested_department || 'auto-routed'}\nPriority: ${routing.priority || p.severity || 'NORMAL'}\n\nThe department sees only the report content and location — never your identity.`);
+    } catch (err) {
+      console.error('[PROPOSAL FILING FAILED]', err);
+      pushBot('⚠️ Filing failed — the report was NOT submitted. Please retry, or use the Camera tab.');
     }
   };
 
@@ -136,27 +217,48 @@ export default function AlertsChatView() {
     try {
       let mediaPath = null;
       if (emFile) {
-        mediaPath = await uploadMediaBlob(emFile, 'emergency_attachment.mp4');
+        mediaPath = await uploadMediaBlob(emFile, { folder: 'emergency', filename: emFile.name });
       }
 
+      // Route FIRST so the department lands on the row; keyword fallback means
+      // an emergency is never blocked by a classifier outage.
+      const title = `EMERGENCY ALERT: ${emCategory}`;
+      const description = emDescription || 'Urgent citizen dispatch request';
+      const routing = await routeReport(title, description, emCategory);
+
       const repId = newReportId();
-      const reportData = {
+      const result = await createReport({
         id: repId,
-        title: `EMERGENCY ALERT: ${emCategory}`,
-        description: emDescription || 'Urgent citizen dispatch request',
+        title,
+        description,
         category: emCategory,
+        uploaderUuid: getAnonUserId(),
+        status: 'PUBLIC_APPROVED',
         lat: coords.lat,
         lng: coords.lng,
         videoUrl: mediaPath,
-        source: REPORT_SOURCES.SENTINEL_PWA,
-        timestamp: new Date().toISOString()
-      };
+        routedDepartment: routing.department || routing.routed_department || 'POLICE',
+        routingPriority: 'CRITICAL',
+        routingReason: routing.routing_reason || 'Citizen emergency dispatch.',
+        escalationRequired: true,
+        emergencyOverride: true,
+        source: REPORT_SOURCES.CHAT_EMERGENCY,
+        nayakSessionId: sessionId,
+      });
+      if (!result.ok) throw result.error || new Error('insert failed');
 
-      const created = await createReport(reportData);
-      routeReport(created || reportData);
-
-      if (sessionId && created?.id) {
-        await linkReport(sessionId, created.id).catch(() => {});
+      // Register the evidence as a chat upload so it's linked to the report
+      if (mediaPath && sessionId) {
+        try {
+          const up = await uploadMedia({
+            mediaUrl: mediaPath,
+            mediaType: emFile?.type?.startsWith('video/') ? 'video' : 'image',
+            sessionId,
+          });
+          if (up?.id) await linkReport(up.id, repId);
+        } catch (linkErr) {
+          console.warn('[EMERGENCY] evidence link skipped:', linkErr);
+        }
       }
 
       setEmergencyOpen(false);
@@ -165,7 +267,8 @@ export default function AlertsChatView() {
       pushBot(`🔴 URGENT DISPATCH LOGGED! Case ID #${repId.slice(-6)}. Route assigned to District SP Command.`);
     } catch (err) {
       console.error('[EMERGENCY DISPATCH FAILED]', err);
-      alert('Dispatch logged to local precinct registry.');
+      // Never fake success on a failed dispatch — say it failed and give the fallback.
+      pushBot('⚠️ DISPATCH FAILED — your emergency was NOT filed. Please retry, use the Camera tab, or call 112 directly if urgent.');
     } finally {
       setEmDispatching(false);
     }
@@ -213,6 +316,32 @@ export default function AlertsChatView() {
                 </div>
                 
                 <p className="text-xs leading-relaxed font-semibold whitespace-pre-wrap">{m.text}</p>
+
+                {m.proposal && (
+                  <div className="mt-3 pt-2 border-t border-yellow-400/20">
+                    <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-wider block mb-1.5">📋 Proposed Report — needs your confirmation</span>
+                    <div className="text-[10px] text-slate-600 font-semibold space-y-0.5 mb-2">
+                      {m.proposal.category && <div>Category: {m.proposal.category}</div>}
+                      {m.proposal.suggested_department && <div>Department: {m.proposal.suggested_department}</div>}
+                      {m.proposal.severity && <div>Severity: {m.proposal.severity}</div>}
+                      {m.proposal.nearby_similar_count > 0 && <div>⚠ {m.proposal.nearby_similar_count} similar report(s) near you</div>}
+                    </div>
+                    {m.resolved ? (
+                      <span className="text-[10px] font-bold text-slate-500">{m.resolved === 'filed' ? '✅ Filed' : 'Not filed'}</span>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button onClick={() => handleProposalDecision(m.id, true)}
+                          className="px-3 py-1.5 bg-[#ffd900] text-slate-950 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                          File report
+                        </button>
+                        <button onClick={() => handleProposalDecision(m.id, false)}
+                          className="px-3 py-1.5 bg-white border border-slate-300 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                          Not now
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {m.citations && m.citations.length > 0 && (
                   <div className="mt-3 pt-2 border-t border-yellow-400/20 space-y-1">
