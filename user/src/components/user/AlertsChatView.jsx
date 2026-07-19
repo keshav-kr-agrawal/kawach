@@ -204,6 +204,7 @@ export default function AlertsChatView() {
   const [emDescription, setEmDescription] = useState('');
   const [emFile, setEmFile] = useState(null);
   const [emDispatching, setEmDispatching] = useState(false);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const emFileInputRef = useRef(null);
