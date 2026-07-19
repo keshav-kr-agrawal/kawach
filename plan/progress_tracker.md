@@ -107,7 +107,8 @@ Last updated: 2026-07-17 (Phases 0-3 AI-tasks done; **currency CNN trained & dep
 | DP.6 | Retire `departments/app.js` | Done | Deleted; logic split into core/config modules; all 15 modules parse-checked |
 | DP.7 | Police in registry + admin aggregation | Done | 2026-07-17 — `depts/police.js` (matchCodes POLICE+DISASTER, HIGH SLA floor); admin now covers all 11; node test extended |
 | DP.8 | `police/backend/Dockerfile` for HF Spaces (port 7860) + dotenv wiring (`load_dotenv` in both backends) + gitignored `.env` files with placeholders | Done | 2026-07-17 — police backend can now deploy as its OWN HF Docker Space (recommended over merging into the Classifier Space: separate deps/restarts). `python-dotenv` added to both requirements |
-| DP.next | Deploy `police/backend` (unblocks Nayak on the live site) | **User** | Create a new HF Space (Docker SDK) → push `police/backend/` → set Space secrets: `DATABASE_URL` (Supabase Postgres URI), `GEMINI_API_KEY`, `CLASSIFIER_URL=https://hikity-kawach-classifier.hf.space`, `JWT_SECRET` → then set `VITE_POLICE_API_URL=https://<space>.hf.space` in user/.env and push |
+| DP.9 | Render-ready deploy: `render.yaml` blueprint (free tier, native Python — no Docker) + fresh-DB bootstrap in `main.py` (`create_all` at startup + `SEED_ON_START=1` one-time demo seed, guarded on empty DB) | Done | 2026-07-17 — Render free has no shell, so table creation/seeding must happen at boot; Dockerfile kept for any container host |
+| DP.next | Deploy `police/backend` on Render (unblocks Nayak on the live site) | **User** | Render → New → Blueprint → pick the GitHub repo (reads `render.yaml`) → fill `DATABASE_URL` (Supabase URI), `GEMINI_API_KEY`, `JWT_SECRET` → deploy → after first successful boot set `SEED_ON_START=0` → set `VITE_POLICE_API_URL=https://kawach-police.onrender.com` in user/.env and push |
 
 ## Nayak Assistant (parallel track — see `plan/nayak_assistant_plan.md`)
 

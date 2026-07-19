@@ -1,9 +1,34 @@
 from dotenv import load_dotenv
 load_dotenv()  # local dev: reads police/backend/.env; hosted: real env/secrets win
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
+from app.database import Base, engine
+
+# Fresh-database bootstrap (Render/HF free tiers have no shell):
+# create_all is idempotent — it only creates tables that don't exist yet.
+# Set SEED_ON_START=1 (once) to also populate demo FIR/offender data when the
+# database is empty; unset it after the first successful boot.
+try:
+    Base.metadata.create_all(bind=engine)
+    if os.environ.get("SEED_ON_START") == "1":
+        from app.database import SessionLocal
+        from app.models import District
+        _db = SessionLocal()
+        try:
+            if _db.query(District).count() == 0:
+                print("[BOOT] Empty database + SEED_ON_START=1 — running full demo seed...")
+                from app.scripts.generate_data import seed_database
+                seed_database()
+            else:
+                print("[BOOT] SEED_ON_START=1 but data exists — skipping seed (unset the env var).")
+        finally:
+            _db.close()
+except Exception as _e:
+    # Don't block startup on DB issues — routes will surface errors honestly.
+    print(f"[BOOT] Database bootstrap warning: {_e}")
 from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports, fraud_shield, ingestion, osint_scraper, webhooks, nayak, digital_arrest
 
 app = FastAPI(
