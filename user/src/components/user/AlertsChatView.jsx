@@ -139,6 +139,90 @@ const NAYAK_SERVICES = [
   }
 ];
 
+const USABILITY_REFINERIES = [
+  {
+    id: 'voice-dictate',
+    label: 'Voice-to-Report Dictation',
+    icon: '🎙️',
+    badge: 'Hands-Free AI',
+    action: 'query',
+    query: '🎙️ Voice Dictation Mode: Speak your complaint in Hindi, Kannada, or English. Nayak will format a BNS report draft.'
+  },
+  {
+    id: 'ocr-crop',
+    label: 'Document OCR Text Extractor',
+    icon: '📸',
+    badge: 'Text Scanner',
+    action: 'upload',
+    accept: 'image/*',
+    prompt: '📸 Upload photo of notice, receipt, or handwritten note for instant OCR text extraction...'
+  },
+  {
+    id: 'bilingual-pdf',
+    label: 'Bilingual Station Complaint Generator',
+    icon: '📝',
+    badge: 'Station Draft',
+    action: 'query',
+    query: 'Draft an official police complaint letter in English & Kannada formatted for submission at the local SP office.'
+  },
+  {
+    id: 'landmark-pin',
+    label: 'GPS Landmark & Jurisdiction Pinpoint',
+    icon: '📍',
+    badge: 'Live GPS',
+    action: 'locate',
+    query: 'Pinpoint my exact GPS location, nearest police station boundary, and emergency dispatch landmark.'
+  },
+  {
+    id: 'cyber-1930',
+    label: 'National Cyber Crime (1930) Helper',
+    icon: '🔍',
+    badge: 'Helpline 1930',
+    action: 'query',
+    query: 'Prepare cyber fraud report payload formatted for the National Cyber Crime Portal (1930 helpline).'
+  },
+  {
+    id: 'stitch-evidence',
+    label: 'Multi-Image Evidence Package Stitcher',
+    icon: '🧾',
+    badge: 'Dossier Prep',
+    action: 'query',
+    query: 'Combine my uploaded bank receipts, WhatsApp screenshots, and call logs into one court-ready evidence package.'
+  },
+  {
+    id: 'translator',
+    label: 'Instant 5-Language Legal Translator',
+    icon: '🌐',
+    badge: 'Multi-Lingual',
+    action: 'query',
+    query: 'Translate the BNS legal provisions and rights into Kannada, Hindi, Tamil, and Telugu.'
+  },
+  {
+    id: 'sos-contacts',
+    label: 'Emergency Family Location Blast',
+    icon: '📢',
+    badge: 'SMS & WhatsApp',
+    action: 'query',
+    query: 'Send my live GPS location and safety status alert to my registered emergency contacts.'
+  },
+  {
+    id: 'saved-cards',
+    label: 'Offline Saved Law Cards & Verdicts',
+    icon: '🔖',
+    badge: 'Offline Vault',
+    action: 'query',
+    query: 'Show my saved BNS rights cards, currency check verdicts, and police vehicle check guidelines.'
+  },
+  {
+    id: 'sla-countdown',
+    label: 'Live Ticket SLA Countdown Tracker',
+    icon: '⏱️',
+    badge: 'SLA Countdown',
+    action: 'query',
+    query: 'Show real-time resolution countdown timers for my open civic and police reports.'
+  }
+];
+
 function formatForensicVerdict(v) {
   if (!v || v.verdict === 'PENDING_ANALYSIS') {
     return `### 🛡️ Forensic Scanner Verdict
@@ -721,35 +805,69 @@ export default function AlertsChatView() {
                 </div>
               </div>
 
-              {/* Render Key Services row-wise immediately after the first default welcome message */}
+              {/* Render Key AI Services & Usability Refineries row-wise immediately after the first default welcome message */}
               {index === 0 && (
-                <div className="my-4 space-y-2 max-w-md w-full">
-                  <div className="text-[10px] font-black text-[#b08850] uppercase tracking-wider font-mono flex items-center gap-1.5 px-1">
-                    <span>⚡</span> Key AI Services (Tap to Scan or Consult):
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {NAYAK_SERVICES.map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => handleServiceClick(s)}
-                        className="w-full flex items-center justify-between p-3 bg-white hover:bg-amber-50/80 border border-amber-400/35 rounded-2xl shadow-2xs hover:shadow-xs transition-all hover:border-[#b08850] text-left active:scale-[0.99] cursor-pointer group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-xl p-2 bg-amber-100/60 rounded-xl group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
-                          <div>
-                            <div className="font-sora text-xs font-black text-ink flex items-center gap-2">
-                              {s.label}
+                <div className="my-4 space-y-4 max-w-md w-full">
+                  {/* 15 AI Forensic Refineries */}
+                  <div className="space-y-2">
+                    <div className="text-[10px] font-black text-[#b08850] uppercase tracking-wider font-mono flex items-center gap-1.5 px-1">
+                      <span>⚡</span> AI Forensic Refineries (Tap to Scan or Consult):
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {NAYAK_SERVICES.map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => handleServiceClick(s)}
+                          className="w-full flex items-center justify-between p-3 bg-white hover:bg-amber-50/80 border border-amber-400/35 rounded-2xl shadow-2xs hover:shadow-xs transition-all hover:border-[#b08850] text-left active:scale-[0.99] cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl p-2 bg-amber-100/60 rounded-xl group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
+                            <div>
+                              <div className="font-sora text-xs font-black text-ink flex items-center gap-2">
+                                {s.label}
+                              </div>
+                              <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                                {s.type === 'upload' ? '📷 Tap to select photo or video for instant AI scan' : '⚖️ Tap to consult Nayak legal rulebook'}
+                              </p>
                             </div>
-                            <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                              {s.type === 'upload' ? '📷 Tap to select photo or video for instant AI scan' : '⚖️ Tap to consult Nayak legal rulebook'}
-                            </p>
                           </div>
-                        </div>
-                        <span className="text-[9px] font-mono font-extrabold text-[#b08850] bg-amber-400/20 px-2 py-1 rounded-lg shrink-0 uppercase tracking-wider">
-                          {s.badge}
-                        </span>
-                      </button>
-                    ))}
+                          <span className="text-[9px] font-mono font-extrabold text-[#b08850] bg-amber-400/20 px-2 py-1 rounded-lg shrink-0 uppercase tracking-wider">
+                            {s.badge}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 10 Citizen Usability & Work-Easability Refineries */}
+                  <div className="space-y-2 pt-3 border-t border-amber-400/20">
+                    <div className="text-[10px] font-black text-slate-700 uppercase tracking-wider font-mono flex items-center gap-1.5 px-1">
+                      <span>🛠️</span> Citizen Work-Easability Shortcuts (1-Tap Work Refineries):
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {USABILITY_REFINERIES.map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => handleServiceClick(s)}
+                          className="w-full flex items-center justify-between p-3 bg-slate-50/90 hover:bg-amber-100/40 border border-slate-300/60 rounded-2xl shadow-2xs hover:shadow-xs transition-all hover:border-slate-800 text-left active:scale-[0.99] cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl p-2 bg-slate-200/70 rounded-xl group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
+                            <div>
+                              <div className="font-sora text-xs font-black text-ink flex items-center gap-2">
+                                {s.label}
+                              </div>
+                              <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                                🛠️ Tap to launch automated citizen shortcut
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-[9px] font-mono font-extrabold text-slate-700 bg-slate-200 px-2 py-1 rounded-lg shrink-0 uppercase tracking-wider">
+                            {s.badge}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
