@@ -14,6 +14,18 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: PYTHONUNBUFFERED
+        value: "1"   # force stdout to flush immediately — without this, print()
+                      # logs can vanish or appear wildly out of order in Render's
+                      # log viewer (bit us diagnosing the Gemini key issue)
+      - key: PYTHONUTF8
+        value: "1"   # CRITICAL: without this, Render's default locale isn't
+                      # UTF-8, and any print() of Gemini's emoji-laden response
+                      # text throws UnicodeEncodeError — silently caught by
+                      # nayak.py's broad except and disguised as a "Gemini
+                      # error", making every chat fall back to the canned
+                      # template even with a perfectly valid API key.
+                      # Reproduced and confirmed as the root cause 2026-07-19.
       - key: DATABASE_URL
         sync: false   # Supabase → Settings → Database → Connection string (URI)
       - key: GEMINI_API_KEY

@@ -109,7 +109,7 @@ def run_check_link(url: str, api_key: str = None) -> dict:
                 result = json.loads(res.json()["candidates"][0]["content"]["parts"][0]["text"])
                 return result
         except Exception as e:
-            print(f"[NAYAK] check_link Gemini fallback error: {e}")
+            print(f"[NAYAK] check_link Gemini fallback error: {e}", flush=True)
             
     # Default fallback
     return {
@@ -151,7 +151,7 @@ def run_classify_text(text_content: str, api_key: str = None) -> dict:
                 result = json.loads(res.json()["candidates"][0]["content"]["parts"][0]["text"])
                 return result
         except Exception as e:
-            print(f"[NAYAK] classify_text Gemini fallback error: {e}")
+            print(f"[NAYAK] classify_text Gemini fallback error: {e}", flush=True)
             
     return {
         "is_scam": False,
@@ -285,7 +285,7 @@ def enrich_proposal(prefilled: dict, db: Session, session_id: str, lat, lng) -> 
             incidents = run_get_area_incidents(lat, lng, 5.0, db)
             nearby_count = len(incidents) if isinstance(incidents, list) else 0
         except Exception as e:
-            print(f"[NAYAK] area check failed during proposal enrichment: {e}")
+            print(f"[NAYAK] area check failed during proposal enrichment: {e}", flush=True)
 
     return {
         **prefilled,
@@ -442,7 +442,7 @@ def handle_nayak_chat(
     # 4. Check for Gemini Key
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        print("[NAYAK] No GEMINI_API_KEY — running honest fallback.")
+        print("[NAYAK] No GEMINI_API_KEY — running honest fallback.", flush=True)
         reply_txt = generate_fallback_chat_reply(req.message, db, session_id)
         bot_reply = NayakMessage(
             session_id=session_id,
@@ -687,7 +687,7 @@ def handle_nayak_chat(
                     "message": {"role": "assistant", "content": model_reply}
                 }
     except Exception as e:
-        print(f"[NAYAK] Gemini agent loop error: {e}")
+        print(f"[NAYAK] Gemini agent loop error: {type(e).__name__}: {e}", flush=True)
         
     # If anything breaks, return fallback
     reply_txt = generate_fallback_chat_reply(req.message, db, session_id)
@@ -764,7 +764,7 @@ def _classify_media_for_real(media_url: str, media_type: str) -> dict:
                 "source": "none"}
 
     except Exception as e:
-        print(f"[NAYAK] Real classification failed ({media_type}): {e}")
+        print(f"[NAYAK] Real classification failed ({media_type}): {e}", flush=True)
         return {
             "is_authenticated": None,
             "score": None,
