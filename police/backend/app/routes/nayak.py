@@ -15,9 +15,9 @@ router = APIRouter()
 
 # "gemini-flash-latest" resolves to gemini-3.5-flash which only has 20 req/day
 # on the free tier — exhausted instantly during testing (confirmed 2026-07-19).
-# "gemini-1.5-flash" has 1,500 req/day on the free tier and full function-calling
-# support. Override via GEMINI_MODEL env var on Render if needed.
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
+# "gemini-2.5-flash" confirmed working at standard tier with the production key.
+# Override via GEMINI_MODEL env var on Render if needed.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
 
 @router.get("/_debug_env")
