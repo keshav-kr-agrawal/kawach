@@ -304,33 +304,6 @@ function UserLayout({ userReports }) {
 
         {/* Desktop Workspace */}
         <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-          <header className="flex items-center justify-between px-8 py-4 border-b border-slate-200 bg-white">
-            <div>
-              <h2 className="text-sm font-black text-slate-900 font-sora tracking-wide uppercase">
-                {getPageMeta().title}
-              </h2>
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                {getPageMeta().subtitle}
-              </p>
-            </div>
-            
-            <div style={{
-              backgroundColor: 'rgba(255, 217, 0, 0.15)',
-              color: '#000000',
-              padding: '6px 12px',
-              borderRadius: '12px',
-              fontSize: '10px',
-              fontWeight: '800',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              border: '1px solid rgba(255, 217, 0, 0.4)'
-            }}>
-              <span style={{ display: 'inline-block', width: '6px', height: '6px', backgroundColor: '#ff3b30', borderRadius: '50%' }} />
-              <span>SECURE NODE ACTIVE</span>
-            </div>
-          </header>
-
           <div className="flex-1 overflow-hidden relative w-full bg-white">
             <AnimatePresence mode="wait">
               <motion.div
@@ -353,12 +326,6 @@ function UserLayout({ userReports }) {
   // Mobile View
   return (
     <div className="flex flex-col h-full w-full max-w-md mx-auto overflow-hidden relative bg-white">
-      {/* Persistent Dynamic Top Bar */}
-      <TopBar
-        onOpenProfile={() => navigate('/user/profile')}
-        onOpenLibrary={() => navigate('/user/library')}
-      />
-
       {/* Scrollable Middle Content — each child view manages its own scroll */}
       <div className="flex-1 overflow-hidden relative w-full">
         <AnimatePresence mode="wait">
