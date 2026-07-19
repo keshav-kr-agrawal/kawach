@@ -79,7 +79,12 @@ The AI classifier is currently offline or unreachable. Your evidence has been se
 
   const isAuthentic = v.is_authenticated === true;
   const isSuspicious = v.is_authenticated === false;
+  // v.score is the verdict-coherent authenticity score (0-100, high = genuine).
+  // For suspicious verdicts we present it inverted as Risk so a big number
+  // always means "bad" — mixing the two directions was genuinely confusing.
   const scoreText = v.score != null ? `${Number(v.score).toFixed(1)}%` : null;
+  const riskText = v.score != null ? `${(100 - Number(v.score)).toFixed(1)}%` : null;
+  const structuralFlag = v.verdict_basis === 'structural_red_flag';
 
   // Split details into readable bullet points
   const rawSentences = raw
@@ -101,7 +106,7 @@ The AI classifier is currently offline or unreachable. Your evidence has been se
     return `### 🛡️ Forensic Scanner Verdict
 
 #### ❌ **Flagged Suspicious Currency Note**
-**Confidence Rating:** ${scoreText || 'High Risk'}
+**Risk Level:** ${riskText || 'High'}${structuralFlag ? '\n\n> Decisive factor: a hard security feature failed outright (wording, serial pattern, or denomination validity). This is a direct rule flag, not a probability estimate.' : ''}
 
 ---
 
@@ -120,7 +125,7 @@ ${bullets.length > 0 ? bullets.join('\n\n') : '* Security features do not match 
     return `### 🛡️ Forensic Scanner Verdict
 
 #### ✅ **Verified Authentic Currency Note**
-**Confidence Rating:** ${scoreText || 'Verified'}
+**Authenticity Score:** ${scoreText || 'Verified'}
 
 ---
 

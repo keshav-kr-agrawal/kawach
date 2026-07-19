@@ -797,6 +797,14 @@ def _classify_media_for_real(media_url: str, media_type: str) -> dict:
             else:
                 is_auth = None
             fake_prob = data.get("fake_probability")
+            # Prefer the verdict-coherent authenticity_score (v2.2) over the
+            # raw advisory CNN probability — the raw number routinely
+            # contradicted the rule-based verdict and confused users.
+            auth_score = data.get("authenticity_score")
+            if auth_score is None and fake_prob is not None:
+                auth_score = round((1.0 - fake_prob) * 100, 1)
+            # For structural red flags the number isn't what decided — surface
+            # the flag reason directly; the score becomes supporting context.
             findings = "; ".join(
                 c["finding"] for c in data.get("security_checks", [])[:2] if c.get("score") is not None
             )
@@ -805,7 +813,8 @@ def _classify_media_for_real(media_url: str, media_type: str) -> dict:
                 details += f" {data['guidance']}"
             return {
                 "is_authenticated": is_auth,
-                "score": round((1.0 - fake_prob) * 100, 1) if fake_prob is not None else None,
+                "score": auth_score,
+                "verdict_basis": data.get("verdict_basis"),
                 "verdict": verdict,
                 "confidence": data.get("confidence"),
                 "model_mode": data.get("model_mode"),

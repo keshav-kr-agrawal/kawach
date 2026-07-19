@@ -150,6 +150,15 @@ We checked first: **no trustworthy pretrained INR-counterfeit model exists publi
 | **Circulating denominations** | **93.0% average across ₹10/₹20/₹50/₹100/₹200/₹500** — the complete set of notes actually in circulation today (RBI withdrew ₹2000 notes from circulation in May 2023) |
 | Honest weak spot | ₹2000: 85.1% (thin fake data, n=47) — disclosed even though the denomination is withdrawn; the pipeline still screens one if presented, since withdrawn notes remain a deposit/exchange fraud vector |
 
+### Datasets Used (Kaggle)
+The model was trained on a merge of the following 6 public Kaggle datasets:
+- [devanandjoly/indian-currency-images-for-fake-currency-detection](https://www.kaggle.com/datasets/devanandjoly/indian-currency-images-for-fake-currency-detection) (3,960 raw images)
+- [iayushanand/currency-dataset500-inr-note-real-fake](https://www.kaggle.com/datasets/iayushanand/currency-dataset500-inr-note-real-fake) (995 raw images)
+- [jayaprakashpondy/indian-currency-dataset](https://www.kaggle.com/datasets/jayaprakashpondy/indian-currency-dataset) (355 raw images)
+- [mdladla/fake-currency-data](https://www.kaggle.com/datasets/mdladla/fake-currency-data) (0 active raw images after filtering/leak check)
+- [preetrank/indian-currency-real-vs-fake-notes-dataset](https://www.kaggle.com/datasets/preetrank/indian-currency-real-vs-fake-notes-dataset) (8,761 raw images)
+- [sreeharisureshkaggle/fake-currency-detection-dataset](https://www.kaggle.com/datasets/sreeharisureshkaggle/fake-currency-detection-dataset) (132 raw images)
+
 **And the most important number is one we measured ourselves:** when we tested the CNN against real-world prop-note fakes it had never seen, its confidence did **not** transfer — which is precisely why the pipeline demotes it to an advisory role behind the explainable structural checks, instead of letting a single black-box score decide. The lab accuracy is real; the architecture just refuses to over-trust it.
 
 ---

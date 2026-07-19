@@ -878,9 +878,31 @@ class CurrencyDetector:
 
         checks.append(uv_check)  # informational placement at the end, as before
 
+        # ── Coherent display score ───────────────────────────────────────────
+        # The raw CNN fake-probability is an ADVISORY input and routinely
+        # disagrees with the rule-based verdict (a structural red flag can
+        # condemn a note the CNN liked). Showing that raw number next to the
+        # verdict confused users ("86% but flagged fake?!"). authenticity_score
+        # is the number that actually tracks the decision: structural-weighted
+        # heuristic evidence, blended with the CNN only when the CNN was
+        # confident enough to be consulted, then forced consistent with any
+        # structural red flag (which IS overwhelming evidence by design).
+        authenticity = genuine_score
+        if fp is not None and (cnn_conf_fake or cnn_conf_real):
+            authenticity = 0.5 * authenticity + 0.5 * (1.0 - fp)
+        if structural_reds:
+            authenticity = min(authenticity, 0.20)
+        verdict_basis = (
+            "structural_red_flag" if structural_reds
+            else "cnn_flag" if (cnn_conf_fake and verdict in ("SUSPECT_FEATURES", "LIKELY_COUNTERFEIT"))
+            else "fused_checks"
+        )
+
         return {
             "verdict": verdict,
             "confidence": confidence,
+            "authenticity_score": round(authenticity * 100, 1),
+            "verdict_basis": verdict_basis,
             "fake_probability": fp if fp is not None else round(1.0 - genuine_score, 3),
             "model_mode": self.mode,
             "security_checks": checks,
