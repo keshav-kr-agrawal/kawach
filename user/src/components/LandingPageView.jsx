@@ -40,6 +40,29 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const autoProvisionSession = (selectedDept = 'POLICE') => {
+    const mockUser = {
+      username: 'officer_1',
+      role: 'SP',
+      department: selectedDept
+    };
+    localStorage.setItem('token', 'mock_jwt_token_official');
+    localStorage.setItem('user', JSON.stringify(mockUser));
+    if (onOfficialLogin) {
+      onOfficialLogin('mock_jwt_token_official', mockUser);
+    }
+  };
+
+  const handleEnterPolice = () => {
+    autoProvisionSession('POLICE');
+    navigate('/department/police');
+  };
+
+  const handleEnterCivic = () => {
+    autoProvisionSession('FIRE');
+    navigate('/department/fire');
+  };
+
   const handleOfficialSubmit = (e) => {
     e.preventDefault();
     if (!username || !password) return;
@@ -47,17 +70,7 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
 
     setTimeout(() => {
       setLoading(false);
-      const mockUser = {
-        username: username,
-        role: dept === 'ADMIN' ? 'DGP' : 'SP',
-        department: dept
-      };
-      localStorage.setItem('token', 'mock_jwt_token_official');
-      localStorage.setItem('user', JSON.stringify(mockUser));
-
-      if (onOfficialLogin) {
-        onOfficialLogin('mock_jwt_token_official', mockUser);
-      }
+      autoProvisionSession(dept);
 
       if (dept === 'POLICE') {
         navigate('/department/police');
@@ -168,7 +181,7 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
               
               <div>
                 <div className="w-12 h-12 bg-yellow-400/10 rounded-2xl flex items-center justify-center border border-yellow-400/20 mb-5 group-hover:scale-105 transition-transform">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#b08850" strokeWidth="2" className="w-6 h-6"><path d="M17 21v-2a4 4 0 0 4-4H5a4 4 0 0 4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#b08850" strokeWidth="2" className="w-6 h-6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </div>
                 <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono mb-1">Portal 01</span>
                 <h3 className="text-xl font-black text-slate-900 font-sora mb-2">Citizen Sentinel PWA</h3>
@@ -201,9 +214,7 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
               </div>
 
               <button
-                onClick={() => {
-                  window.location.href = '/police/frontend/index.html';
-                }}
+                onClick={handleEnterPolice}
                 className="w-full py-3.5 px-4 bg-[#ffd900] hover:bg-yellow-400 text-slate-950 font-black rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xs text-xs tracking-wider uppercase font-sora border border-slate-950/10"
               >
                 Enter Police Console ➔
@@ -226,9 +237,7 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
               </div>
 
               <button
-                onClick={() => {
-                  window.location.href = '/departments/index.html';
-                }}
+                onClick={handleEnterCivic}
                 className="w-full py-3.5 px-4 bg-[#ffd900] hover:bg-yellow-400 text-slate-950 font-black rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xs text-xs tracking-wider uppercase font-sora border border-slate-950/10"
               >
                 Access Civic Panels ➔
@@ -304,8 +313,8 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
             <h4 className="text-xs font-bold text-slate-950 uppercase tracking-wider">System Portals</h4>
             <ul className="space-y-2 text-slate-500 font-semibold">
               <li><button onClick={() => navigate('/user/map')} className="hover:text-[#b08850] transition-colors">Citizen Sentinel PWA</button></li>
-              <li><button onClick={() => navigate('/department/police')} className="hover:text-[#b08850] transition-colors">Police Command Center</button></li>
-              <li><a href="http://localhost:3000" className="hover:text-[#b08850] transition-colors">Civic Departments Panel</a></li>
+              <li><button onClick={handleEnterPolice} className="hover:text-[#b08850] transition-colors">Police Command Center</button></li>
+              <li><button onClick={handleEnterCivic} className="hover:text-[#b08850] transition-colors">Civic Departments Panel</button></li>
             </ul>
           </div>
 
