@@ -11,46 +11,53 @@ const DEFAULT_COORDS = { lat: 12.9716, lng: 77.5946 }; // Bengaluru fallback
 const NAYAK_SERVICES = [
   {
     id: 'currency',
-    label: 'Fake Currency Detector',
+    label: 'Counterfeit Currency Detection',
     icon: '💵',
-    badge: 'v2 AI',
+    badge: 'Computer Vision',
     type: 'upload',
     accept: 'image/*',
-    prompt: '💵 Select a clear photo of the ₹500 or ₹200 currency note to scan...'
+    prompt: '💵 Upload photo of ₹500 or ₹200 note for Computer Vision counterfeit scan...'
   },
   {
     id: 'deepfake',
-    label: 'Deepfake Video Forensics',
-    icon: '📹',
-    badge: 'MTCNN+CNN',
+    label: 'Deepfake Identification',
+    icon: '🎭',
+    badge: 'MTCNN + CNN',
     type: 'upload',
     accept: 'video/*,image/*',
-    prompt: '📹 Select a video clip to run MTCNN face consensus analysis...'
+    prompt: '🎭 Upload video clip for AI facial deepfake analysis...'
   },
   {
-    id: 'digital-arrest',
-    label: 'Digital Arrest Call Checker',
+    id: 'scam-script',
+    label: 'Scam Script & Voice Spoofing',
     icon: '📞',
-    badge: 'Scam Shield',
+    badge: 'NLP & Speech AI',
     type: 'query',
-    query: 'I received a video/voice call claiming to be CBI / ED threatening digital arrest. Can you verify this?'
+    query: 'I received a video/voice call claiming to be CBI / ED threatening digital arrest. Is this a scam?'
   },
   {
-    id: 'police-powers',
-    label: 'Police Power & Motor Rules',
+    id: 'fraud-ring',
+    label: 'Fraud Ring Mapping',
+    icon: '🕸️',
+    badge: 'Graph AI',
+    type: 'query',
+    query: 'Analyze recent cyber fraud numbers and check if there is an active fraud ring targeting my area.'
+  },
+  {
+    id: 'geospatial',
+    label: 'Geospatial Crime Grid',
+    icon: '🗺️',
+    badge: 'Geo AI',
+    type: 'query',
+    query: 'Show geospatial safety intelligence and verified incident density near my current GPS location.'
+  },
+  {
+    id: 'legal-rights',
+    label: 'Legal Rights & Cop Powers',
     icon: '⚖️',
     badge: 'BNS 2026',
     type: 'query',
-    query: 'Can a traffic police officer forcibly take my ignition keys or demand spot fines under the Motor Vehicles Act?'
-  },
-  {
-    id: 'evidence',
-    label: 'Upload Media / Notice',
-    icon: '📂',
-    badge: 'Storage',
-    type: 'upload',
-    accept: 'image/*,video/*,.pdf',
-    prompt: '📂 Select a photo, video or document to upload for Nayak forensic review...'
+    query: 'What are my constitutional rights during police vehicle checks under BNS and Motor Vehicles Act?'
   }
 ];
 
@@ -396,26 +403,6 @@ export default function AlertsChatView() {
         </button>
       </div>
 
-      {/* Nayak Quick Services & Capabilities Bar */}
-      <div className="px-4 py-2 bg-yellow-50/80 border-b border-yellow-400/20 flex items-center gap-2 overflow-x-auto scrollbar-none flex-none select-none">
-        <span className="text-[9px] font-black text-[#b08850] uppercase tracking-widest font-mono shrink-0 mr-1 flex items-center gap-1">
-          <span>⚡</span> Services:
-        </span>
-        {NAYAK_SERVICES.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => handleServiceClick(s)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-yellow-400/30 border border-yellow-400/40 rounded-xl text-xs font-bold text-slate-900 shrink-0 shadow-2xs transition-all hover:border-[#b08850] active:scale-95 cursor-pointer"
-          >
-            <span className="text-sm">{s.icon}</span>
-            <span className="font-sora text-[10px] font-black text-slate-900">{s.label}</span>
-            <span className="text-[8px] font-extrabold text-[#b08850] bg-yellow-400/20 px-1.5 py-0.5 rounded-md uppercase font-mono">
-              {s.badge}
-            </span>
-          </button>
-        ))}
-      </div>
-
       {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
         {messages.map((m) => {
@@ -491,6 +478,26 @@ export default function AlertsChatView() {
         )}
 
         <div ref={messagesEndRef} />
+      </div>
+
+      {/* Nayak Quick Services & Key Capabilities Bar */}
+      <div className="px-3 py-2 bg-yellow-50/90 border-t border-yellow-400/20 flex items-center gap-2 overflow-x-auto scrollbar-none flex-none select-none">
+        <span className="text-[9px] font-black text-[#b08850] uppercase tracking-widest font-mono shrink-0 mr-1 flex items-center gap-1">
+          <span>⚡</span> AI Services:
+        </span>
+        {NAYAK_SERVICES.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => handleServiceClick(s)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-yellow-400/30 border border-yellow-400/40 rounded-xl text-xs font-bold text-slate-900 shrink-0 shadow-2xs transition-all hover:border-[#b08850] active:scale-95 cursor-pointer"
+          >
+            <span className="text-sm">{s.icon}</span>
+            <span className="font-sora text-[10px] font-black text-slate-900">{s.label}</span>
+            <span className="text-[8px] font-extrabold text-[#b08850] bg-yellow-400/20 px-1.5 py-0.5 rounded-md uppercase font-mono">
+              {s.badge}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* Input Bar */}
