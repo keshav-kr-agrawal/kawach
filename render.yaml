@@ -1,9 +1,8 @@
-# Render Blueprint — deploys both KAWACH services.
+# Render Blueprint — deploys the KAWACH police backend (free tier, no Docker).
 # Render dashboard → New → Blueprint → pick this GitHub repo → it reads this file.
-# sync:false vars must be set manually in the Render dashboard for each service.
+# The four sync:false vars are prompted for / set in the dashboard (kept out of git).
 
 services:
-  # ── 1. Police Backend (Python / FastAPI) ───────────────────────────────────
   - type: web
     name: kawach-police
     runtime: python
@@ -41,34 +40,3 @@ services:
       # create_all, additive-only); if you want demo FIR/offender data, run
       # `DATABASE_URL=<target> python -m app.scripts.generate_data` manually,
       # once, deliberately — never as part of the boot sequence.
-
-  # ── 2. Citizen User App (React / Vite — Static Site) ──────────────────────
-  - type: web
-    name: kawach-user
-    runtime: static
-    rootDir: user
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    pullRequestPreviewsEnabled: false
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: no-cache
-    routes:
-      # SPA fallback — React Router handles all client-side paths
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_POLICE_API_URL
-        value: https://kawach-police.onrender.com
-      - key: VITE_SUPABASE_URL
-        sync: false
-      - key: VITE_SUPABASE_ANON_KEY
-        sync: false
-      - key: VITE_CLOUDINARY_CLOUD_NAME
-        value: kijqhnss
-      - key: VITE_CLOUDINARY_UPLOAD_PRESET
-        value: kawach_preset
-      - key: VITE_CLASSIFIER_API_URL
-        value: https://hikity-kawach-classifier.hf.space/classify
