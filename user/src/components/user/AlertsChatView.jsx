@@ -583,20 +583,20 @@ export default function AlertsChatView() {
         </div>
       )}
 
-      {/* Header — Hidden on mobile to maximize vertical chat space */}
-      <div className="hidden md:flex px-6 py-3 bg-white border-b border-amber-400/20 items-center justify-between flex-none">
+      {/* Header — Restored with top notch safety margin */}
+      <div className="px-4 pt-4 pb-3 bg-white border-b border-amber-400/20 flex items-center justify-between flex-none md:px-6 md:pt-6 md:pb-3">
         <div>
           <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
             LAW-BACKED LEGAL &amp; THREAT COUNSEL
           </span>
-          <h2 className="text-xl font-black text-ink font-sora">
+          <h2 className="text-lg font-black text-ink font-sora md:text-xl">
             Nayak <span className="font-serif italic font-normal text-[#b08850] pr-1">AI Counsel</span>
           </h2>
         </div>
 
         <button
           onClick={() => setEmergencyOpen(true)}
-          className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs uppercase tracking-wider font-sora animate-pulse"
+          className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs uppercase tracking-wider font-sora animate-pulse shrink-0"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           Emergency SOS
