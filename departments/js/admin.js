@@ -1,94 +1,103 @@
 /**
- * Master Admin console — the concentrated cross-department view:
- * per-department load (total/active/breached/escalated/resolved), city totals,
- * and one live escalation feed (SLA breaches + escalation_required together,
- * worst first). Reads the same identity-free columns as every dashboard.
+ * Master Console — the concentrated cross-department view: city totals,
+ * per-department pressure (total/open/breached/escalated/resolved), and one
+ * escalation feed (SLA breaches + escalation_required together, worst
+ * first). Reads the same identity-free columns as every desk.
  */
 
 import { DEPARTMENTS, reportBelongsTo } from './config/registry.js';
 import { fetchAllReports } from './core/supabase.js';
 import { computeSla } from './core/sla.js';
+import { SHIELD_MARK, glyphFor } from './ui/glyphs.js';
+import { el, esc, startClock, initLinkDot, slaChip, escalationChip } from './ui/common.js';
 
-function el(id) { return document.getElementById(id); }
+document.getElementById('brand-mark').innerHTML = SHIELD_MARK;
+startClock();
+initLinkDot();
 
 function deptStats(reports, dept) {
-  const mine = reports.filter(r => reportBelongsTo(r, dept));
-  const active = mine.filter(r => r.status !== 'RESOLVED');
+  const mine = reports.filter((r) => reportBelongsTo(r, dept));
+  const active = mine.filter((r) => r.status !== 'RESOLVED');
   return {
     dept,
     total: mine.length,
     active: active.length,
     resolved: mine.length - active.length,
-    breached: active.filter(r => computeSla(r, dept)?.isBreached).length,
-    escalated: active.filter(r => r.escalation_required).length,
+    breached: active.filter((r) => computeSla(r, dept)?.isBreached).length,
+    escalated: active.filter((r) => r.escalation_required).length,
   };
 }
 
+const PRIO_RANK = { CRITICAL: 3, HIGH: 2, NORMAL: 1, MEDIUM: 1, LOW: 0 };
+
 async function load() {
-  let reports = [];
-  try {
-    reports = await fetchAllReports();
-  } catch (err) {
-    console.error('[ADMIN] Fetch failed:', err);
-    el('reports-loading').innerHTML = `<span style="color:#ef4444;">Failed to load: ${err.message}</span>`;
-    return;
-  }
+  const reports = await fetchAllReports();
   el('reports-loading').classList.add('hidden');
 
-  // ── City totals ──
-  const active = reports.filter(r => r.status !== 'RESOLVED');
-  const breachedAll = active.filter(r => computeSla(r)?.isBreached);
-  const escalatedAll = active.filter(r => r.escalation_required);
-  el('t-total').innerText = reports.length;
-  el('t-active').innerText = active.length;
-  el('t-breached').innerText = breachedAll.length;
-  el('t-escalated').innerText = escalatedAll.length;
-  el('t-resolved').innerText = reports.length - active.length;
+  /* city totals */
+  const active = reports.filter((r) => r.status !== 'RESOLVED');
+  const breachedAll = active.filter((r) => computeSla(r)?.isBreached);
+  const escalatedAll = active.filter((r) => r.escalation_required);
+  el('t-total').textContent = reports.length;
+  el('t-active').textContent = active.length;
+  el('t-breached').textContent = breachedAll.length;
+  el('t-escalated').textContent = escalatedAll.length;
+  el('t-resolved').textContent = reports.length - active.length;
 
-  // ── Per-department concentration grid (sorted by pressure: breached desc) ──
-  const stats = DEPARTMENTS.map(d => deptStats(reports, d))
+  /* pressure grid, sorted by breaches desc then open load */
+  const stats = DEPARTMENTS.map((d) => deptStats(reports, d))
     .sort((a, b) => (b.breached - a.breached) || (b.active - a.active));
 
-  el('admin-grid').innerHTML = stats.map(s => `
-    <div class="admin-dept-card">
-      <h4>${s.dept.icon} ${s.dept.name}
-        <a class="goto-link" href="dashboard.html?dept=${s.dept.id}">open →</a>
-      </h4>
-      <div class="admin-dept-nums">
-        <span>Total<b>${s.total}</b></span>
-        <span>Active<b>${s.active}</b></span>
-        <span class="num-breached">Breached<b>${s.breached}</b></span>
-        <span class="num-escalated">Escalated<b>${s.escalated}</b></span>
-        <span class="num-resolved">Resolved<b>${s.resolved}</b></span>
+  el('pressure-grid').innerHTML = stats.map((s) => `
+    <div class="pressure-card ${s.breached > 0 ? 'is-hot' : ''}">
+      <div class="pressure-top">
+        <span class="pressure-glyph">${glyphFor(s.dept.id)}</span>
+        <span class="pressure-name grow">${esc(s.dept.name)}</span>
+        <a class="pressure-open" href="dashboard.html?dept=${s.dept.id}">open →</a>
+      </div>
+      <div class="pressure-nums">
+        <span class="pnum"><b>${s.total}</b><span>Total</span></span>
+        <span class="pnum"><b>${s.active}</b><span>Open</span></span>
+        <span class="pnum p-alarm"><b>${s.breached}</b><span>Breached</span></span>
+        <span class="pnum p-alarm"><b>${s.escalated}</b><span>Escalated</span></span>
+        <span class="pnum"><b>${s.resolved}</b><span>Resolved</span></span>
       </div>
     </div>
   `).join('');
 
-  // ── Live escalation feed: breaches + escalations, unresolved, worst first ──
-  const prioRank = { CRITICAL: 3, HIGH: 2, NORMAL: 1, MEDIUM: 1, LOW: 0 };
-  const feedItems = active
-    .map(r => ({ r, sla: computeSla(r) }))
-    .filter(x => x.sla?.isBreached || x.r.escalation_required)
+  /* escalation feed — breaches + escalations, worst first */
+  const owner = (r) => DEPARTMENTS.find((d) => reportBelongsTo(r, d)) || null;
+  const feed = active
+    .map((r) => ({ r, dept: owner(r) }))
+    .map((x) => ({ ...x, sla: computeSla(x.r, x.dept) }))
+    .filter((x) => x.sla?.isBreached || x.r.escalation_required)
     .sort((a, b) =>
       (Number(b.sla?.isBreached) - Number(a.sla?.isBreached)) ||
-      ((prioRank[b.r.routing_priority] ?? 1) - (prioRank[a.r.routing_priority] ?? 1)))
+      ((PRIO_RANK[b.r.routing_priority] ?? 1) - (PRIO_RANK[a.r.routing_priority] ?? 1)))
     .slice(0, 40);
 
-  el('escalation-feed').innerHTML = feedItems.length === 0
-    ? `<div class="feed-row" style="justify-content:center;opacity:.7;">✓ No breaches or escalations — city queues healthy.</div>`
-    : feedItems.map(({ r, sla }) => {
-        const owner = DEPARTMENTS.find(d => reportBelongsTo(r, d));
-        return `
-        <div class="feed-row">
-          <span class="dept-tag">${owner ? owner.icon + ' ' + owner.id : r.routed_department || '—'}</span>
-          <span class="grow"><strong>${r.title || 'Untitled report'}</strong> — ${r.description || ''}</span>
-          ${r.escalation_required ? '<span class="badge sla-breached" style="animation:none;">⬆ ESCALATED</span>' : ''}
-          ${sla?.isBreached ? `<span class="badge sla-breached">🚨 ${sla.label}</span>` : `<span class="badge sla-ok">⏳ ${sla?.label || ''}</span>`}
-          ${owner ? `<a class="goto-link" href="dashboard.html?dept=${owner.id}">view →</a>` : ''}
-        </div>`;
-      }).join('');
-
-  lucide.createIcons();
+  el('escalation-feed').innerHTML = feed.length === 0
+    ? `<p class="empty-view" style="padding:var(--s-8) 0">
+         <span class="display" style="font-size:var(--text-h2)">City queues healthy.</span><br>
+         No breaches or escalations anywhere on the grid.
+       </p>`
+    : feed.map(({ r, dept, sla }, i) => `
+      <article class="ledger-row feed-row">
+        <div class="stack-2">
+          <div class="row-wrap">
+            <span class="idx">${String(i + 1).padStart(2, '0')}</span>
+            <span class="chip chip-dept">${dept ? esc(dept.name) : esc(r.routed_department || '—')}</span>
+            <span class="feed-title">${esc(r.title || 'Untitled report')}</span>
+          </div>
+          <p class="ledger-desc">${esc(r.description || '')}</p>
+        </div>
+        <div class="ledger-side" style="flex-direction:row;align-items:center">
+          ${escalationChip(r)}
+          ${slaChip(sla)}
+          ${dept ? `<a class="pressure-open" href="dashboard.html?dept=${dept.id}">view →</a>` : ''}
+        </div>
+      </article>
+    `).join('');
 }
 
 load();

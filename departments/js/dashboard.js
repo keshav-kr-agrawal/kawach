@@ -1,123 +1,133 @@
 /**
- * The ONE department dashboard shell (build spec principle #3).
- * Which department it shows is decided entirely by ?dept=<id> + its config —
- * queue, SLA badges, escalation flags, and resolve action are identical for
- * all 10 departments.
+ * The ONE department desk shell (build spec principle #3).
+ * Which desk it shows is decided entirely by ?dept=<id> + its config —
+ * queue, SLA chips, escalation flags, and resolve action are identical
+ * for all eleven departments. SLA math lives ONLY in core/sla.js.
  */
 
-import { getDepartment } from './config/registry.js';
-import { reportBelongsTo } from './config/registry.js';
+import { getDepartment, reportBelongsTo, DEPARTMENTS } from './config/registry.js';
 import { fetchReportsByCodes, resolveReport } from './core/supabase.js';
 import { computeSla } from './core/sla.js';
+import { SHIELD_MARK, glyphFor, MARKS } from './ui/glyphs.js';
+import {
+  el, esc, startClock, initLinkDot, priorityChip, slaChip, escalationChip, statusChip,
+} from './ui/common.js';
+
+document.getElementById('brand-mark').innerHTML = SHIELD_MARK;
+startClock();
+initLinkDot();
 
 const deptId = new URLSearchParams(location.search).get('dept');
 const dept = getDepartment(deptId);
 
-let activeReports = [];
+const FILTERS = ['All', 'Open', 'Breached', 'Resolved'];
+let filter = 'All';
+let reports = [];
 
-function el(id) { return document.getElementById(id); }
+function bucket(r) {
+  if (r.status === 'RESOLVED') return 'Resolved';
+  return computeSla(r, dept)?.isBreached ? 'Breached' : 'Open';
+}
 
-async function load() {
-  if (!dept) {
-    el('active-dept-name').innerText = 'Unknown department';
-    el('reports-loading').classList.add('hidden');
-    el('reports-empty').classList.remove('hidden');
-    return;
-  }
-  el('active-dept-name').innerText = `${dept.icon} ${dept.name}`;
-  document.title = `KAWACH: ${dept.name}`;
-
-  try {
-    const rows = await fetchReportsByCodes(dept.matchCodes);
-    activeReports = rows.filter(r => reportBelongsTo(r, dept));
-    render();
-  } catch (err) {
-    console.error('[DEPT] Fetch failed:', err);
-    alert('Failed to retrieve incident reports: ' + err.message);
-  } finally {
-    el('reports-loading').classList.add('hidden');
-  }
+function renderTabs() {
+  const counts = { All: reports.length, Open: 0, Breached: 0, Resolved: 0 };
+  reports.forEach((r) => { counts[bucket(r)] += 1; });
+  el('filter-tabs').innerHTML = FILTERS.map((f) => `
+    <button class="tab ${filter === f ? 'is-active' : ''}" data-filter="${f}">
+      ${f}<span class="tab-count">${counts[f]}</span>
+    </button>
+  `).join('');
+  el('filter-tabs').querySelectorAll('[data-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => { filter = btn.dataset.filter; render(); });
+  });
 }
 
 function render() {
-  const total = activeReports.length;
-  const active = activeReports.filter(r => r.status !== 'RESOLVED');
-  const breached = active.filter(r => computeSla(r, dept)?.isBreached);
+  const active = reports.filter((r) => r.status !== 'RESOLVED');
+  el('stat-total').textContent = reports.length;
+  el('stat-active').textContent = active.length;
+  el('stat-breached').textContent = active.filter((r) => computeSla(r, dept)?.isBreached).length;
+  el('stat-resolved').textContent = reports.length - active.length;
 
-  el('stats-total').innerText = total;
-  el('stats-active').innerText = active.length;
-  el('stats-breached').innerText = breached.length;
-  el('stats-resolved').innerText = total - active.length;
+  renderTabs();
 
-  const listEl = el('reports-list');
-  listEl.innerHTML = '';
-  el('reports-empty').classList.toggle('hidden', total > 0);
+  const visible = filter === 'All' ? reports : reports.filter((r) => bucket(r) === filter);
+  el('reports-empty').classList.toggle('hidden', visible.length > 0);
 
-  activeReports.forEach(report => {
-    const isResolved = report.status === 'RESOLVED';
-    const sla = computeSla(report, dept);
-    const prio = sla?.priority || report.routing_priority || 'NORMAL';
-
-    const slaBadge = sla
-      ? `<span class="badge ${sla.isBreached ? 'sla-breached' : 'sla-ok'}">${sla.isBreached ? '🚨 ' : '⏳ '}${sla.label}</span>`
-      : '';
-    const escalationBadge = report.escalation_required
-      ? `<span class="badge sla-breached" style="animation:none;">⬆ ESCALATED</span>` : '';
-
-    const card = document.createElement('div');
-    card.className = 'report-card';
-    card.innerHTML = `
-      <div class="report-top">
-        <div class="report-info">
-          <h4>${report.title || 'Civic Safety Issue'}</h4>
-          <p class="report-desc">${report.description || 'No description provided.'}</p>
-          <div class="badge-row">
-            <span class="badge prio-${prio.toLowerCase()}">Priority: ${prio}</span>
-            <span class="badge ${isResolved ? 'status-resolved' : 'status-pending'}">
-              ${isResolved ? '✓ Resolved' : '⚡ Active Alert'}
-            </span>
-            ${escalationBadge}
-            ${slaBadge}
+  el('reports-list').innerHTML = visible.map((r, i) => {
+    const sla = computeSla(r, dept);
+    const prio = sla?.priority || r.routing_priority || 'NORMAL';
+    const resolved = r.status === 'RESOLVED';
+    return `
+      <article class="ledger-row ${resolved ? 'is-resolved' : ''}">
+        <div class="stack-2">
+          <div class="row-wrap">
+            <span class="idx">${String(i + 1).padStart(2, '0')}</span>
+            <h3 class="ledger-title">${esc(r.title || 'Civic safety report')}</h3>
+          </div>
+          <p class="ledger-desc">${esc(r.description || 'No description provided.')}</p>
+          <div class="row-wrap">
+            ${priorityChip(prio)}
+            ${statusChip(r)}
+            ${escalationChip(r)}
+            ${slaChip(sla)}
+          </div>
+          <div class="ledger-meta">
+            <span>${esc(r.sub_category || r.category || 'General')}</span>
+            <span>${r.lat != null ? `${Number(r.lat).toFixed(4)}, ${Number(r.lng).toFixed(4)}` : 'no location'}</span>
+            <span>${r.timestamp ? new Date(r.timestamp).toLocaleString('en-IN') : 'just now'}</span>
+            ${r.ai_verdict ? `<span>verdict: ${esc(r.ai_verdict)} · trust ${Math.round(r.trust_score ?? 0)}</span>` : ''}
           </div>
         </div>
-        ${report.video_url ? `
-          <div class="video-preview-box">
-            <video src="${report.video_url}" controls playsinline muted></video>
-          </div>` : ''}
-      </div>
-      <div class="report-bottom">
-        <div class="meta-group">
-          <span><strong>Category:</strong> ${report.sub_category || report.category || 'General'}</span>
-          <span>•</span>
-          <span><strong>📍</strong> ${report.lat?.toFixed(5)}, ${report.lng?.toFixed(5)}</span>
-          <span>•</span>
-          <span><strong>⏱️</strong> ${report.timestamp ? new Date(report.timestamp).toLocaleString() : 'Just now'}</span>
+        <div class="ledger-side">
+          ${r.video_url ? `<div class="evidence-box"><video src="${esc(r.video_url)}" controls playsinline muted></video></div>` : ''}
+          ${!resolved
+            ? `<button class="btn-resolve" data-resolve="${esc(r.id)}">${MARKS.check} Mark resolved</button>`
+            : `<span class="label">Completed & closed</span>`}
         </div>
-        ${!isResolved ? `
-          <button class="btn-resolve-issue" data-resolve="${report.id}">
-            <i data-lucide="check"></i> Mark Resolved
-          </button>` : `
-          <span style="font-size: 11px; font-weight: 800; color: #10b981;">✓ Completed &amp; Closed</span>`}
-      </div>`;
-    listEl.appendChild(card);
-  });
+      </article>`;
+  }).join('');
 
-  listEl.querySelectorAll('[data-resolve]').forEach(btn => {
+  el('reports-list').querySelectorAll('[data-resolve]').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      const id = btn.getAttribute('data-resolve');
+      btn.disabled = true;
       try {
+        const id = btn.getAttribute('data-resolve');
         await resolveReport(id);
-        activeReports = activeReports.map(r => r.id === id ? { ...r, status: 'RESOLVED' } : r);
+        reports = reports.map((r) => (String(r.id) === id ? { ...r, status: 'RESOLVED' } : r));
         render();
       } catch (err) {
+        btn.disabled = false;
         alert('Failed to resolve report: ' + err.message);
       }
     });
   });
+}
 
-  lucide.createIcons();
+async function load() {
+  if (!dept) {
+    el('dept-name').textContent = 'Unknown desk';
+    el('reports-loading').classList.add('hidden');
+    el('reports-empty').classList.remove('hidden');
+    el('dept-kicker').textContent = 'Pick a desk from the register';
+    return;
+  }
+  document.title = `KAWACH — ${dept.name}`;
+  const idx = DEPARTMENTS.findIndex((d) => d.id === dept.id) + 1;
+  el('dept-glyph').innerHTML = glyphFor(dept.id);
+  el('dept-kicker').textContent = `Desk ${String(idx).padStart(2, '0')} of ${DEPARTMENTS.length} · codes: ${dept.matchCodes.join(', ')}`;
+  el('dept-name').textContent = dept.name;
+  el('dept-floor').textContent =
+    dept.minPriority === 'CRITICAL' ? 'SLA floor: every report enters the 15-minute tier'
+    : dept.minPriority === 'HIGH' ? 'SLA floor: 4-hour tier or better'
+    : 'SLA follows classified priority';
+
+  const rows = await fetchReportsByCodes(dept.matchCodes);
+  reports = rows.filter((r) => reportBelongsTo(r, dept));
+  el('reports-loading').classList.add('hidden');
+  render();
 }
 
 load();
-// Live SLA countdowns: refresh badges every 60s without refetching
-setInterval(() => { if (activeReports.length) render(); }, 60000);
+// Live SLA countdowns: re-render chips every 60s without refetching.
+setInterval(() => { if (reports.length) render(); }, 60000);

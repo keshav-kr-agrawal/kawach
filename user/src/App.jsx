@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate, Outlet, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { User, BookOpen, ArrowLeft, Shield } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
 // Citizen components
@@ -96,13 +95,13 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
 
   const getPageMeta = () => {
     const path = location.pathname;
-    if (path.startsWith('/user/map')) return { title: 'SENTINEL GHOST MAP', subtitle: 'PII-Free Safety Grid' };
-    if (path.startsWith('/user/feed')) return { title: 'LOCAL INCIDENT FEED', subtitle: 'Peer-to-Peer Broadcasts' };
-    if (path.startsWith('/user/services')) return { title: 'CIVIC DIRECTORY', subtitle: 'Verified Helplines & Contacts' };
+    if (path.startsWith('/user/map')) return { title: 'SENTINEL MAP', subtitle: 'PII-Free Safety Grid' };
+    if (path.startsWith('/user/feed')) return { title: 'INCIDENT FEED', subtitle: 'Peer-to-Peer Safety Broadcasts' };
+    if (path.startsWith('/user/services')) return { title: 'CIVIC DIRECTORY', subtitle: 'Verified Helplines & Emergency Contacts' };
     if (path.startsWith('/user/chat')) return { title: 'EMERGENCY SHIELD', subtitle: 'Warnings & Live Alerts' };
-    if (path.startsWith('/user/camera')) return { title: 'SECURE CAPTURE', subtitle: 'Anonymous Incident Camera' };
-    if (path.startsWith('/user/library')) return { title: 'CITIZEN LAW LIBRARY', subtitle: 'Know Your Rights' };
-    if (path.startsWith('/user/profile')) return { title: 'CITIZEN PROFILE', subtitle: 'Sentinel Privacy Settings' };
+    if (path.startsWith('/user/camera')) return { title: 'SECURE CAPTURE', subtitle: 'Anonymous Evidence Recording' };
+    if (path.startsWith('/user/library')) return { title: 'CITIZEN LAW LIBRARY', subtitle: 'Know Your Legal Rights' };
+    if (path.startsWith('/user/profile')) return { title: 'CITIZEN PROFILE', subtitle: 'Privacy & Report History' };
     return { title: 'KAWACH SENTINEL', subtitle: 'Public Threat Intelligence' };
   };
 
@@ -113,7 +112,7 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
     <div className="glass-panel flex-none" style={{
       width: '100%',
       padding: '12px 16px',
-      borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+      borderBottom: '1px solid rgba(255, 217, 0, 0.2)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -126,13 +125,12 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
         {!isProfileOrLibrary ? (
           <button
             onClick={() => {
-              console.log('[TOPBAR] Clicked user profile circle button');
               if (onOpenProfile) onOpenProfile();
               else navigate('/user/profile');
             }}
             style={{
-              width: '32px',
-              height: '32px',
+              width: '34px',
+              height: '34px',
               borderRadius: '50%',
               backgroundColor: '#ffd900',
               border: '1.5px solid #000000',
@@ -145,17 +143,17 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
             }}
             title="Open User Profile"
           >
-            <User size={15} color="#000000" strokeWidth={2.5} />
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2.5" className="w-4 h-4"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </button>
         ) : (
           <button
             onClick={() => navigate(-1)}
             style={{
-              width: '32px',
-              height: '32px',
+              width: '34px',
+              height: '34px',
               borderRadius: '10px',
-              backgroundColor: '#f2f2f2',
-              border: '1px solid #e5e5e5',
+              backgroundColor: '#f8fafc',
+              border: '1px solid #e2e8f0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -164,15 +162,15 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
             }}
             title="Go Back"
           >
-            <ArrowLeft size={15} strokeWidth={2.5} />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           </button>
         )}
 
         <div>
-          <h3 style={{ margin: 0, fontSize: '11px', fontWeight: '900', fontFamily: 'Outfit, sans-serif', color: '#000000', letterSpacing: '0.02em' }}>
+          <h3 style={{ margin: 0, fontSize: '11px', fontWeight: '900', fontFamily: 'Sora, sans-serif', color: '#09090b', letterSpacing: '0.02em' }}>
             {title}
           </h3>
-          <p style={{ margin: 0, fontSize: '9px', color: '#64748B', fontWeight: '600' }}>
+          <p style={{ margin: 0, fontSize: '9px', color: '#64748B', fontWeight: '600', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
             {subtitle}
           </p>
         </div>
@@ -183,20 +181,20 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
           <button
             onClick={onOpenLibrary}
             style={{
-              width: '32px',
-              height: '32px',
+              width: '34px',
+              height: '34px',
               borderRadius: '10px',
-              backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
+              backgroundColor: '#fffbeb',
+              border: '1px solid rgba(255, 217, 0, 0.4)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: '#333333'
+              color: '#b08850'
             }}
             title="Open Legal Library"
           >
-            <BookOpen size={15} strokeWidth={2.5} />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
           </button>
         )}
 
@@ -223,12 +221,138 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
 function UserLayout({ userReports }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const getPageMeta = () => {
+    const path = location.pathname;
+    if (path.startsWith('/user/map')) return { title: 'SENTINEL GHOST MAP', subtitle: 'PII-Free Safety Grid' };
+    if (path.startsWith('/user/feed')) return { title: 'LOCAL INCIDENT FEED', subtitle: 'Peer-to-Peer Broadcasts' };
+    if (path.startsWith('/user/services')) return { title: 'CIVIC DIRECTORY', subtitle: 'Verified Helplines & Contacts' };
+    if (path.startsWith('/user/chat')) return { title: 'EMERGENCY SHIELD', subtitle: 'Warnings & Live Alerts' };
+    if (path.startsWith('/user/camera')) return { title: 'SECURE CAPTURE', subtitle: 'Anonymous Incident Camera' };
+    if (path.startsWith('/user/library')) return { title: 'CITIZEN LAW LIBRARY', subtitle: 'Know Your Rights' };
+    if (path.startsWith('/user/profile')) return { title: 'CITIZEN PROFILE', subtitle: 'Sentinel Privacy Settings' };
+    return { title: 'KAWACH SENTINEL', subtitle: 'Public Threat Intelligence' };
+  };
 
   // Check if we are currently on map tab
   const isMapTab = location.pathname.startsWith('/user/map');
 
+  if (isDesktop) {
+    return (
+      <div className="flex flex-row h-screen w-screen overflow-hidden relative bg-white select-text">
+        {/* Desktop Left Sidebar */}
+        <div className="flex flex-col w-64 bg-white border-r border-slate-200 h-full p-6 select-none flex-none">
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-8">
+            <img src="/kawach.png" alt="KAWACH Logo" className="w-10 h-10 object-contain" />
+            <div>
+              <h1 className="text-lg font-black tracking-tight text-slate-900 font-sora">KAWACH</h1>
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block -mt-1">Citizen Sentinel</span>
+            </div>
+          </div>
+
+          {/* Menu Items */}
+          <nav className="flex-1 space-y-2">
+            {[
+              { id: 'map', label: 'Safety Map', path: '/user/map', icon: '🗺️' },
+              { id: 'services', label: 'Civic Directory', path: '/user/services', icon: '📞' },
+              { id: 'camera', label: 'Incident Capture', path: '/user/camera', icon: '📸' },
+              { id: 'chat', label: 'Emergency Shield', path: '/user/chat', icon: '💬' },
+              { id: 'feed', label: 'Incident Feed', path: '/user/feed', icon: '🧭' },
+              { id: 'library', label: 'Law Library', path: '/user/library', icon: '📖' },
+              { id: 'profile', label: 'My Profile', path: '/user/profile', icon: '👤' },
+            ].map((item) => {
+              const isActive = location.pathname.startsWith(item.path);
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.path)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
+                    isActive 
+                      ? 'bg-[#ffd900] text-slate-950 shadow-sm border border-slate-950/10' 
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="text-base">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Footer Sign Out */}
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate('/');
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 transition-all mt-auto"
+          >
+            <span className="text-base">🚪</span>
+            <span>Sign Out</span>
+          </button>
+        </div>
+
+        {/* Desktop Workspace */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+          <header className="flex items-center justify-between px-8 py-4 border-b border-slate-200 bg-white">
+            <div>
+              <h2 className="text-sm font-black text-slate-900 font-sora tracking-wide uppercase">
+                {getPageMeta().title}
+              </h2>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                {getPageMeta().subtitle}
+              </p>
+            </div>
+            
+            <div style={{
+              backgroundColor: 'rgba(255, 217, 0, 0.15)',
+              color: '#000000',
+              padding: '6px 12px',
+              borderRadius: '12px',
+              fontSize: '10px',
+              fontWeight: '800',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              border: '1px solid rgba(255, 217, 0, 0.4)'
+            }}>
+              <span style={{ display: 'inline-block', width: '6px', height: '6px', backgroundColor: '#ff3b30', borderRadius: '50%' }} />
+              <span>SECURE NODE ACTIVE</span>
+            </div>
+          </header>
+
+          <div className="flex-1 overflow-hidden relative w-full bg-white">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 flex flex-col"
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mobile View
   return (
-    <div className="flex flex-col h-full w-full max-w-md mx-auto overflow-hidden relative bg-black">
+    <div className="flex flex-col h-full w-full max-w-md mx-auto overflow-hidden relative bg-white">
       {/* Persistent Dynamic Top Bar */}
       <TopBar
         onOpenProfile={() => navigate('/user/profile')}
@@ -327,7 +451,7 @@ function RequireCitizenAuth({ token, isLoadingSession, children }) {
 
   if (isLoadingSession) {
     return (
-      <div style={{ display: 'flex', height: '100dvh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', width: '100vw' }}>
+      <div style={{ display: 'flex', height: '100dvh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff', width: '100vw' }}>
         <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #ffd900', borderTopColor: 'transparent', animation: 'spin 1s linear infinite' }} />
         <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
       </div>
@@ -359,8 +483,8 @@ class ProfileErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-full p-8 gap-4 bg-slate-50">
-          <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center text-2xl">⚠️</div>
+        <div className="flex flex-col items-center justify-center h-full p-8 gap-4 bg-white">
+          <div className="w-16 h-16 rounded-full bg-yellow-50 flex items-center justify-center text-2xl">⚠️</div>
           <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Profile Error</h3>
           <p className="text-xs text-slate-500 text-center">Something went wrong loading your profile.</p>
           <button
@@ -378,7 +502,7 @@ class ProfileErrorBoundary extends React.Component {
 
 function CitizenAppWrapper({ children }) {
   return (
-    <div className="flex flex-col h-full w-full max-w-md mx-auto overflow-hidden relative bg-black">
+    <div className="flex flex-col h-full w-full md:max-w-none max-w-md mx-auto overflow-hidden relative bg-white">
       {children}
     </div>
   );

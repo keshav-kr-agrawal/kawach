@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  font-family: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -22,8 +22,8 @@ body {
   padding: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #f8fafc; /* bg-slate-50 slate base */
-  color: #333333;
+  background-color: #ffffff; /* White base */
+  color: #09090b;
 }
 
 #root {
@@ -41,7 +41,7 @@ body.in-app {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f2f2f2;
+  background: #ffffff;
   overflow: hidden;
   user-select: none;
   height: 100%;
@@ -52,14 +52,20 @@ body.in-app {
 
 body.in-app #root {
   width: 100%;
-  max-width: 480px; /* Force mobile phone frame on desktop */
   height: 100vh;
   height: 100dvh;
   min-height: 100vh;
   min-height: 100dvh;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  border-left: 1px solid #e5e5e5;
-  border-right: 1px solid #e5e5e5;
+}
+
+@media (max-width: 768px) {
+  body.in-app #root {
+    max-width: 480px; /* Force mobile phone frame on desktop screen width < 768px */
+    margin: 0 auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border-left: 1px solid #e5e5e5;
+    border-right: 1px solid #e5e5e5;
+  }
 }
 
 @media (max-width: 480px) {
@@ -79,7 +85,7 @@ body.in-app #root {
   flex-direction: column;
   height: 100%;
   max-height: 100%;
-  background-color: #f8fafc; /* bg-slate-50 */
+  background-color: #ffffff; /* pure white background */
   scrollbar-width: none;
 }
 

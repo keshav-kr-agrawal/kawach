@@ -1,53 +1,72 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-600 font-sans antialiased overflow-x-hidden;
-    font-family: 'Inter', sans-serif;
+    @apply bg-paper-warm text-ink font-ui antialiased;
   }
-
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', sans-serif;
-    @apply text-slate-900 font-semibold;
+  ::selection {
+    @apply bg-amber-200 text-amber-950;
   }
 }
 
-/* Glassmorphism replacement for clean light cards */
-.glass-panel {
-  @apply bg-white border border-slate-200 shadow-sm;
+@layer components {
+  /* mono microcopy tag — the console's recurring micro-motif */
+  .tag {
+    @apply font-mono text-[0.64rem] uppercase tracking-tag text-ink-faint;
+  }
+  .kicker {
+    @apply font-mono text-[0.7rem] uppercase tracking-wide2 text-amber-600;
+  }
+
+  /* chips — severity is darkness within the single amber hue, never a new color */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-ledger px-2.5 py-1 font-mono text-[0.62rem] font-medium uppercase tracking-tag whitespace-nowrap border border-transparent;
+  }
+  .chip-critical { @apply bg-amber-950 text-amber-50; }
+  .chip-high     { @apply bg-amber-700 text-amber-50; }
+  .chip-medium   { @apply border-amber-500 text-amber-700 bg-amber-50; }
+  .chip-low      { @apply border-amber-200 text-ink-faint bg-white; }
+  .chip-quiet    { @apply border-amber-200 text-ink-soft bg-white; }
+
+  .panel {
+    @apply bg-white border border-amber-200 rounded-ledger shadow-panel;
+  }
+
+  .btn-ink {
+    @apply inline-flex items-center justify-center gap-2 rounded-ledger bg-amber-950 px-5 py-2.5 font-mono text-[0.68rem] font-medium uppercase tracking-tag text-amber-50 transition hover:bg-amber-800 disabled:opacity-40 disabled:cursor-wait;
+  }
+  .btn-line {
+    @apply inline-flex items-center justify-center gap-2 rounded-ledger border border-amber-500 bg-white px-5 py-2.5 font-mono text-[0.68rem] font-medium uppercase tracking-tag text-amber-800 transition hover:bg-amber-950 hover:text-amber-50 hover:border-amber-950 disabled:opacity-40;
+  }
+
+  .field {
+    @apply w-full rounded-ledger border border-amber-200 bg-white px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:border-amber-600 transition-colors;
+  }
+
+  .pulse-dot {
+    @apply inline-block h-1.5 w-1.5 rounded-full bg-current;
+    animation: kv-pulse 1.6s ease-in-out infinite;
+  }
 }
 
-.glass-panel-hover {
-  @apply transition-all duration-300 hover:border-slate-300 hover:shadow-md;
+@keyframes kv-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.7); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot { animation: none; }
 }
 
-/* Glowing replacement for clean high-contrast text styles */
-.glow-text-lavender {
-  @apply text-blue-600 font-bold;
-}
+/* thin recessive scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #F2CF5B; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #C9990F; }
 
-.glow-text-gold {
-  @apply text-amber-600 font-bold;
-}
-
-.glow-border {
-  @apply shadow-sm border border-slate-200;
-}
-
-/* Scrollbar customization for light theme */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-slate-100;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
+/* leaflet surface stays inside the two-hue system */
+.leaflet-container {
+  font-family: "Archivo", sans-serif;
+  background: #FEFCF5;
 }
