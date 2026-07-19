@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAWACH — Department Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Archivo:wght@400;500;640;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/kawach.css">
+</head>
+<body>
+  <div class="paper-field"></div>
+
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" id="brand-mark"></span>
+      <span class="stack-2" style="gap:0">
+        <span class="brand-name">KAWACH</span>
+        <span class="brand-sub">Civic Command · Department Desk</span>
+      </span>
+    </a>
+    <span class="row" style="gap:var(--s-4)">
+      <span class="topbar-clock" id="topbar-clock"></span>
+      <span id="link-dot" class="link-dot"></span>
+      <a class="top-link" href="index.html">All Desks</a>
+    </span>
+  </header>
+
+  <main class="shell page-pad-block">
+    <div class="desk-head">
+      <div class="desk-head-id">
+        <span class="desk-head-glyph" id="dept-glyph"></span>
+        <div>
+          <p class="kicker" id="dept-kicker">Department desk</p>
+          <h1 class="display desk-head-name" id="dept-name">Loading…</h1>
+          <p class="desk-floor-note" id="dept-floor"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-band" id="stat-band">
+      <div class="stat-tile"><span class="stat-num" id="stat-total">0</span><span class="label">Assigned</span></div>
+      <div class="stat-tile"><span class="stat-num" id="stat-active">0</span><span class="label">Open</span></div>
+      <div class="stat-tile stat-alarm"><span class="stat-num" id="stat-breached">0</span><span class="label">SLA breached</span></div>
+      <div class="stat-tile"><span class="stat-num" id="stat-resolved">0</span><span class="label">Resolved</span></div>
+    </div>
+
+    <div class="queue-head">
+      <h2 class="section-title">Routed queue</h2>
+      <div class="tabs" id="filter-tabs"></div>
+    </div>
+
+    <div id="reports-loading" class="loading-line">Pulling the ledger</div>
+    <div id="reports-empty" class="empty-view hidden">
+      <p class="display">All clear.</p>
+      <p>No reports are currently routed to this desk.</p>
+    </div>
+    <div id="reports-list" class="ledger"></div>
+  </main>
+
+  <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>

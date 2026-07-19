@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAWACH — Civic Command</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Archivo:wght@400;500;640;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/kawach.css">
+</head>
+<body>
+  <div class="paper-field"></div>
+
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" id="brand-mark"></span>
+      <span class="stack-2" style="gap:0">
+        <span class="brand-name">KAWACH</span>
+        <span class="brand-sub">Civic Command · Department Grid</span>
+      </span>
+    </a>
+    <span class="row" style="gap:var(--s-4)">
+      <span class="topbar-clock" id="topbar-clock"></span>
+      <span id="link-dot" class="link-dot"></span>
+      <a class="top-link" href="admin.html">Master Console</a>
+    </span>
+  </header>
+
+  <!-- BEAT 1 · HOOK -->
+  <section class="hero">
+    <p class="kicker">Eleven departments · One queue discipline</p>
+    <h1 class="display hero-title">
+      <span class="line"><span>The city reports.</span></span>
+      <span class="line"><span><em>Every desk</em> answers</span></span>
+      <span class="line"><span>on the clock.</span></span>
+    </h1>
+    <p class="hero-sub">
+      Citizen reports arrive already classified, prioritised, and stripped of identity.
+      From here they hit a department queue with a running SLA — fifteen minutes for a
+      fire, seventy-two hours for a broken streetlight — and nothing leaves the ledger
+      until it is resolved.
+    </p>
+    <div class="hero-ticker">
+      <div class="tick"><span class="tick-num" id="tick-total">—</span><span class="label">Reports on ledger</span></div>
+      <div class="tick"><span class="tick-num" id="tick-open">—</span><span class="label">Open right now</span></div>
+      <div class="tick"><span class="tick-num" id="tick-breached">—</span><span class="label">Past SLA</span></div>
+      <div class="tick"><span class="tick-num" id="tick-resolved">—</span><span class="label">Resolved</span></div>
+    </div>
+    <div class="scroll-cue">The doctrine</div>
+  </section>
+
+  <!-- BEAT 2 · TENSION — the anonymity boundary -->
+  <section class="doctrine">
+    <div class="stack-8">
+      <p class="kicker reveal">The boundary</p>
+      <h2 class="display doctrine-quote reveal">
+        A report crosses into this building carrying evidence, location, and urgency —
+        <em>never a name.</em>
+      </h2>
+      <p class="prose reveal">
+        Department queues read a fixed set of identity-free columns. Who filed the
+        report stays on the citizen side of the wall, permanently. What you act on is
+        the incident itself: what happened, where, how bad, and how strong the
+        evidence is.
+      </p>
+    </div>
+    <div class="stack-2">
+      <div class="guardrail reveal">
+        <span class="idx">R·01</span>
+        <div>
+          <h4>Detection never files. Citizens do.</h4>
+          <p>The classifier proposes; a person confirms. No queue entry exists that a citizen did not explicitly approve.</p>
+        </div>
+      </div>
+      <div class="guardrail reveal">
+        <span class="idx">R·02</span>
+        <div>
+          <h4>Identity stops at the wall.</h4>
+          <p>Dashboards query only report content, coordinates, evidence, and classifier output. Reporter identity is not in the column list — by construction.</p>
+        </div>
+      </div>
+      <div class="guardrail reveal">
+        <span class="idx">R·03</span>
+        <div>
+          <h4>One shell, eleven desks.</h4>
+          <p>Every department runs the same dashboard, parameterised by config. Same SLA math, same queue discipline, no favourites.</p>
+        </div>
+      </div>
+      <div class="guardrail reveal">
+        <span class="idx">R·04</span>
+        <div>
+          <h4>Honest when degraded.</h4>
+          <p>If the live database is unreachable, the dot in the corner turns red and the grid runs on a simulated ledger — behaviorally identical, honestly flagged.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BEAT 3 · DEPTH — the SLA ladder -->
+  <section class="sla-section">
+    <p class="kicker reveal">The clock</p>
+    <h2 class="display doctrine-quote reveal" style="margin-top:var(--s-6)">
+      Four windows. <em>No exceptions.</em>
+    </h2>
+    <p class="prose reveal" style="margin-top:var(--s-4)">
+      Priority is set upstream by classification — and floors apply: every fire report
+      enters at the fifteen-minute tier, every police report at the four-hour tier or
+      better. When a window closes unanswered, the report is marked breached and
+      surfaces on the Master Console. There is no way to quietly let one expire.
+    </p>
+    <div class="sla-ladder">
+      <div class="sla-rung reveal">
+        <span class="chip chip-critical">Critical</span>
+        <div class="sla-bar-track"><div class="sla-bar t-critical"></div></div>
+        <span class="sla-window">15 min</span>
+      </div>
+      <div class="sla-rung reveal">
+        <span class="chip chip-high">High</span>
+        <div class="sla-bar-track"><div class="sla-bar t-high"></div></div>
+        <span class="sla-window">4 hrs</span>
+      </div>
+      <div class="sla-rung reveal">
+        <span class="chip chip-normal">Normal</span>
+        <div class="sla-bar-track"><div class="sla-bar t-normal"></div></div>
+        <span class="sla-window">24 hrs</span>
+      </div>
+      <div class="sla-rung reveal">
+        <span class="chip chip-low">Low</span>
+        <div class="sla-bar-track"><div class="sla-bar t-low"></div></div>
+        <span class="sla-window">72 hrs</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- BEAT 4 · RESOLUTION — the desk index -->
+  <section class="desk-section">
+    <p class="kicker reveal">The register</p>
+    <h2 class="display doctrine-quote reveal" style="margin-top:var(--s-6)">
+      Find your desk.
+    </h2>
+    <div class="desk-list" id="desk-list"></div>
+  </section>
+
+  <!-- BEAT 5 · CONVERSION — master console -->
+  <section class="closing">
+    <p class="kicker">Oversight</p>
+    <h2 class="display" style="font-size:var(--text-h1);max-width:16ch">
+      One console watches <em>all eleven queues</em> — worst first.
+    </h2>
+    <p class="prose">
+      City totals, per-department pressure, and a live feed of every breach and
+      escalation across the grid, refreshed on its own clock.
+    </p>
+    <a class="btn-solid" href="admin.html">Open the Master Console</a>
+  </section>
+
+  <footer class="footer-line">
+    <span>KAWACH · Civic Command</span>
+    <span>Identity-free by construction</span>
+  </footer>
+
+  <script type="module" src="js/portal.js"></script>
+</body>
+</html>
