@@ -593,35 +593,42 @@ def handle_nayak_chat(
     )
     
     # Construct Gemini contents list from chat history
+    # Build conversation history for Gemini.
+    # Gemini requires: alternating user/model turns, starts with user,
+    # and the LAST entry must be a user turn (the current message).
+    # We exclude tool-only rows here; they were already baked into prior
+    # model replies. We also skip the just-saved user message row —
+    # we'll append it explicitly at the end so it's always present.
     contents = []
-    for h_msg in history:
-        # Map roles to gemini model tags ('user', 'model')
-        role = "user" if h_msg.role == "user" else "model"
-        
-        # If it was a tool call
+    for h_msg in history[:-1]:  # all but the last (current user message)
         if h_msg.tool_name:
-            # We don't map tool contents directly, but we can send them as model parts or pass the simplified message text
-            # For simplicity in request payloads, we build standard text structures
+            # Represent tool calls as a model text turn (simplest safe form)
             contents.append({
                 "role": "model",
                 "parts": [
-                    {"text": f"[Tool Call: {h_msg.tool_name} with result {json.dumps(h_msg.tool_result)}]"}
+                    {"text": f"[Tool: {h_msg.tool_name} → {json.dumps(h_msg.tool_result)[:300]}]"}
                 ]
             })
         else:
+            role = "user" if h_msg.role == "user" else "model"
             contents.append({
                 "role": role,
                 "parts": [{"text": h_msg.content}]
             })
-            
+
+    # Always append the current user message last — this is what Gemini responds to.
+    contents.append({"role": "user", "parts": [{"text": req.message}]})
+
     payload = {
         "contents": contents,
         "tools": tools_manifest,
         "systemInstruction": {"parts": [{"text": system_instruction}]}
     }
-    
+
     try:
-        res = requests.post(gemini_url, headers=headers, json=payload, timeout=10)
+        res = requests.post(gemini_url, headers=headers, json=payload, timeout=25)
+        if res.status_code != 200:
+            print(f"[NAYAK] Gemini returned HTTP {res.status_code}: {res.text[:400]}", flush=True)
         if res.status_code == 200:
             res_json = res.json()
             candidate = res_json.get("candidates", [{}])[0]
@@ -681,7 +688,9 @@ def handle_nayak_chat(
                 payload["contents"].append(tool_part)
                 
                 # Re-invoke Gemini
-                second_res = requests.post(gemini_url, headers=headers, json=payload, timeout=10)
+                second_res = requests.post(gemini_url, headers=headers, json=payload, timeout=25)
+                if second_res.status_code != 200:
+                    print(f"[NAYAK] Gemini 2nd call HTTP {second_res.status_code}: {second_res.text[:400]}", flush=True)
                 if second_res.status_code == 200:
                     model_reply = second_res.json()["candidates"][0]["content"]["parts"][0]["text"]
                     bot_reply = NayakMessage(
