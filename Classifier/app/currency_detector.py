@@ -152,6 +152,28 @@ _DENOM_WORDS = {
 _PROP_TOKENS = ["CHILDREN BANK", "CHURAN", "MANORANJAN", "PROP NOTE", "MOVIE SHOOTING"]
 _DENOM_TOKENS = {"10", "20", "50", "100", "200", "500", "2000"}
 
+# Denomination reality (verified against RBI guidance 2026-07-20):
+# - actively circulating banknotes: 10/20/50/100/200/500
+# - 2000: WITHDRAWN from circulation May 2023 (still legal tender,
+#   deposit/exchange only) — warn, never condemn: genuine ones exist
+# - 1000 (and old-series 500): DEMONETIZED Nov 2016 — invalid currency
+# - 1/2/5: printing discontinued but old notes REMAIN legal tender —
+#   never flag these as fake just for being rare
+# - anything else (30/75/25/0...) has never been issued — prop-note signature
+_VALID_CIRCULATING = {10, 20, 50, 100, 200, 500}
+_LEGAL_RARE = {1, 2, 5}
+_WITHDRAWN = {2000}
+_DEMONETIZED = {1000}
+_FANTASY_NUMERALS = {0, 15, 25, 30, 40, 60, 75, 150, 250, 300, 400, 600, 700, 750, 800, 900, 3000, 5000}
+_DENOM_WORD_VALUES = {
+    "TEN RUPEES": 10, "TWENTY RUPEES": 20, "FIFTY RUPEES": 50,
+    "ONE HUNDRED RUPEES": 100, "TWO HUNDRED RUPEES": 200,
+    "FIVE HUNDRED RUPEES": 500, "TWO THOUSAND RUPEES": 2000,
+    "ONE THOUSAND RUPEES": 1000, "THIRTY RUPEES": 30,
+    "TWENTY FIVE RUPEES": 25, "SEVENTY FIVE RUPEES": 75,
+    "THREE HUNDRED RUPEES": 300, "FIVE THOUSAND RUPEES": 5000,
+}
+
 
 # ── CNN model slot ───────────────────────────────────────────────────────────
 #
@@ -423,14 +445,61 @@ class CurrencyDetector:
         }
 
     @classmethod
-    def _detect_denomination(cls, ocr_items: Optional[list]) -> Optional[int]:
-        counts = {}
-        for tok in cls._ocr_words(ocr_items):
-            stripped = tok.lstrip("₹RS").strip()
-            for cand in (tok, stripped):
-                if cand in _DENOM_TOKENS:
+    def _denomination_counts(cls, ocr_items: Optional[list]) -> tuple:
+        """Count every denomination-like signal in the OCR: exact numeral
+        tokens (real, withdrawn, demonetized AND known fantasy values) plus
+        denomination words ('THIRTY RUPEES'). Word matches count double —
+        wording is much harder to be OCR noise than a stray numeral."""
+        candidates = _VALID_CIRCULATING | _WITHDRAWN | _DEMONETIZED | _FANTASY_NUMERALS
+        counts, word_hits = {}, set()
+        words = cls._ocr_words(ocr_items)
+        for tok in words:
+            stripped = tok.lstrip("₹RS").strip() or tok
+            for cand in {tok, stripped}:
+                if cand.isdigit() and int(cand) in candidates:
                     counts[int(cand)] = counts.get(int(cand), 0) + 1
-        return max(counts, key=counts.get) if counts else None
+                    break
+        for phrase, val in _DENOM_WORD_VALUES.items():
+            if _fuzzy_contains(words, phrase, threshold=0.85):
+                counts[val] = counts.get(val, 0) + 2
+                word_hits.add(val)
+        return counts, word_hits
+
+    @staticmethod
+    def _detect_denomination(counts: dict) -> Optional[int]:
+        """Primary denomination for whitelist/reporting — real note values only."""
+        real = {v: c for v, c in counts.items()
+                if v in _VALID_CIRCULATING | _WITHDRAWN | _DEMONETIZED}
+        return max(real, key=real.get) if real else None
+
+    @staticmethod
+    def _denomination_validity_check(counts: dict, word_hits: set) -> tuple:
+        """STRUCTURAL: does the denomination printed on this note actually
+        exist as circulating Indian currency? A '₹30' or '₹75' note has never
+        been issued (prop-note signature); ₹1000 was demonetized Nov 2016;
+        ₹2000 is withdrawn (warn, don't condemn — genuine ones exist).
+        Non-valid values need strong evidence (numeral seen twice, or the
+        denomination spelled out in words) so OCR noise on a genuine note
+        can never trip this — false positives are the kill metric."""
+        def confirmed(v):
+            return counts.get(v, 0) >= 2 or v in word_hits
+
+        fantasy = [v for v in counts if v in _FANTASY_NUMERALS and confirmed(v)]
+        if fantasy:
+            return 0.05, (f"Denomination ₹{fantasy[0]} detected — RBI has never issued a "
+                          f"₹{fantasy[0]} banknote. This is novelty/prop-note territory, not currency.")
+        demonetized = [v for v in counts if v in _DEMONETIZED and confirmed(v)]
+        if demonetized:
+            return 0.2, ("₹1000 denomination detected — demonetized in November 2016 and no "
+                         "longer valid currency; demonetized notes are a known scam vector.")
+        if any(v in _WITHDRAWN and confirmed(v) for v in counts):
+            return 0.5, ("₹2000 note — WITHDRAWN from circulation by RBI in May 2023 (still "
+                         "legal tender for deposit/exchange at banks). Exercise extra caution "
+                         "accepting one in a transaction.")
+        valid = [v for v in counts if v in _VALID_CIRCULATING]
+        if valid:
+            return 0.6, f"Denomination ₹{max(valid, key=lambda v: counts[v])} — a valid circulating denomination."
+        return 0.5, "Denomination not readable from this shot — validity check skipped, not counted against the note."
 
     # ── Stage 3: classical security-feature checks ───────────────────────────
 
@@ -707,7 +776,8 @@ class CurrencyDetector:
                 gates,
             )
 
-        denomination = self._detect_denomination(ocr_items)
+        denom_counts, denom_word_hits = self._denomination_counts(ocr_items)
+        denomination = self._detect_denomination(denom_counts)
 
         # Stage 3 — evidence collection
         thread_s, thread_r = self._security_thread_score(note)
@@ -715,6 +785,7 @@ class CurrencyDetector:
         noise_s, noise_r = self._print_noise_score(note)
         serial_s, serial_r = self._serial_number_score(note, ocr_items)
         text_s, text_r = self._text_integrity_score(ocr_items, denomination)
+        denom_s, denom_r = self._denomination_validity_check(denom_counts, denom_word_hits)
         uv_check = self._uv_fluorescence_check(bgr, capture_mode)
 
         # Lighting exclusion rule: under flagged glare, a red band/print read
@@ -728,6 +799,9 @@ class CurrencyDetector:
         checks = [
             {"feature": "serial_number_pattern", "score": serial_s, "finding": serial_r, "tier": "structural", "weight": 0.25},
             {"feature": "text_integrity", "score": text_s, "finding": text_r, "tier": "structural", "weight": 0.20},
+            # weight 0 — informational for the blended score, but its tier
+            # gives a red flag (fantasy/demonetized denomination) veto power
+            {"feature": "denomination_validity", "score": denom_s, "finding": denom_r, "tier": "structural", "weight": 0.0},
             {"feature": "security_thread", "score": thread_s, "finding": thread_r, "tier": "weak_proxy", "weight": 0.20},
             {"feature": "microprint_sharpness", "score": micro_s, "finding": micro_r, "tier": "weak_proxy", "weight": 0.15},
             {"feature": "print_noise_profile", "score": noise_s, "finding": noise_r, "tier": "weak_proxy", "weight": 0.20},
@@ -793,6 +867,14 @@ class CurrencyDetector:
             verdict, confidence = "INCONCLUSIVE", "LOW"
             guidance = (f"Checks disagree ({', '.join(disagreeing)}) — retake in bright even daylight "
                         f"showing the full front face, or verify physically at a bank.")
+
+        # ₹2000 rides along as a warning whatever the verdict — withdrawn,
+        # not counterfeit, but a known scam vector in hand-to-hand deals.
+        if any(v in _WITHDRAWN and (denom_counts.get(v, 0) >= 2 or v in denom_word_hits)
+               for v in denom_counts):
+            guidance = ((guidance + " ") if guidance else "") + (
+                "Note: ₹2000 notes were withdrawn from circulation in May 2023 — "
+                "accept only for bank deposit/exchange.")
 
         checks.append(uv_check)  # informational placement at the end, as before
 

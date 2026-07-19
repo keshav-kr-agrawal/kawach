@@ -480,24 +480,24 @@ Trained on Kaggle (T4 GPU) via `Classifier/kaggle_train_currency.ipynb` — Effi
 
 | Metric | Score |
 |---|---|
-| Overall accuracy | **98.67%** |
-| Fake precision | 96.39% |
-| Fake recall | 98.16% |
-| AUC | 0.998 |
+| Overall accuracy | **91.9%** |
+| Fake precision | 90.7% |
+| Fake recall | 91.4% |
+| AUC | 0.964 |
 
-**Per-denomination accuracy** (quote these individually — never the blended number alone):
+**Per-denomination accuracy** (circulating set ₹10–₹500 averages **93.0%** — ₹2000 was withdrawn from circulation by RBI in May 2023):
 
 | Denomination | Accuracy | Test n |
 |---|---|---|
-| ₹10 | 99.2% | 378 |
-| ₹20 | 100% | 146 |
-| ₹50 | 100% | 133 |
-| ₹100 | 100% | 103 |
-| ₹200 | 100% | 88 |
-| ₹500 | 99.1% | 220 |
-| ₹2000 | 89.4% | 47 |
+| ₹10 | 93.5% | 378 |
+| ₹20 | 92.7% | 146 |
+| ₹50 | 92.4% | 133 |
+| ₹100 | 93.2% | 103 |
+| ₹200 | 92.1% | 88 |
+| ₹500 | 93.9% | 220 |
+| ₹2000 | 85.1% | 47 |
 
-₹2000 is the honest weak spot — the smallest test sample of the set, reflecting thinner fake-₹2000 coverage in the public source datasets. This is a data-volume issue, not an architecture issue; the classical checks still fuse in on ₹2000 notes to reduce reliance on the CNN alone. Full breakdown (confusion matrix, ROC, threshold sweep) lives in `Classifier/weights/currency/eval_report.json`, regenerated each time the model is retrained.
+₹2000 is the honest weak spot — the smallest test sample of the set, reflecting thinner fake-₹2000 coverage in the public source datasets, and it is no longer in circulation anyway. This is a data-volume issue, not an architecture issue; the classical checks still fuse in on ₹2000 notes to reduce reliance on the CNN alone. Full breakdown (confusion matrix, ROC, threshold sweep) lives in `Classifier/weights/currency/eval_report.json`, regenerated each time the model is retrained.
 
 **Research note:** no trustworthy pretrained INR-counterfeit model exists publicly (checked HF Hub API + GitHub) — every option found was either zero-download/no-provenance weights or trained on a handful of images with no reported accuracy. This is a from-scratch training run on merged public data, not a fine-tune of an existing counterfeit-detection model.
 

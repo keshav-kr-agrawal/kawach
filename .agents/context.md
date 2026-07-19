@@ -214,7 +214,7 @@ KAWACH operates **seven distinct AI/ML and computer vision pipelines**:
   2. Microprint Laplacian sharpness score.
   3. Print-noise profile analysis.
   4. **Telescopic Serial Number Check:** EasyOCR + column ink-height profiling to verify ascending numeral sizing (RBI anti-counterfeit standard).
-* **Performance:** **98.67% test accuracy** (AUC 0.998).
+* **Performance:** **91.9% test accuracy** (AUC 0.964; circulating denominations ₹10–₹500 average 93.0%).
 * **UV Mode:** Gated check for `capture_mode="uv"`.
 
 ### 7. Pipeline 7: Digital Arrest Live-Session Monitor (`police/backend/app/routes/digital_arrest.py`)

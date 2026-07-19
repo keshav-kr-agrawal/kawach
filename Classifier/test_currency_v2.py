@@ -72,6 +72,20 @@ def generate_cases():
     # partial note (left 55% — folded/half-covered)
     cv2.imwrite(os.path.join(GEN_DIR, "real_partial.png"), real[:, : int(w * 0.55)])
 
+    # fantasy-denomination prop note: note-shaped, note-colored, correct RBI
+    # wording — but a ₹30 denomination that has never existed. The
+    # denomination-validity check must catch it even when everything else
+    # looks plausible.
+    prop = np.full((560, 1200, 3), (140, 190, 235), np.uint8)  # warm note-ish tone
+    cv2.rectangle(prop, (18, 18), (1182, 542), (90, 130, 190), 4)
+    cv2.putText(prop, "RESERVE BANK OF INDIA", (240, 110),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.5, (40, 40, 60), 4)
+    cv2.putText(prop, "THIRTY RUPEES", (400, 320),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.6, (40, 40, 60), 4)
+    for (x, y) in [(60, 100), (1020, 100), (60, 500), (1020, 500)]:
+        cv2.putText(prop, "30", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 2.2, (30, 30, 50), 6)
+    cv2.imwrite(os.path.join(GEN_DIR, "prop_30_note.png"), prop)
+
 
 # (name, path, allowed_verdicts, forbidden_verdicts, forbid_high_genuine)
 CASES = [
@@ -84,6 +98,8 @@ CASES = [
     ("real_blur", os.path.join(GEN_DIR, "real_blur.png"), None, FAKE_VERDICTS, True),
     ("real_glare", os.path.join(GEN_DIR, "real_glare.png"), None, FAKE_VERDICTS, True),
     ("real_partial", os.path.join(GEN_DIR, "real_partial.png"), None, FAKE_VERDICTS, True),
+    # a ₹30 note does not exist — must never clear as genuine
+    ("prop_30_note", os.path.join(GEN_DIR, "prop_30_note.png"), None, GENUINE_VERDICTS, False),
 ]
 
 

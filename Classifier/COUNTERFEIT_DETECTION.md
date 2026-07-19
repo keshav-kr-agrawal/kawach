@@ -116,6 +116,7 @@ EasyOCR runs **once** per request; its output feeds the presence gate, denominat
 **Tier A — structural (near-veto power):** the hardest features to fake casually.
 - **Serial number pattern validation** *(PS technique #3)* — RBI's documented telescopic numbering: number-panel digits print in ascending size left-to-right. Verified via OCR bounding boxes + column ink-height profiling. No model needed; fully explainable.
 - **Text integrity** — the OCR'd text is fuzzy-matched against the fixed wording every genuine note carries ("RESERVE BANK OF INDIA", the guarantee clause, the denomination in words) plus a list of known novelty/prop-note tokens. *Missing* text scores softly (could be the reverse side or a steep angle); *substituted* text is a red flag. **This check caught both of our real-world test fakes by literally reading their wrong wording.**
+- **Denomination validity** — does the printed denomination *exist*? Verified against RBI reality (2026): circulating notes are ₹10/20/50/100/200/500 only. A "₹30" or "₹75" note has never been issued (instant prop-note red flag); **₹1000 was demonetized Nov 2016** (invalid currency, known scam vector); **₹2000 is withdrawn** (May 2023 — flagged as a caution, never condemned, since genuine ones remain legal tender for deposit); old ₹1/₹2/₹5 notes remain legal tender and are never punished for rarity. Non-valid values need strong evidence (numeral read twice, or the denomination spelled out in words) so OCR noise can't trip it.
 - **UV fluorescence** *(PS technique #4)* — honestly gated: it only activates when the caller declares a UV-lit capture (`capture_mode="uv"`). A normal-light photo *cannot* see fluorescence, so the pipeline says `not_applicable` instead of fabricating a UV verdict.
 
 **Tier B — weak proxies (corroborate only, can never carry a verdict):**
@@ -145,9 +146,9 @@ We checked first: **no trustworthy pretrained INR-counterfeit model exists publi
 | Split | Stratified 70/15/15 — 6,304 train / 1,351 val / 1,352 held-out test (touched once) |
 | Augmentation | Domain-realistic: perspective warp, motion blur, JPEG artifacts — simulating real phone photos, not generic ImageNet transforms |
 | Training | Frozen-backbone warm-up → full fine-tune, early stopping on val macro-F1 (Kaggle T4; notebook: `kaggle_train_currency.ipynb`) |
-| **Held-out test accuracy** | **98.67%** overall (n=1,352) · fake-recall 0.98 · AUC 0.998 |
-| **Circulating denominations** | **99.7% average across ₹10/₹20/₹50/₹100/₹200/₹500** — the complete set of notes actually in circulation today (RBI withdrew ₹2000 notes from circulation in May 2023) |
-| Honest weak spot | ₹2000: 89.4% (thin fake data, n=47) — disclosed even though the denomination is withdrawn; the pipeline still screens one if presented, since withdrawn notes remain a deposit/exchange fraud vector |
+| **Held-out test accuracy** | **91.9%** overall (n=1,352) · fake-recall 0.91 · fake-precision 0.91 · AUC 0.964 |
+| **Circulating denominations** | **93.0% average across ₹10/₹20/₹50/₹100/₹200/₹500** — the complete set of notes actually in circulation today (RBI withdrew ₹2000 notes from circulation in May 2023) |
+| Honest weak spot | ₹2000: 85.1% (thin fake data, n=47) — disclosed even though the denomination is withdrawn; the pipeline still screens one if presented, since withdrawn notes remain a deposit/exchange fraud vector |
 
 **And the most important number is one we measured ourselves:** when we tested the CNN against real-world prop-note fakes it had never seen, its confidence did **not** transfer — which is precisely why the pipeline demotes it to an advisory role behind the explainable structural checks, instead of letting a single black-box score decide. The lab accuracy is real; the architecture just refuses to over-trust it.
 
