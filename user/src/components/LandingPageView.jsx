@@ -201,7 +201,9 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
               </div>
 
               <button
-                onClick={() => navigate('/department/police')}
+                onClick={() => {
+                  window.location.href = '/police/frontend/index.html';
+                }}
                 className="w-full py-3.5 px-4 bg-[#ffd900] hover:bg-yellow-400 text-slate-950 font-black rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xs text-xs tracking-wider uppercase font-sora border border-slate-950/10"
               >
                 Enter Police Console ➔
@@ -225,7 +227,7 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
 
               <button
                 onClick={() => {
-                  window.location.href = 'http://localhost:3000';
+                  window.location.href = '/departments/index.html';
                 }}
                 className="w-full py-3.5 px-4 bg-[#ffd900] hover:bg-yellow-400 text-slate-950 font-black rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xs text-xs tracking-wider uppercase font-sora border border-slate-950/10"
               >
