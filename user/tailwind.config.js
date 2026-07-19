@@ -7,12 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        snapYellow: "#ffd900",
+        snapYellow: "#E9BA26",
         policeSlate: "#ffffff",
         uimaxBase: "#ffffff",
-        uimaxAccent: "#ffd900",
+        uimaxAccent: "#E9BA26",
         uimaxDarkBase: "#ffffff",
-        uimaxDarkAccent: "#ffd900",
+        uimaxDarkAccent: "#E9BA26",
         // KAWACH uimax dual-hue tokens (white base + one amber hue, severity = darkness)
         paper: { DEFAULT: "#FFFFFF", warm: "#FEFCF5" },
         ink: { DEFAULT: "#171307", soft: "#5C5748", faint: "#8F8A7A" },

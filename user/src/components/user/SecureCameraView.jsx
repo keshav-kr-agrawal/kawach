@@ -216,22 +216,22 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     <div className="flex-1 flex flex-col h-full bg-white font-sans overflow-hidden select-text relative">
       
       {/* Header */}
-      <div className="px-6 py-4 bg-white border-b border-yellow-400/20 flex-none flex items-center justify-between z-20">
+      <div className="px-6 py-4 bg-white border-b border-amber-400/20 flex-none flex items-center justify-between z-20">
         <div>
           <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
             ANONYMOUS EVIDENCE RECORDING
           </span>
-          <h2 className="text-xl font-black text-slate-950 font-sora">
+          <h2 className="text-xl font-black text-ink font-sora">
             Secure <span className="font-serif italic font-normal text-[#b08850] pr-1">Capture</span>
           </h2>
         </div>
-        <span className="px-2.5 py-1 bg-yellow-400/10 border border-yellow-400/30 text-[#b08850] text-[10px] font-bold rounded-full font-mono">
+        <span className="px-2.5 py-1 bg-amber-400/10 border border-amber-400/30 text-[#b08850] text-[10px] font-bold rounded-full font-mono">
           EXIF Scrub Active
         </span>
       </div>
 
       {/* Camera Viewport Canvas */}
-      <div className="flex-1 relative bg-slate-950 flex items-center justify-center overflow-hidden">
+      <div className="flex-1 relative bg-amber-950 flex items-center justify-center overflow-hidden">
         {hasCameraAccess ? (
           <video
             ref={videoRef}
@@ -241,12 +241,12 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="p-6 text-center text-slate-400 space-y-3">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-10 h-10 mx-auto text-yellow-400"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <div className="p-6 text-center text-ink-faint space-y-3">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-10 h-10 mx-auto text-amber-400"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             <p className="text-xs font-semibold">{cameraError || 'Initializing device camera...'}</p>
             <button
               onClick={startCamera}
-              className="px-4 py-2 bg-[#ffd900] text-slate-950 font-bold rounded-xl text-xs font-sora"
+              className="px-4 py-2 bg-[#E9BA26] text-ink font-bold rounded-xl text-xs font-sora"
             >
               Grant Camera Access
             </button>
@@ -269,11 +269,11 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
               className={`w-18 h-18 rounded-full border-4 flex items-center justify-center transition-all shadow-2xl ${
                 isRecording 
                   ? 'border-red-600 bg-red-600 scale-110' 
-                  : 'border-white bg-[#ffd900] hover:scale-105'
+                  : 'border-white bg-[#E9BA26] hover:scale-105'
               }`}
             >
               <div className={`transition-all ${
-                isRecording ? 'w-6 h-6 bg-white rounded-md' : 'w-8 h-8 rounded-full bg-slate-950'
+                isRecording ? 'w-6 h-6 bg-white rounded-md' : 'w-8 h-8 rounded-full bg-amber-950'
               }`} />
             </button>
           </div>
@@ -282,20 +282,20 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
 
       {/* Review & Submit Sheet Modal */}
       {sheetOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-end justify-center">
-          <div className="bg-white border-t-2 border-[#ffd900] rounded-t-3xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto space-y-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-amber-950/70 backdrop-blur-xs flex items-end justify-center">
+          <div className="bg-white border-t-2 border-[#E9BA26] rounded-t-3xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto space-y-5 shadow-2xl">
             
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-black text-slate-950 text-base font-sora">
+            <div className="flex items-center justify-between border-b border-amber-100 pb-3">
+              <h3 className="font-black text-ink text-base font-sora">
                 Review & Upload Evidence
               </h3>
-              <button onClick={handleRetake} className="text-slate-400 hover:text-slate-700 font-bold text-xs">
+              <button onClick={handleRetake} className="text-ink-faint hover:text-ink-soft font-bold text-xs">
                 Retake Clip ✕
               </button>
             </div>
 
             {/* Video Preview */}
-            <div className="w-full h-44 bg-slate-900 rounded-2xl overflow-hidden relative">
+            <div className="w-full h-44 bg-amber-950 rounded-2xl overflow-hidden relative">
               {videoUrl && (
                 <video
                   src={videoUrl}
@@ -308,8 +308,8 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
 
             {/* Quick Threat Validation Status */}
             {isValidating && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-xs text-[#b08850] font-bold flex items-center gap-2">
-                <span className="w-3.5 h-3.5 border-2 border-[#ffd900] border-t-transparent rounded-full animate-spin" />
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-[#b08850] font-bold flex items-center gap-2">
+                <span className="w-3.5 h-3.5 border-2 border-[#E9BA26] border-t-transparent rounded-full animate-spin" />
                 Validating scene objects & authenticity...
               </div>
             )}
@@ -326,7 +326,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
             {/* Form Inputs */}
             <form onSubmit={handleSubmitUpload} className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                <label className="text-[10px] font-bold text-ink-soft uppercase tracking-wider block mb-1">
                   Incident Title
                 </label>
                 <input
@@ -335,18 +335,18 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Street Light Outage / Water Pipe Burst"
                   required
-                  className="w-full bg-slate-50 border border-yellow-400/20 rounded-xl px-4 py-3 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#ffd900]"
+                  className="w-full bg-amber-50 border border-amber-400/20 rounded-xl px-4 py-3 text-xs text-ink font-semibold focus:outline-none focus:border-[#E9BA26]"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                <label className="text-[10px] font-bold text-ink-soft uppercase tracking-wider block mb-1">
                   Department Category
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full bg-slate-50 border border-yellow-400/20 rounded-xl px-4 py-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#ffd900]"
+                  className="w-full bg-amber-50 border border-amber-400/20 rounded-xl px-4 py-3 text-xs font-bold text-ink focus:outline-none focus:border-[#E9BA26]"
                 >
                   <option value="Infrastructure">Infrastructure (BWSSB / BBMP)</option>
                   <option value="Traffic Warning">Traffic Warning (KSP Traffic)</option>
@@ -357,7 +357,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                <label className="text-[10px] font-bold text-ink-soft uppercase tracking-wider block mb-1">
                   Additional Context
                 </label>
                 <textarea
@@ -365,7 +365,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Add specific landmark details or vehicle numbers..."
-                  className="w-full bg-slate-50 border border-yellow-400/20 rounded-xl p-3 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#ffd900]"
+                  className="w-full bg-amber-50 border border-amber-400/20 rounded-xl p-3 text-xs text-ink font-semibold focus:outline-none focus:border-[#E9BA26]"
                 />
               </div>
 
@@ -375,7 +375,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                   id="emOverride"
                   checked={emergencyOverride}
                   onChange={(e) => setEmergencyOverride(e.target.checked)}
-                  className="w-4 h-4 accent-[#ffd900]"
+                  className="w-4 h-4 accent-[#E9BA26]"
                 />
                 <label htmlFor="emOverride" className="text-xs font-bold text-red-600">
                   Mark as High-Priority Emergency Dispatch
@@ -386,14 +386,14 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                 <button
                   type="button"
                   onClick={handleRetake}
-                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs"
+                  className="flex-1 py-3 bg-amber-50 hover:bg-amber-100 text-ink-soft font-bold rounded-xl text-xs"
                 >
                   Discard
                 </button>
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="flex-2 py-3 bg-[#ffd900] hover:bg-yellow-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider font-sora shadow-xs border border-slate-950/10"
+                  className="flex-2 py-3 bg-[#E9BA26] hover:bg-amber-400 text-ink font-black rounded-xl text-xs uppercase tracking-wider font-sora shadow-xs border border-amber-950/10"
                 >
                   {uploading ? 'Scrubbing & Uploading...' : 'Upload Anonymized Evidence'}
                 </button>

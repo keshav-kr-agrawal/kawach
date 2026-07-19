@@ -83,7 +83,7 @@ export default function BottomNav() {
       right: 0,
       height: 'calc(70px + env(safe-area-inset-bottom))',
       zIndex: 1000,
-      background: '#ffd900', // Sophisticated Safety Yellow (#FFD900)
+      background: '#E9BA26', // Sophisticated Safety Yellow (#E9BA26)
       boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.08)',
       borderTop: '1px solid rgba(0, 0, 0, 0.06)',
       overflow: 'visible'

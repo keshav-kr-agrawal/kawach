@@ -132,7 +132,7 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
               width: '32px',
               height: '32px',
               borderRadius: '50%',
-              backgroundColor: '#ffd900',
+              backgroundColor: '#E9BA26',
               border: '1.5px solid #000000',
               display: 'flex',
               alignItems: 'center',
@@ -250,13 +250,13 @@ function UserLayout({ userReports }) {
     return (
       <div className="flex flex-row h-screen w-screen overflow-hidden relative bg-white select-text">
         {/* Desktop Left Sidebar */}
-        <div className="flex flex-col w-64 bg-white border-r border-slate-200 h-full p-6 select-none flex-none">
+        <div className="flex flex-col w-64 bg-white border-r border-amber-200 h-full p-6 select-none flex-none">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
             <img src="/kawach.png" alt="KAWACH Logo" className="w-10 h-10 object-contain" />
             <div>
-              <h1 className="text-lg font-black tracking-tight text-slate-900 font-sora">KAWACH</h1>
-              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block -mt-1">Citizen Sentinel</span>
+              <h1 className="text-lg font-black tracking-tight text-ink font-sora">KAWACH</h1>
+              <span className="text-[9px] font-bold text-ink-soft uppercase tracking-widest block -mt-1">Citizen Sentinel</span>
             </div>
           </div>
 
@@ -278,8 +278,8 @@ function UserLayout({ userReports }) {
                   onClick={() => navigate(item.path)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
                     isActive 
-                      ? 'bg-[#ffd900] text-slate-950 shadow-sm border border-slate-950/10' 
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'bg-[#E9BA26] text-ink shadow-sm border border-amber-950/10' 
+                      : 'text-ink-soft hover:bg-amber-50 hover:text-ink'
                   }`}
                 >
                   <span className="text-base">{item.icon}</span>
@@ -376,7 +376,7 @@ function UserLayout({ userReports }) {
                 key={report.id}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                  <span style={{ color: '#ffd900', fontWeight: '700' }}>📹 Processing Report:</span>
+                  <span style={{ color: '#E9BA26', fontWeight: '700' }}>📹 Processing Report:</span>
                   <span style={{
                     color: '#333333',
                     whiteSpace: 'nowrap',
@@ -388,7 +388,7 @@ function UserLayout({ userReports }) {
                   </span>
                 </div>
                 <span style={{
-                  color: report.status === 'PUBLIC_APPROVED' ? '#22c55e' : (report.status === 'REPORTED_SUSPICIOUS' ? '#ff3b30' : '#ffd900'),
+                  color: report.status === 'PUBLIC_APPROVED' ? '#22c55e' : (report.status === 'REPORTED_SUSPICIOUS' ? '#ff3b30' : '#E9BA26'),
                   fontWeight: '700'
                 }}>
                   {report.status}
@@ -419,7 +419,7 @@ function RequireCitizenAuth({ token, isLoadingSession, children }) {
   if (isLoadingSession) {
     return (
       <div style={{ display: 'flex', height: '100dvh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff', width: '100vw' }}>
-        <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #ffd900', borderTopColor: 'transparent', animation: 'spin 1s linear infinite' }} />
+        <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #E9BA26', borderTopColor: 'transparent', animation: 'spin 1s linear infinite' }} />
         <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -451,12 +451,12 @@ class ProfileErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center h-full p-8 gap-4 bg-white">
-          <div className="w-16 h-16 rounded-full bg-yellow-50 flex items-center justify-center text-2xl">⚠️</div>
-          <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Profile Error</h3>
-          <p className="text-xs text-slate-500 text-center">Something went wrong loading your profile.</p>
+          <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center text-2xl">⚠️</div>
+          <h3 className="text-sm font-black text-ink uppercase tracking-wider">Profile Error</h3>
+          <p className="text-xs text-ink-soft text-center">Something went wrong loading your profile.</p>
           <button
             onClick={() => this.setState({ hasError: false })}
-            className="px-6 py-2.5 bg-yellow-400 text-black text-xs font-black rounded-full"
+            className="px-6 py-2.5 bg-amber-400 text-black text-xs font-black rounded-full"
           >
             Retry
           </button>
@@ -1188,15 +1188,15 @@ export default function App() {
         path="/admin"
         element={
           <RequirePoliceAuth token={officialToken}>
-            <div className="p-6 bg-slate-950 min-h-screen text-slate-100 flex flex-col gap-6 select-text">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+            <div className="p-6 bg-amber-950 min-h-screen text-amber-50 flex flex-col gap-6 select-text">
+              <div className="flex justify-between items-center border-b border-amber-800 pb-4">
                 <div>
                   <h2 className="text-xl font-black text-white uppercase tracking-wider">Super Admin God-Mode Overview</h2>
                   <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Platform Administration Console</span>
                 </div>
                 <button
                   onClick={handleOfficialLogout}
-                  className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-colors"
+                  className="px-4 py-2 bg-amber-950 border border-amber-800 rounded-xl text-xs font-bold text-ink-faint hover:text-white transition-colors"
                 >
                   Sign Out
                 </button>

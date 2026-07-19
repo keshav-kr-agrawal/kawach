@@ -54,10 +54,10 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
   return (
     <div 
       ref={cardRef}
-      className="w-full h-full snap-start relative flex flex-col justify-between p-5 bg-white text-slate-900 overflow-hidden select-text border-b border-yellow-400/20"
+      className="w-full h-full snap-start relative flex flex-col justify-between p-5 bg-white text-ink overflow-hidden select-text border-b border-amber-400/20"
     >
       {/* Video or Image Canvas */}
-      <div className="absolute inset-0 bg-slate-900 z-0">
+      <div className="absolute inset-0 bg-amber-950 z-0">
         {reel.videoUrl ? (
           <video
             ref={videoRef}
@@ -68,27 +68,27 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-slate-900 flex items-center justify-center text-slate-400 font-bold text-xs">
+          <div className="w-full h-full bg-amber-950 flex items-center justify-center text-ink-faint font-bold text-xs">
             [Visual Stream Feed]
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-amber-950 via-amber-950/20 to-transparent pointer-events-none" />
       </div>
 
       {/* Top Header Overlay */}
       <div className="relative z-10 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 bg-[#ffd900] text-slate-950 text-[10px] font-black rounded-full font-sora border border-slate-950/10">
+          <span className="px-3 py-1 bg-[#E9BA26] text-ink text-[10px] font-black rounded-full font-sora border border-amber-950/10">
             {getDepartmentEmoji(reel.department)} {reel.department || 'GENERAL'}
           </span>
-          <span className="px-2.5 py-1 bg-white/90 text-slate-900 text-[10px] font-bold rounded-full backdrop-blur-xs font-mono">
+          <span className="px-2.5 py-1 bg-white/90 text-ink text-[10px] font-bold rounded-full backdrop-blur-xs font-mono">
             {reel.timestamp || 'Just now'}
           </span>
         </div>
 
         <button
           onClick={toggleMute}
-          className="p-2.5 bg-white/90 text-slate-900 rounded-full backdrop-blur-xs shadow-xs hover:bg-white transition-all"
+          className="p-2.5 bg-white/90 text-ink rounded-full backdrop-blur-xs shadow-xs hover:bg-white transition-all"
         >
           {isMuted ? (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
@@ -103,7 +103,7 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
         <button
           onClick={() => toggleUpvote(reel.id)}
           className={`p-3.5 rounded-full backdrop-blur-md transition-all shadow-md ${
-            isUpvoted ? 'bg-[#ffd900] text-slate-950 scale-110' : 'bg-white/80 text-slate-900 hover:bg-white'
+            isUpvoted ? 'bg-[#E9BA26] text-ink scale-110' : 'bg-white/80 text-ink hover:bg-white'
           }`}
         >
           <svg viewBox="0 0 24 24" fill={isUpvoted ? '#09090b' : 'none'} stroke="currentColor" strokeWidth="2.5" className="w-5 h-5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
@@ -122,14 +122,14 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
       {/* Bottom Information Details */}
       <div className="relative z-10 space-y-2 text-white max-w-[80%] pr-4 pb-4">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-yellow-300 font-mono">📍 {reel.location || 'Bengaluru Ward'}</span>
+          <span className="text-xs font-bold text-amber-300 font-mono">📍 {reel.location || 'Bengaluru Ward'}</span>
         </div>
         
         <h3 className="text-lg font-black font-sora text-white leading-snug drop-shadow-sm">
           {reel.title}
         </h3>
         
-        <p className="text-slate-200 text-xs font-medium leading-relaxed line-clamp-2 drop-shadow-xs">
+        <p className="text-amber-100 text-xs font-medium leading-relaxed line-clamp-2 drop-shadow-xs">
           {reel.description}
         </p>
 
@@ -211,22 +211,22 @@ export default function LocalReelsFeedView({ userReports = [], onReportVideo }) 
     <div className="flex-1 flex flex-col h-full bg-white font-sans overflow-hidden select-text relative">
       
       {/* Editorial Header */}
-      <div className="px-6 py-4 bg-white border-b border-yellow-400/20 flex-none flex items-center justify-between z-20">
+      <div className="px-6 py-4 bg-white border-b border-amber-400/20 flex-none flex items-center justify-between z-20">
         <div>
           <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
             COMMUNITY SAFETY BROADCASTS
           </span>
-          <h2 className="text-xl font-black text-slate-950 font-sora">
+          <h2 className="text-xl font-black text-ink font-sora">
             Incident <span className="font-serif italic font-normal text-[#b08850] pr-1">Feed</span>
           </h2>
         </div>
-        <span className="text-[10px] font-bold text-slate-900 bg-yellow-400/20 border border-yellow-400/30 px-2.5 py-1 rounded-full font-mono">
+        <span className="text-[10px] font-bold text-ink bg-amber-400/20 border border-amber-400/30 px-2.5 py-1 rounded-full font-mono">
           {allReels.length} Active Feeds
         </span>
       </div>
 
       {/* Vertical Snap Scroll Reels Container */}
-      <div className="flex-1 overflow-y-scroll snap-y snap-mandatory h-full w-full bg-slate-950">
+      <div className="flex-1 overflow-y-scroll snap-y snap-mandatory h-full w-full bg-amber-950">
         {allReels.map((reel) => (
           <ReelCard
             key={reel.id}
@@ -244,18 +244,18 @@ export default function LocalReelsFeedView({ userReports = [], onReportVideo }) 
 
       {/* Flag Incident Modal */}
       {flagModalReel && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-amber-950/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border-2 border-red-500 rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
             <h3 className="font-black text-red-600 text-base font-sora">
               Flag Suspicious Feed?
             </h3>
-            <p className="text-slate-600 text-xs font-semibold leading-relaxed">
+            <p className="text-ink-soft text-xs font-semibold leading-relaxed">
               Are you sure you want to flag "{flagModalReel.title}"? This alert will be forwarded to district moderators for inspection.
             </p>
             <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={() => setFlagModalReel(null)}
-                className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs"
+                className="px-4 py-2 bg-amber-50 text-ink-soft font-bold rounded-xl text-xs"
               >
                 Cancel
               </button>

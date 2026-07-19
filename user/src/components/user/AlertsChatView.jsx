@@ -141,37 +141,37 @@ ${bullets.length > 0 ? bullets.join('\n\n') : '* Media stored and analyzed.'}`;
 
 function MarkdownMessage({ content }) {
   return (
-    <div className="prose prose-xs max-w-none text-slate-800 space-y-1.5 leading-relaxed select-text font-sans">
+    <div className="prose prose-xs max-w-none text-ink space-y-1.5 leading-relaxed select-text font-sans">
       <ReactMarkdown
         components={{
-          h1: ({ children }) => <h1 className="text-sm font-black text-slate-950 font-sora mt-2.5 mb-1.5 border-b border-yellow-400/20 pb-1">{children}</h1>,
-          h2: ({ children }) => <h2 className="text-xs font-black text-slate-900 font-sora mt-2 mb-1">{children}</h2>,
+          h1: ({ children }) => <h1 className="text-sm font-black text-ink font-sora mt-2.5 mb-1.5 border-b border-amber-400/20 pb-1">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-xs font-black text-ink font-sora mt-2 mb-1">{children}</h2>,
           h3: ({ children }) => <h3 className="text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1">{children}</h3>,
-          p: ({ children }) => <p className="text-xs leading-relaxed font-semibold text-slate-800 mb-1.5 last:mb-0">{children}</p>,
-          strong: ({ children }) => <strong className="font-extrabold text-slate-950 bg-yellow-400/25 px-1 py-0.5 rounded text-[11px] font-sora">{children}</strong>,
+          p: ({ children }) => <p className="text-xs leading-relaxed font-semibold text-ink mb-1.5 last:mb-0">{children}</p>,
+          strong: ({ children }) => <strong className="font-extrabold text-ink bg-amber-400/25 px-1 py-0.5 rounded text-[11px] font-sora">{children}</strong>,
           em: ({ children }) => <em className="font-serif italic text-[#b08850] font-normal">{children}</em>,
-          ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-1.5 text-xs font-semibold text-slate-800">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-1.5 text-xs font-semibold text-slate-800">{children}</ol>,
-          li: ({ children }) => <li className="text-xs text-slate-800 font-semibold leading-relaxed">{children}</li>,
+          ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-1.5 text-xs font-semibold text-ink">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-1.5 text-xs font-semibold text-ink">{children}</ol>,
+          li: ({ children }) => <li className="text-xs text-ink font-semibold leading-relaxed">{children}</li>,
           blockquote: ({ children }) => (
-            <blockquote className="border-l-3 border-[#ffd900] bg-yellow-50/80 p-2.5 rounded-r-xl my-2 text-xs italic text-slate-800 font-medium">
+            <blockquote className="border-l-3 border-[#E9BA26] bg-amber-50/80 p-2.5 rounded-r-xl my-2 text-xs italic text-ink font-medium">
               {children}
             </blockquote>
           ),
           code: ({ inline, children }) => inline ? (
-            <code className="bg-slate-900 text-yellow-300 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{children}</code>
+            <code className="bg-amber-950 text-amber-300 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{children}</code>
           ) : (
-            <pre className="bg-slate-950 text-slate-100 p-3 rounded-xl overflow-x-auto my-2 text-[11px] font-mono border border-slate-800">
+            <pre className="bg-amber-950 text-amber-50 p-3 rounded-xl overflow-x-auto my-2 text-[11px] font-mono border border-amber-800">
               <code>{children}</code>
             </pre>
           ),
           table: ({ children }) => (
-            <div className="overflow-x-auto my-2.5 rounded-xl border border-yellow-400/30">
+            <div className="overflow-x-auto my-2.5 rounded-xl border border-amber-400/30">
               <table className="w-full text-xs text-left border-collapse">{children}</table>
             </div>
           ),
-          th: ({ children }) => <th className="bg-yellow-100/70 p-2 font-black text-slate-900 border-b border-yellow-400/30 text-[10px] uppercase font-mono">{children}</th>,
-          td: ({ children }) => <td className="p-2 border-b border-slate-100 text-slate-800 font-medium">{children}</td>,
+          th: ({ children }) => <th className="bg-amber-100/70 p-2 font-black text-ink border-b border-amber-400/30 text-[10px] uppercase font-mono">{children}</th>,
+          td: ({ children }) => <td className="p-2 border-b border-amber-100 text-ink font-medium">{children}</td>,
         }}
       >
         {content}
@@ -445,15 +445,15 @@ export default function AlertsChatView() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white font-sans text-slate-900 overflow-hidden select-text relative">
+    <div className="flex-1 flex flex-col h-full bg-white font-sans text-ink overflow-hidden select-text relative">
       
       {/* Header */}
-      <div className="px-6 py-3 bg-white border-b border-yellow-400/20 flex items-center justify-between flex-none">
+      <div className="px-6 py-3 bg-white border-b border-amber-400/20 flex items-center justify-between flex-none">
         <div>
           <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
             LAW-BACKED LEGAL & THREAT COUNSEL
           </span>
-          <h2 className="text-xl font-black text-slate-950 font-sora">
+          <h2 className="text-xl font-black text-ink font-sora">
             Nayak <span className="font-serif italic font-normal text-[#b08850] pr-1">AI Counsel</span>
           </h2>
         </div>
@@ -475,14 +475,14 @@ export default function AlertsChatView() {
             <div key={m.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] sm:max-w-md rounded-2xl p-4 shadow-xs ${
                 isUser 
-                  ? 'bg-[#ffd900] text-slate-950 font-semibold border border-slate-950/10 rounded-br-none' 
-                  : 'bg-white border border-yellow-400/25 text-slate-800 rounded-bl-none'
+                  ? 'bg-[#E9BA26] text-ink font-semibold border border-amber-950/10 rounded-br-none' 
+                  : 'bg-white border border-amber-400/25 text-ink rounded-bl-none'
               }`}>
-                <div className="flex items-center justify-between gap-4 mb-1.5 pb-1 border-b border-yellow-400/10">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono flex items-center gap-1">
+                <div className="flex items-center justify-between gap-4 mb-1.5 pb-1 border-b border-amber-400/10">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-ink-soft font-mono flex items-center gap-1">
                     {isUser ? 'You' : '⚖️ Nayak AI Counsel'}
                   </span>
-                  <span className="text-[9px] font-medium text-slate-400">{m.timestamp}</span>
+                  <span className="text-[9px] font-medium text-ink-faint">{m.timestamp}</span>
                 </div>
                 
                 {isUser ? (
@@ -492,24 +492,24 @@ export default function AlertsChatView() {
                 )}
 
                 {m.proposal && (
-                  <div className="mt-3 pt-2 border-t border-yellow-400/20">
+                  <div className="mt-3 pt-2 border-t border-amber-400/20">
                     <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-wider block mb-1.5">📋 Proposed Report — needs your confirmation</span>
-                    <div className="text-[10px] text-slate-600 font-semibold space-y-0.5 mb-2">
+                    <div className="text-[10px] text-ink-soft font-semibold space-y-0.5 mb-2">
                       {m.proposal.category && <div>Category: {m.proposal.category}</div>}
                       {m.proposal.suggested_department && <div>Department: {m.proposal.suggested_department}</div>}
                       {m.proposal.severity && <div>Severity: {m.proposal.severity}</div>}
                       {m.proposal.nearby_similar_count > 0 && <div>⚠ {m.proposal.nearby_similar_count} similar report(s) near you</div>}
                     </div>
                     {m.resolved ? (
-                      <span className="text-[10px] font-bold text-slate-500">{m.resolved === 'filed' ? '✅ Filed' : 'Not filed'}</span>
+                      <span className="text-[10px] font-bold text-ink-soft">{m.resolved === 'filed' ? '✅ Filed' : 'Not filed'}</span>
                     ) : (
                       <div className="flex gap-2">
                         <button onClick={() => handleProposalDecision(m.id, true)}
-                          className="px-3 py-1.5 bg-[#ffd900] text-slate-950 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                          className="px-3 py-1.5 bg-[#E9BA26] text-ink rounded-lg text-[10px] font-bold uppercase tracking-wider">
                           File report
                         </button>
                         <button onClick={() => handleProposalDecision(m.id, false)}
-                          className="px-3 py-1.5 bg-white border border-slate-300 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                          className="px-3 py-1.5 bg-white border border-amber-200 text-ink-soft rounded-lg text-[10px] font-bold uppercase tracking-wider">
                           Not now
                         </button>
                       </div>
@@ -518,10 +518,10 @@ export default function AlertsChatView() {
                 )}
 
                 {m.citations && m.citations.length > 0 && (
-                  <div className="mt-3 pt-2 border-t border-yellow-400/20 space-y-1">
+                  <div className="mt-3 pt-2 border-t border-amber-400/20 space-y-1">
                     <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-wider block">Legal Citations:</span>
                     {m.citations.map((cite, i) => (
-                      <span key={i} className="inline-block px-2 py-0.5 bg-yellow-400/10 text-[#b08850] rounded border border-yellow-400/20 text-[9px] font-bold mr-1.5 mb-1">
+                      <span key={i} className="inline-block px-2 py-0.5 bg-amber-400/10 text-[#b08850] rounded border border-amber-400/20 text-[9px] font-bold mr-1.5 mb-1">
                         🔖 {cite}
                       </span>
                     ))}
@@ -534,8 +534,8 @@ export default function AlertsChatView() {
 
         {busy && (
           <div className="flex justify-start">
-            <div className="bg-white border border-yellow-400/20 rounded-2xl p-3 text-xs text-slate-500 font-bold flex items-center gap-2">
-              <span className="w-3.5 h-3.5 border-2 border-[#ffd900] border-t-transparent rounded-full animate-spin" />
+            <div className="bg-white border border-amber-400/20 rounded-2xl p-3 text-xs text-ink-soft font-bold flex items-center gap-2">
+              <span className="w-3.5 h-3.5 border-2 border-[#E9BA26] border-t-transparent rounded-full animate-spin" />
               Nayak AI is consulting legal rulebooks & incident DB...
             </div>
           </div>
@@ -545,7 +545,7 @@ export default function AlertsChatView() {
       </div>
 
       {/* Nayak Quick Services & Key Capabilities Bar */}
-      <div className="px-3 py-2 bg-yellow-50/90 border-t border-yellow-400/20 flex items-center gap-2 overflow-x-auto scrollbar-none flex-none select-none">
+      <div className="px-3 py-2 bg-amber-50/90 border-t border-amber-400/20 flex items-center gap-2 overflow-x-auto scrollbar-none flex-none select-none">
         <span className="text-[9px] font-black text-[#b08850] uppercase tracking-widest font-mono shrink-0 mr-1 flex items-center gap-1">
           <span>⚡</span> AI Services:
         </span>
@@ -553,11 +553,11 @@ export default function AlertsChatView() {
           <button
             key={s.id}
             onClick={() => handleServiceClick(s)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-yellow-400/30 border border-yellow-400/40 rounded-xl text-xs font-bold text-slate-900 shrink-0 shadow-2xs transition-all hover:border-[#b08850] active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-amber-400/30 border border-amber-400/40 rounded-xl text-xs font-bold text-ink shrink-0 shadow-2xs transition-all hover:border-[#b08850] active:scale-95 cursor-pointer"
           >
             <span className="text-sm">{s.icon}</span>
-            <span className="font-sora text-[10px] font-black text-slate-900">{s.label}</span>
-            <span className="text-[8px] font-extrabold text-[#b08850] bg-yellow-400/20 px-1.5 py-0.5 rounded-md uppercase font-mono">
+            <span className="font-sora text-[10px] font-black text-ink">{s.label}</span>
+            <span className="text-[8px] font-extrabold text-[#b08850] bg-amber-400/20 px-1.5 py-0.5 rounded-md uppercase font-mono">
               {s.badge}
             </span>
           </button>
@@ -565,7 +565,7 @@ export default function AlertsChatView() {
       </div>
 
       {/* Input Bar */}
-      <form onSubmit={handleSend} className="p-3 bg-white border-t border-yellow-400/20 flex items-center gap-2 flex-none">
+      <form onSubmit={handleSend} className="p-3 bg-white border-t border-amber-400/20 flex items-center gap-2 flex-none">
         <input 
           type="file"
           ref={fileInputRef}
@@ -578,7 +578,7 @@ export default function AlertsChatView() {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={busy}
-          className="p-3 bg-yellow-50 hover:bg-yellow-100 border border-yellow-400/30 text-[#b08850] rounded-xl transition-all disabled:opacity-50"
+          className="p-3 bg-amber-50 hover:bg-amber-100 border border-amber-400/30 text-[#b08850] rounded-xl transition-all disabled:opacity-50"
           title="Attach document or media"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
@@ -590,14 +590,14 @@ export default function AlertsChatView() {
           onChange={(e) => setInputText(e.target.value)}
           placeholder="Talk to Nayak AI about legal rights, digital scams, or file emergency SOS..."
           disabled={busy}
-          className="flex-1 bg-slate-50 border border-yellow-400/20 rounded-xl px-4 py-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#ffd900] font-semibold"
+          className="flex-1 bg-amber-50 border border-amber-400/20 rounded-xl px-4 py-3 text-xs text-ink placeholder-ink-faint focus:outline-none focus:border-[#E9BA26] font-semibold"
           style={{ minHeight: '44px' }}
         />
 
         <button
           type="submit"
           disabled={busy || !inputText.trim()}
-          className="p-3 bg-[#ffd900] hover:bg-yellow-400 text-slate-950 font-bold rounded-xl border border-slate-950/10 transition-all disabled:opacity-50"
+          className="p-3 bg-[#E9BA26] hover:bg-amber-400 text-ink font-bold rounded-xl border border-amber-950/10 transition-all disabled:opacity-50"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
@@ -605,33 +605,33 @@ export default function AlertsChatView() {
 
       {/* Emergency Dispatch Modal */}
       {emergencyOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-amber-950/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border-2 border-red-500 rounded-3xl p-6 w-full max-w-md space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center justify-between border-b border-amber-100 pb-3">
               <h3 className="font-black text-red-600 text-base font-sora flex items-center gap-2">
                 🚨 Direct Emergency Dispatch
               </h3>
-              <button onClick={() => setEmergencyOpen(false)} className="text-slate-400 hover:text-slate-700">
+              <button onClick={() => setEmergencyOpen(false)} className="text-ink-faint hover:text-ink-soft">
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleEmergencyDispatch} className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                <label className="text-[10px] font-bold text-ink-soft uppercase tracking-wider block mb-1">
                   Incident Category
                 </label>
                 <select
                   value={emCategory}
                   onChange={(e) => setEmCategory(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-bold text-slate-800"
+                  className="w-full bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs font-bold text-ink"
                 >
                   {EMERGENCY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                <label className="text-[10px] font-bold text-ink-soft uppercase tracking-wider block mb-1">
                   Emergency Description
                 </label>
                 <textarea
@@ -639,7 +639,7 @@ export default function AlertsChatView() {
                   value={emDescription}
                   onChange={(e) => setEmDescription(e.target.value)}
                   placeholder="State immediate danger details, address, or landmarks..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800 focus:outline-none focus:border-red-500"
+                  className="w-full bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs font-semibold text-ink focus:outline-none focus:border-red-500"
                 />
               </div>
 
@@ -647,7 +647,7 @@ export default function AlertsChatView() {
                 <button
                   type="button"
                   onClick={() => setEmergencyOpen(false)}
-                  className="px-4 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs"
+                  className="px-4 py-2.5 bg-amber-50 text-ink-soft font-bold rounded-xl text-xs"
                 >
                   Cancel
                 </button>

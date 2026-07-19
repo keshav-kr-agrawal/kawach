@@ -73,13 +73,13 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
 
   return (
     <div className="min-h-full h-full bg-white flex flex-col justify-between p-4 font-sans select-text relative">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-100/10 via-white to-white pointer-events-none opacity-60 z-0" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-100/10 via-white to-white pointer-events-none opacity-60 z-0" />
       
       {/* Top Back Nav */}
       <header className="relative z-10 w-full max-w-md mx-auto py-2">
         <button 
           onClick={onBackToHome}
-          className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white border border-yellow-400/20 rounded-xl text-xs font-bold text-slate-700 hover:bg-yellow-50 hover:border-[#b08850]/35 transition-all shadow-xs"
+          className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white border border-amber-400/20 rounded-xl text-xs font-bold text-ink-soft hover:bg-amber-50 hover:border-[#b08850]/35 transition-all shadow-xs"
           style={{ minHeight: '44px' }}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
@@ -93,17 +93,17 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full bg-white border border-yellow-400/20 rounded-3xl p-8 shadow-xs relative overflow-hidden"
+          className="w-full bg-white border border-amber-400/20 rounded-3xl p-8 shadow-xs relative overflow-hidden"
         >
           {/* Top Yellow Bar */}
-          <div className="absolute top-0 left-0 right-0 h-2 bg-[#ffd900]" />
+          <div className="absolute top-0 left-0 right-0 h-2 bg-[#E9BA26]" />
 
           {/* Icon Brand */}
           <div className="flex flex-col items-center mb-8">
             <div className="w-12 h-12 mb-4">
               <img src="/kawach.png" alt="KAWACH Logo" className="w-full h-full object-contain" />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 font-sora tracking-tight">
+            <h2 className="text-2xl font-black text-ink font-sora tracking-tight">
               {isSignUp ? (
                 <>Create <span className="font-serif italic font-normal text-[#b08850] pr-1.5">Account</span></>
               ) : (
@@ -137,11 +137,11 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-ink-soft mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <span className="absolute left-3.5 top-3.5 text-slate-400">
+                <span className="absolute left-3.5 top-3.5 text-ink-faint">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 </span>
                 <input 
@@ -149,7 +149,7 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full bg-slate-50 border border-yellow-400/20 rounded-xl pl-10 pr-4 py-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#ffd900] focus:bg-white font-semibold shadow-2xs transition-all"
+                  className="w-full bg-amber-50 border border-amber-400/20 rounded-xl pl-10 pr-4 py-3.5 text-xs text-ink placeholder-ink-faint focus:outline-none focus:border-[#E9BA26] focus:bg-white font-semibold shadow-2xs transition-all"
                   style={{ minHeight: '44px' }}
                   required
                 />
@@ -157,11 +157,11 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-ink-soft mb-2">
                 Security Password
               </label>
               <div className="relative">
-                <span className="absolute left-3.5 top-3.5 text-slate-400">
+                <span className="absolute left-3.5 top-3.5 text-ink-faint">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </span>
                 <input 
@@ -169,7 +169,7 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Min 6 characters..."
-                  className="w-full bg-slate-50 border border-yellow-400/20 rounded-xl pl-10 pr-4 py-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#ffd900] focus:bg-white font-semibold shadow-2xs transition-all"
+                  className="w-full bg-amber-50 border border-amber-400/20 rounded-xl pl-10 pr-4 py-3.5 text-xs text-ink placeholder-ink-faint focus:outline-none focus:border-[#E9BA26] focus:bg-white font-semibold shadow-2xs transition-all"
                   style={{ minHeight: '44px' }}
                   required
                 />
@@ -185,7 +185,7 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
                   setError('');
                   setMessage('');
                 }}
-                className="text-[11px] text-slate-500 hover:text-slate-800 font-bold transition-colors"
+                className="text-[11px] text-ink-soft hover:text-ink font-bold transition-colors"
               >
                 {isSignUp ? (
                   <span className="flex items-center justify-center gap-1.5">
@@ -205,16 +205,16 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
               <button 
                 type="button"
                 onClick={handleAutofill}
-                className="flex-1 py-3.5 px-4 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 py-3.5 px-4 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-xs font-bold text-ink-soft transition-colors flex items-center justify-center gap-1.5"
                 style={{ minHeight: '44px' }}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="#ffd900" strokeWidth="2.5" className="w-3.5 h-3.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg> 
+                <svg viewBox="0 0 24 24" fill="none" stroke="#E9BA26" strokeWidth="2.5" className="w-3.5 h-3.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg> 
                 Autofill
               </button>
               <button 
                 type="submit"
                 disabled={loading}
-                className="flex-2 py-3.5 px-4 bg-[#ffd900] border border-slate-950/10 hover:bg-yellow-400 text-slate-950 font-black rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs uppercase tracking-wide font-sora"
+                className="flex-2 py-3.5 px-4 bg-[#E9BA26] border border-amber-950/10 hover:bg-amber-400 text-ink font-black rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs uppercase tracking-wide font-sora"
                 style={{ minHeight: '44px' }}
               >
                 {loading ? 'Processing...' : (isSignUp ? 'Register' : 'Access Portal')} 
@@ -227,7 +227,7 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
       </main>
 
       {/* Bottom Legal Notice */}
-      <footer className="relative z-10 text-center py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+      <footer className="relative z-10 text-center py-4 text-[9px] font-bold text-ink-faint uppercase tracking-widest font-mono">
         🔐 Authenticated securely via Supabase cryptographic protocols.
       </footer>
     </div>

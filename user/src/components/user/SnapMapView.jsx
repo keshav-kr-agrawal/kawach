@@ -144,8 +144,8 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
 
   const getSnapchatStatusColor = (status) => {
     if (status === 'REPORTED_SUSPICIOUS') return '#ef4444';
-    if (status === 'PUBLIC_APPROVED') return '#ffd900';
-    return '#ffd900';
+    if (status === 'PUBLIC_APPROVED') return '#E9BA26';
+    return '#E9BA26';
   };
 
   const getSnapchatStatusLabel = (status) => {
@@ -180,7 +180,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
         <Circle
           center={defaultCenter}
           radius={300}
-          pathOptions={{ fillColor: '#ffd900', fillOpacity: 0.2, color: '#ffd900', weight: 2 }}
+          pathOptions={{ fillColor: '#E9BA26', fillOpacity: 0.2, color: '#E9BA26', weight: 2 }}
         />
 
         {/* Render Incident Pins */}
@@ -194,11 +194,11 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
           >
             <Popup>
               <div className="p-1 font-sora">
-                <h4 className="font-bold text-xs text-slate-950">{pin.title}</h4>
-                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{pin.description}</p>
+                <h4 className="font-bold text-xs text-ink">{pin.title}</h4>
+                <p className="text-[10px] text-ink-soft font-semibold mt-0.5">{pin.description}</p>
                 <button
                   onClick={() => openVideoModal(pin)}
-                  className="mt-2 w-full py-1 bg-[#ffd900] text-slate-950 font-black rounded text-[10px] uppercase"
+                  className="mt-2 w-full py-1 bg-[#E9BA26] text-ink font-black rounded text-[10px] uppercase"
                 >
                   View Stream
                 </button>
@@ -211,16 +211,16 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
 
       {/* Floating Info Banner Overlay */}
       <div className="absolute bottom-20 left-4 right-4 z-20 pointer-events-none">
-        <div className="bg-white/95 border-2 border-[#ffd900] p-3.5 rounded-2xl shadow-lg backdrop-blur-md flex items-center justify-between pointer-events-auto">
+        <div className="bg-white/95 border-2 border-[#E9BA26] p-3.5 rounded-2xl shadow-lg backdrop-blur-md flex items-center justify-between pointer-events-auto">
           <div>
             <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-wider block font-mono">
               BENGALURU SAFETY SPHERE
             </span>
-            <h4 className="font-black text-slate-950 text-xs font-sora mt-0.5">
+            <h4 className="font-black text-ink text-xs font-sora mt-0.5">
               {allPins.length} Verified Incidents Nearby
             </h4>
           </div>
-          <span className="px-2.5 py-1 bg-[#ffd900] text-slate-950 text-[10px] font-extrabold rounded-xl uppercase font-sora">
+          <span className="px-2.5 py-1 bg-[#E9BA26] text-ink text-[10px] font-extrabold rounded-xl uppercase font-sora">
             GPS Active
           </span>
         </div>
@@ -228,22 +228,22 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
 
       {/* Video Modal Overlay */}
       {selectedVideo && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border-2 border-[#ffd900] rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-2xl relative overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-amber-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-[#E9BA26] rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-2xl relative overflow-hidden">
             
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center justify-between border-b border-amber-100 pb-3">
               <div>
                 <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-wider block font-mono">
                   {getSnapchatStatusLabel(selectedVideo.status)}
                 </span>
-                <h3 className="font-black text-slate-950 text-base font-sora">{selectedVideo.title}</h3>
+                <h3 className="font-black text-ink text-base font-sora">{selectedVideo.title}</h3>
               </div>
-              <button onClick={closeVideoModal} className="text-slate-400 hover:text-slate-700 font-bold text-xs">
+              <button onClick={closeVideoModal} className="text-ink-faint hover:text-ink-soft font-bold text-xs">
                 ✕
               </button>
             </div>
 
-            <div className="w-full h-48 bg-slate-900 rounded-2xl overflow-hidden relative">
+            <div className="w-full h-48 bg-amber-950 rounded-2xl overflow-hidden relative">
               {selectedVideo.videoUrl ? (
                 <video
                   ref={mapVideoRef}
@@ -254,13 +254,13 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold">
+                <div className="w-full h-full flex items-center justify-center text-ink-faint text-xs font-bold">
                   [Stream Feed Unavailable]
                 </div>
               )}
             </div>
 
-            <p className="text-slate-600 text-xs font-semibold leading-relaxed">
+            <p className="text-ink-soft text-xs font-semibold leading-relaxed">
               {selectedVideo.description}
             </p>
 
@@ -273,7 +273,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
               </button>
               <button
                 onClick={closeVideoModal}
-                className="px-4 py-2 bg-[#ffd900] text-slate-950 font-black rounded-xl text-xs uppercase font-sora"
+                className="px-4 py-2 bg-[#E9BA26] text-ink font-black rounded-xl text-xs uppercase font-sora"
               >
                 Close
               </button>

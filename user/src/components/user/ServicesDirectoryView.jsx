@@ -144,17 +144,17 @@ export default function ServicesDirectoryView({ gpsCoords }) {
     });
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white font-sans text-slate-900 overflow-y-auto pb-24 select-text">
+    <div className="flex-1 flex flex-col h-full bg-white font-sans text-ink overflow-y-auto pb-24 select-text">
       
       {/* Editorial Header */}
-      <div className="px-6 pt-6 pb-4 bg-white border-b border-yellow-400/20">
+      <div className="px-6 pt-6 pb-4 bg-white border-b border-amber-400/20">
         <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block mb-1 font-mono">
           DIRECT EMERGENCY LINES & VERIFIED DIRECTORY
         </span>
-        <h2 className="text-2xl font-black text-slate-950 font-sora">
+        <h2 className="text-2xl font-black text-ink font-sora">
           Civic <span className="font-serif italic font-normal text-[#b08850] pr-1">Directory</span>
         </h2>
-        <p className="text-slate-500 text-xs font-semibold mt-1 leading-relaxed">
+        <p className="text-ink-soft text-xs font-semibold mt-1 leading-relaxed">
           Instant access to official state response stations and vetted private utility dispatches in your ward.
         </p>
       </div>
@@ -164,7 +164,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
         {/* 1. Core Emergency Lifelines Section */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black text-slate-950 font-sora uppercase tracking-wider flex items-center gap-1.5">
+            <h3 className="text-xs font-black text-ink font-sora uppercase tracking-wider flex items-center gap-1.5">
               <svg viewBox="0 0 24 24" fill="none" stroke="#b08850" strokeWidth="2.5" className="w-4 h-4"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
               Emergency Lifelines
             </h3>
@@ -177,24 +177,24 @@ export default function ServicesDirectoryView({ gpsCoords }) {
             {emergencyLifelines.map((line) => (
               <div 
                 key={line.phone}
-                className="bg-white border-2 border-[#ffd900] rounded-2xl p-4 flex flex-col justify-between shadow-xs hover:border-yellow-500 transition-all"
+                className="bg-white border-2 border-[#E9BA26] rounded-2xl p-4 flex flex-col justify-between shadow-xs hover:border-amber-500 transition-all"
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 bg-yellow-400/15 rounded-xl flex items-center justify-center text-[#b08850] border border-yellow-400/30">
+                    <div className="w-10 h-10 bg-amber-400/15 rounded-xl flex items-center justify-center text-[#b08850] border border-amber-400/30">
                       {line.renderIcon()}
                     </div>
-                    <span className="text-[10px] font-black font-mono bg-slate-950 text-[#ffd900] px-2.5 py-1 rounded-lg">
+                    <span className="text-[10px] font-black font-mono bg-amber-950 text-[#E9BA26] px-2.5 py-1 rounded-lg">
                       Dial {line.phone}
                     </span>
                   </div>
-                  <h4 className="font-black text-slate-950 text-sm font-sora">{line.name}</h4>
-                  <p className="text-slate-500 text-[10px] font-semibold mt-1 leading-relaxed">{line.details}</p>
+                  <h4 className="font-black text-ink text-sm font-sora">{line.name}</h4>
+                  <p className="text-ink-soft text-[10px] font-semibold mt-1 leading-relaxed">{line.details}</p>
                 </div>
 
                 <a 
                   href={`tel:${line.phone}`}
-                  className="mt-4 w-full py-2.5 bg-[#ffd900] hover:bg-yellow-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-950/10 uppercase tracking-wider font-sora transition-all"
+                  className="mt-4 w-full py-2.5 bg-[#E9BA26] hover:bg-amber-400 text-ink font-black rounded-xl text-xs flex items-center justify-center gap-2 border border-amber-950/10 uppercase tracking-wider font-sora transition-all"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                   Call Now
@@ -206,13 +206,13 @@ export default function ServicesDirectoryView({ gpsCoords }) {
 
         {/* 2. Sector Selector Tabs (Government vs Private) */}
         <section className="space-y-4">
-          <div className="bg-slate-100 p-1 rounded-2xl flex gap-1 border border-slate-200">
+          <div className="bg-amber-50 p-1 rounded-2xl flex gap-1 border border-amber-200">
             <button
               onClick={() => setActiveSector('government')}
               className={`flex-1 py-2.5 text-xs font-extrabold rounded-xl transition-all font-sora ${
                 activeSector === 'government'
-                  ? 'bg-white text-slate-950 shadow-xs border border-yellow-400/40'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white text-ink shadow-xs border border-amber-400/40'
+                  : 'text-ink-soft hover:text-ink'
               }`}
             >
               🏛️ Government & Public Units
@@ -221,8 +221,8 @@ export default function ServicesDirectoryView({ gpsCoords }) {
               onClick={() => setActiveSector('private')}
               className={`flex-1 py-2.5 text-xs font-extrabold rounded-xl transition-all font-sora ${
                 activeSector === 'private'
-                  ? 'bg-white text-slate-950 shadow-xs border border-yellow-400/40'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white text-ink shadow-xs border border-amber-400/40'
+                  : 'text-ink-soft hover:text-ink'
               }`}
             >
               🛠️ Private Vetted Operators
@@ -237,8 +237,8 @@ export default function ServicesDirectoryView({ gpsCoords }) {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                   selectedCategory === cat
-                    ? 'bg-[#ffd900] text-slate-950 border border-slate-950/10 shadow-xs'
-                    : 'bg-white border border-yellow-400/20 text-slate-600 hover:border-[#b08850]'
+                    ? 'bg-[#E9BA26] text-ink border border-amber-950/10 shadow-xs'
+                    : 'bg-white border border-amber-400/20 text-ink-soft hover:border-[#b08850]'
                 }`}
               >
                 {cat}
@@ -247,18 +247,18 @@ export default function ServicesDirectoryView({ gpsCoords }) {
           </div>
 
           {/* Sort Controls */}
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-500 px-1 pt-1">
+          <div className="flex items-center justify-between text-xs font-semibold text-ink-soft px-1 pt-1">
             <span>Showing {filteredServices.length} verified stations</span>
             <div className="flex gap-2">
               <button
                 onClick={() => setSortBy('proximity')}
-                className={`px-2 py-1 rounded-lg text-[10px] font-bold ${sortBy === 'proximity' ? 'bg-yellow-400/20 text-[#b08850]' : 'text-slate-400'}`}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold ${sortBy === 'proximity' ? 'bg-amber-400/20 text-[#b08850]' : 'text-ink-faint'}`}
               >
                 Nearest First
               </button>
               <button
                 onClick={() => setSortBy('quality')}
-                className={`px-2 py-1 rounded-lg text-[10px] font-bold ${sortBy === 'quality' ? 'bg-yellow-400/20 text-[#b08850]' : 'text-slate-400'}`}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold ${sortBy === 'quality' ? 'bg-amber-400/20 text-[#b08850]' : 'text-ink-faint'}`}
               >
                 Highest Rated
               </button>
@@ -271,19 +271,19 @@ export default function ServicesDirectoryView({ gpsCoords }) {
           {filteredServices.map((service) => (
             <div
               key={service.id}
-              className="bg-white border border-yellow-400/20 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs hover:border-[#b08850]/40 transition-all"
+              className="bg-white border border-amber-400/20 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs hover:border-[#b08850]/40 transition-all"
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h4 className="font-black text-slate-950 text-sm font-sora">{service.name}</h4>
+                  <h4 className="font-black text-ink text-sm font-sora">{service.name}</h4>
                   {service.verified && (
                     <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md uppercase">
                       Verified
                     </span>
                   )}
                 </div>
-                <p className="text-slate-500 text-xs font-semibold">{service.address}</p>
-                <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 pt-1">
+                <p className="text-ink-soft text-xs font-semibold">{service.address}</p>
+                <div className="flex items-center gap-4 text-[10px] font-bold text-ink-faint pt-1">
                   <span>📍 {service.distance} km away</span>
                   <span>⭐ {service.rating} / 5.0</span>
                   <span>{service.sector === 'government' ? 'FREE Public Service' : 'Standard Rate'}</span>
@@ -292,7 +292,7 @@ export default function ServicesDirectoryView({ gpsCoords }) {
 
               <a
                 href={`tel:${service.phone}`}
-                className="w-full sm:w-auto px-4 py-2.5 bg-yellow-50 hover:bg-[#ffd900] border border-yellow-400/40 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all font-sora shrink-0"
+                className="w-full sm:w-auto px-4 py-2.5 bg-amber-50 hover:bg-[#E9BA26] border border-amber-400/40 text-ink font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all font-sora shrink-0"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                 Call {service.phone}
