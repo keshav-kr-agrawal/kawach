@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { sendChat, getMessages, uploadMedia, linkReport, getAnonUserId } from '../../api/nayakService';
 import { uploadMediaBlob } from '../../api/mediaService';
 import { createReport, newReportId, REPORT_SOURCES } from '../../api/reportService';
@@ -7,12 +8,53 @@ import { routeReport } from '../../api/routingService';
 const EMERGENCY_CATEGORIES = ['Infrastructure', 'Violence/Loitering', 'Theft/Property', 'Traffic Warning', 'Emergency Alert'];
 const DEFAULT_COORDS = { lat: 12.9716, lng: 77.5946 }; // Bengaluru fallback
 
+function MarkdownMessage({ content }) {
+  return (
+    <div className="prose prose-xs max-w-none text-slate-800 space-y-1.5 leading-relaxed select-text font-sans">
+      <ReactMarkdown
+        components={{
+          h1: ({ children }) => <h1 className="text-sm font-black text-slate-950 font-sora mt-2.5 mb-1.5 border-b border-yellow-400/20 pb-1">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-xs font-black text-slate-900 font-sora mt-2 mb-1">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1">{children}</h3>,
+          p: ({ children }) => <p className="text-xs leading-relaxed font-semibold text-slate-800 mb-1.5 last:mb-0">{children}</p>,
+          strong: ({ children }) => <strong className="font-extrabold text-slate-950 bg-yellow-400/25 px-1 py-0.5 rounded text-[11px] font-sora">{children}</strong>,
+          em: ({ children }) => <em className="font-serif italic text-[#b08850] font-normal">{children}</em>,
+          ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-1.5 text-xs font-semibold text-slate-800">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-1.5 text-xs font-semibold text-slate-800">{children}</ol>,
+          li: ({ children }) => <li className="text-xs text-slate-800 font-semibold leading-relaxed">{children}</li>,
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-3 border-[#ffd900] bg-yellow-50/80 p-2.5 rounded-r-xl my-2 text-xs italic text-slate-800 font-medium">
+              {children}
+            </blockquote>
+          ),
+          code: ({ inline, children }) => inline ? (
+            <code className="bg-slate-900 text-yellow-300 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{children}</code>
+          ) : (
+            <pre className="bg-slate-950 text-slate-100 p-3 rounded-xl overflow-x-auto my-2 text-[11px] font-mono border border-slate-800">
+              <code>{children}</code>
+            </pre>
+          ),
+          table: ({ children }) => (
+            <div className="overflow-x-auto my-2.5 rounded-xl border border-yellow-400/30">
+              <table className="w-full text-xs text-left border-collapse">{children}</table>
+            </div>
+          ),
+          th: ({ children }) => <th className="bg-yellow-100/70 p-2 font-black text-slate-900 border-b border-yellow-400/30 text-[10px] uppercase font-mono">{children}</th>,
+          td: ({ children }) => <td className="p-2 border-b border-slate-100 text-slate-800 font-medium">{children}</td>,
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
 export default function AlertsChatView() {
   const [messages, setMessages] = useState([
     {
       id: 'msg-1',
       sender: 'bot',
-      text: "🛡️ Hello! This is your KAWACH Emergency Shield. Ask about local ward safety conditions, verify viral WhatsApp warnings, evaluate suspicious transaction calls, or verify your legal rights under Indian law.",
+      text: "⚖️ Hello! I am **Nayak AI**, your law-backed legal and public threat counsel.\n\nAsk me about:\n- **Legal Rights & Laws**: BNS, Motor Vehicles Act, CrPC provisions & police power boundaries\n- **Scam & Fraud Verification**: Digital arrest calls, counterfeit currency, WhatsApp warnings\n- **Civic Incidents**: Ward safety, emergency SOS routing & incident filings.",
       timestamp: '12:00 PM'
     }
   ]);
@@ -281,10 +323,10 @@ export default function AlertsChatView() {
       <div className="px-6 py-4 bg-white border-b border-yellow-400/20 flex items-center justify-between flex-none">
         <div>
           <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
-            INSTANT THREAT & LEGAL VERIFICATION
+            LAW-BACKED LEGAL & THREAT COUNSEL
           </span>
           <h2 className="text-xl font-black text-slate-950 font-sora">
-            Emergency <span className="font-serif italic font-normal text-[#b08850] pr-1">Shield</span>
+            Nayak <span className="font-serif italic font-normal text-[#b08850] pr-1">AI Counsel</span>
           </h2>
         </div>
 
@@ -309,13 +351,17 @@ export default function AlertsChatView() {
                   : 'bg-white border border-yellow-400/25 text-slate-800 rounded-bl-none'
               }`}>
                 <div className="flex items-center justify-between gap-4 mb-1.5 pb-1 border-b border-yellow-400/10">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono">
-                    {isUser ? 'You' : 'KAWACH Shield'}
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono flex items-center gap-1">
+                    {isUser ? 'You' : '⚖️ Nayak AI Counsel'}
                   </span>
                   <span className="text-[9px] font-medium text-slate-400">{m.timestamp}</span>
                 </div>
                 
-                <p className="text-xs leading-relaxed font-semibold whitespace-pre-wrap">{m.text}</p>
+                {isUser ? (
+                  <p className="text-xs leading-relaxed font-semibold whitespace-pre-wrap">{m.text}</p>
+                ) : (
+                  <MarkdownMessage content={m.text} />
+                )}
 
                 {m.proposal && (
                   <div className="mt-3 pt-2 border-t border-yellow-400/20">
@@ -362,7 +408,7 @@ export default function AlertsChatView() {
           <div className="flex justify-start">
             <div className="bg-white border border-yellow-400/20 rounded-2xl p-3 text-xs text-slate-500 font-bold flex items-center gap-2">
               <span className="w-3.5 h-3.5 border-2 border-[#ffd900] border-t-transparent rounded-full animate-spin" />
-              Scanning legal database & threat logs...
+              Nayak AI is consulting legal rulebooks & incident DB...
             </div>
           </div>
         )}
@@ -394,7 +440,7 @@ export default function AlertsChatView() {
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Ask a legal question or paste suspicious call info..."
+          placeholder="Talk to Nayak AI about legal rights, digital scams, or file emergency SOS..."
           disabled={busy}
           className="flex-1 bg-slate-50 border border-yellow-400/20 rounded-xl px-4 py-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#ffd900] font-semibold"
           style={{ minHeight: '44px' }}

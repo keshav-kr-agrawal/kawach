@@ -98,7 +98,7 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
     if (path.startsWith('/user/map')) return { title: 'SENTINEL MAP', subtitle: 'PII-Free Safety Grid' };
     if (path.startsWith('/user/feed')) return { title: 'INCIDENT FEED', subtitle: 'Peer-to-Peer Safety Broadcasts' };
     if (path.startsWith('/user/services')) return { title: 'CIVIC DIRECTORY', subtitle: 'Verified Helplines & Emergency Contacts' };
-    if (path.startsWith('/user/chat')) return { title: 'EMERGENCY SHIELD', subtitle: 'Warnings & Live Alerts' };
+    if (path.startsWith('/user/chat')) return { title: 'NAYAK AI COUNSEL', subtitle: 'Law-Backed Counsel & Threat Verification' };
     if (path.startsWith('/user/camera')) return { title: 'SECURE CAPTURE', subtitle: 'Anonymous Evidence Recording' };
     if (path.startsWith('/user/library')) return { title: 'CITIZEN LAW LIBRARY', subtitle: 'Know Your Legal Rights' };
     if (path.startsWith('/user/profile')) return { title: 'CITIZEN PROFILE', subtitle: 'Privacy & Report History' };
@@ -236,7 +236,7 @@ function UserLayout({ userReports }) {
     if (path.startsWith('/user/map')) return { title: 'SENTINEL GHOST MAP', subtitle: 'PII-Free Safety Grid' };
     if (path.startsWith('/user/feed')) return { title: 'LOCAL INCIDENT FEED', subtitle: 'Peer-to-Peer Broadcasts' };
     if (path.startsWith('/user/services')) return { title: 'CIVIC DIRECTORY', subtitle: 'Verified Helplines & Contacts' };
-    if (path.startsWith('/user/chat')) return { title: 'EMERGENCY SHIELD', subtitle: 'Warnings & Live Alerts' };
+    if (path.startsWith('/user/chat')) return { title: 'NAYAK AI COUNSEL', subtitle: 'Law-Backed Counsel & Threat Verification' };
     if (path.startsWith('/user/camera')) return { title: 'SECURE CAPTURE', subtitle: 'Anonymous Incident Camera' };
     if (path.startsWith('/user/library')) return { title: 'CITIZEN LAW LIBRARY', subtitle: 'Know Your Rights' };
     if (path.startsWith('/user/profile')) return { title: 'CITIZEN PROFILE', subtitle: 'Sentinel Privacy Settings' };
@@ -266,7 +266,7 @@ function UserLayout({ userReports }) {
               { id: 'map', label: 'Safety Map', path: '/user/map', icon: '🗺️' },
               { id: 'services', label: 'Civic Directory', path: '/user/services', icon: '📞' },
               { id: 'camera', label: 'Incident Capture', path: '/user/camera', icon: '📸' },
-              { id: 'chat', label: 'Emergency Shield', path: '/user/chat', icon: '💬' },
+              { id: 'chat', label: 'Nayak AI Counsel', path: '/user/chat', icon: '⚖️' },
               { id: 'feed', label: 'Incident Feed', path: '/user/feed', icon: '🧭' },
               { id: 'library', label: 'Law Library', path: '/user/library', icon: '📖' },
               { id: 'profile', label: 'My Profile', path: '/user/profile', icon: '👤' },

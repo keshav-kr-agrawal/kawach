@@ -41,7 +41,7 @@ export default function BottomNav() {
     },
     { 
       id: 'chat', 
-      label: 'Shield', 
+      label: 'Nayak', 
       path: '/user/chat',
       renderIcon: (isActive) => (
         <svg viewBox="0 0 24 24" fill={isActive ? '#09090b' : 'none'} stroke={isActive ? '#09090b' : 'rgba(9, 9, 11, 0.65)'} strokeWidth={isActive ? '2.5' : '2'} className="w-5 h-5 transition-all">
