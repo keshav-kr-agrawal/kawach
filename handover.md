@@ -2,6 +2,121 @@
 
 ---
 
+# 🔄 How KAWACH Works (A Citizen's Walkthrough Flow)
+
+## 🟢 Simple Language: How it Works (For Frontend Integration)
+
+Here is exactly how the app processes a user action, for example: **A citizen uploads a picture of a fake ₹500 note in the chat and asks if they can trust it.**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Citizen as Citizen (PWA)
+    participant Cloudinary as Cloudinary (Media Storage)
+    participant Render as Render (FastAPI Backend)
+    participant HF as HuggingFace (AI Classifier)
+    participant Supabase as Supabase (PostgreSQL)
+    participant Gemini as Google Gemini (AI Engine)
+
+    Note over Citizen: Step 1: Open PWA
+    Citizen->>Cloudinary: Step 2: Upload raw image
+    Cloudinary-->>Citizen: Return public URL (https://res.cloudinary.com/...)
+    
+    Citizen->>Render: Step 3: Send URL to /api/nayak/upload
+    Render->>HF: Step 4: Forward URL to /classify-currency
+    HF-->>Render: Step 5: Return ML verdict (Counterfeit Score, OCR checks)
+    Render->>Supabase: Step 6: Save upload metadata & ML verdict to `nayak_user_uploads`
+    Render-->>Citizen: Step 7: Return verdict response to display in Chat
+    
+    Citizen->>Render: Step 8: Send user text ("I found this at Koramangala") to /api/nayak/chat
+    Render->>Supabase: Step 9: Retrieve session history & last media upload verdict
+    Render->>Gemini: Step 10: Call Gemini API (Send message history + RAG law context + upload memory)
+    Gemini-->>Render: Step 11: Call function tool "propose_report" (scam recognized)
+    Render->>Supabase: Step 12: Check nearby area incidents using GPS coordinates
+    Render-->>Citizen: Step 13: Return chat reply + pre-filled report proposal card
+    
+    Citizen->>Supabase: Step 14: Tap "YES" to confirm report -> Insert row into `citizen_reports`
+    Citizen->>Render: Step 15: Link image to the filed report (POST /api/nayak/uploads/.../link-report)
+```
+
+### The Step-by-Step Walkthrough
+
+1. **Citizen opens the app:** The browser loads the pre-built React app from **Vercel** (`kawach-two.vercel.app`). Vercel's job is done here; all subsequent operations are direct API calls from the user's browser.
+2. **Citizen uploads a photo:** When the user taps the paperclip icon in the Nayak chat and picks an image, the browser uploads the raw bytes **directly to Cloudinary**. Cloudinary returns a public image URL.
+3. **URL sent to Backend:** The browser sends that public URL to our Python backend on **Render** (`https://kawach-police.onrender.com/api/nayak/upload`).
+4. **Backend calls AI Classifier:** Render fetches the image and passes it to the **Hugging Face** Space microservice.
+5. **AI Model Runs:** The Hugging Face server runs the custom trained **EfficientNet** neural network and classical CV checks (security thread continuity, serial number ascending checks). It returns a raw JSON verdict and immediately discards the image (no storage).
+6. **Verdict Saved:** Render writes the verdict into **Supabase** under the `nayak_user_uploads` table, linking this session, the image URL, and the classification result.
+7. **Verdict Displayed:** Render replies to the browser, and the chat UI displays a message card (e.g., "❌ FLAGGED SUSPICIOUS").
+8. **Citizen asks a question:** The citizen types a reply ("I found this at Koramangala market"). The browser sends this to Render via `POST /api/nayak/chat`.
+9. **Memory Retrieval:** Render loads the user's chat history plus the last media upload verdict from Supabase.
+10. **Gemini Decides:** Render sends this compiled context (history + upload memory) to the **Google Gemini API**. Gemini notices that this is a scam attempt and calls our local `propose_report` function tool.
+11. **Report Proposal Enriched:** Render intercepts the tool call, searches Supabase for other incidents nearby (`get_area_incidents`), assigns a civic department, and sends a draft report back to the user's chat.
+12. **Citizen Confirms:** The citizen sees a yellow card saying "File Report?". Tapping "YES" makes the browser write a new record directly into the `citizen_reports` table in **Supabase**.
+13. **Upload Linked:** The browser tells Render to link the original photo to the new report (`/api/nayak/uploads/{uploadId}/link-report`).
+14. **Dashboard Update:** The new report immediately populates the municipal or police dashboard reading from Supabase.
+
+---
+
+## 🛠️ Technical Details & System Flow Specifications
+
+### 📡 1. Media Upload & Forensic Scan Pipeline (`POST /api/nayak/upload`)
+* **Endpoint:** `POST https://kawach-police.onrender.com/api/nayak/upload`
+* **Request Schema:**
+  ```json
+  {
+    "media_url": "https://res.cloudinary.com/.../img.jpg",
+    "media_type": "image", // 'image' or 'video'
+    "session_id": "3c9f778a-d9dd-47fe-884d-2bf8aae3c839"
+  }
+  ```
+* **Processing:**
+  1. If `media_type` is `"image"`, the backend forwards the binary stream to `https://hikity-kawach-classifier.hf.space/classify-currency`.
+  2. If `media_type` is `"video"`, it forwards to `https://hikity-kawach-classifier.hf.space/classify`.
+  3. The response is saved in the `nayak_user_uploads` table:
+     ```json
+     {
+       "id": "upload-uuid",
+       "session_id": "session-uuid",
+       "media_url": "url",
+       "media_type": "image",
+       "classifier_verdict": {
+         "is_authenticated": false,
+         "score": 12.5,
+         "verdict": "SUSPECT_FEATURES",
+         "details": "Currency screening: SUSPECT_FEATURES. Security thread broken; microprint blurry"
+       }
+     }
+     ```
+
+### 💬 2. Nayak Conversational Agent Pipeline (`POST /api/nayak/chat`)
+* **Endpoint:** `POST https://kawach-police.onrender.com/api/nayak/chat`
+* **Request Schema:**
+  ```json
+  {
+    "session_id": "session-uuid-or-null",
+    "message": "User text input",
+    "lat": 12.9716,
+    "lng": 77.5946
+  }
+  ```
+* **Agent Memory Assembly:**
+  1. Retrieve message history from table `nayak_messages` sorted by `created_at` ascending.
+  2. Query `nayak_user_uploads` for the most recent upload in this session. Assemble an `uploads_context` string.
+  3. Inject `uploads_context` and GPS location into Gemini system instructions.
+  4. Call `gemini-1.5-flash` with the history payload, system prompt, and the `tools_manifest` (search_law, check_link, classify_text, get_area_incidents, propose_report).
+  5. If Gemini invokes `propose_report`, local backend code calls `enrich_proposal` to look up nearby incidents (`get_area_incidents`), auto-selects the department (e.g. `POLICE`, `FIRE`), sets priority severity, and embeds the reference `upload_id`.
+  6. Gemini processes the tool outputs and generates its final conversational response.
+
+### 📝 3. Direct Report Submission (`supabase-js`)
+* **File:** `user/src/api/reportService.js`
+* **Action:** The frontend inserts directly into Supabase `citizen_reports` using the Anon Key.
+* **Fields:** `category`, `description`, `latitude`, `longitude`, `media_url`, `media_type`, `priority`, `routed_department`, `status: 'OPEN'`, `source: 'nayak_chat'`.
+* **Link Call:** Once the row is inserted, the frontend triggers `POST /api/nayak/uploads/{uploadId}/link-report` to complete the chain of custody link in the database.
+
+---
+
+
 ## 📌 Executive Summary
 
 **KAWACH** is an enterprise-grade, multi-tenant public safety grid, digital fraud defense ecosystem, and geospatial threat intelligence platform. Built for Indian Public Safety (targeting both AI-driven crime analytics and digital public safety challenges), KAWACH bridges the critical gap between citizens, law enforcement agencies, and municipal civic departments.
