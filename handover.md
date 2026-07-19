@@ -56,7 +56,24 @@ sequenceDiagram
 13. **Upload Linked:** The browser tells Render to link the original photo to the new report (`/api/nayak/uploads/{uploadId}/link-report`).
 14. **Dashboard Update:** The new report immediately populates the municipal or police dashboard reading from Supabase.
 
+
 ---
+
+## 🌐 Hosting & Services Inventory
+
+Here is the exact distribution of components across the platforms used, how they interact, and their links:
+
+| Platform / Service | Component Hosted | Role in Flow of Usage | Exact Links & Details |
+| :--- | :--- | :--- | :--- |
+| **Vercel** | • Citizen PWA Frontend (`user/`) <br>• Police Console Frontend (`police/frontend/`) | • Serves the static HTML/CSS/JS assets to the user's browser.<br>• Communicates directly with Supabase, Cloudinary, and the Render backend via API requests. | • Citizen App: [kawach-two.vercel.app](https://kawach-two.vercel.app/) <br>• Repos connected to Vercel auto-deploys. |
+| **Render** | • Police Command Backend (`police/backend/`) | • Python / FastAPI app handling backend orchestration.<br>• Connects to Supabase Database.<br>• Runs the Nayak conversational agent loop and handles PDF dossier generation. | • Base URL: [kawach-police.onrender.com](https://kawach-police.onrender.com) <br>• Swagger API Docs: [kawach-police.onrender.com/docs](https://kawach-police.onrender.com/docs) <br>• Admin Debug: [/api/nayak/_debug_env](https://kawach-police.onrender.com/api/nayak/_debug_env) |
+| **Hugging Face** | • AI Classifier Microservice (`Classifier/`) | • Multi-modal forensic scanning microservice.<br>• Runs PyTorch CNNs for currency checks and video/audio deepfake diagnostics.<br>• Accepts media URLs, processes them, and returns JSON verdicts. | • Space API: [hikity-kawach-classifier.hf.space](https://hikity-kawach-classifier.hf.space) <br>• Currency Endpoint: `POST /classify-currency` <br>• Video/Audio Endpoint: `POST /classify` |
+| **Supabase** | • PostgreSQL Database <br>• RAG Rulebook Tables <br>• Realtime updates listener | • Central database holding reports (`citizen_reports`), chat logs (`nayak_messages`), and the 3,974 legal rulebook chunks (`nayak_law_chunks`).<br>• Frontend reads/writes reports directly from the Supabase Client SDK. | • API Host: `https://jlqelkrfeksixxfkulwf.supabase.co` <br>• Table schema is fully automated (additive migrations on backend boot). |
+| **Cloudinary** | • Secure Media Storage CDN | • Accepts raw media uploads directly from the user's browser via unsigned presets.<br>• Returns permanent URLs which are then passed to the backend for AI analysis. | • Cloud Name: `kijqhnss` <br>• Upload Preset: `kawach_preset` <br>• Direct URL structure: `https://res.cloudinary.com/kijqhnss/...` |
+| **Google Gemini API** | • Generative AI & Tool calling | • Generates citation-backed advice based on search inputs.<br>• Uses function calling to invoke local backend tool routines (e.g. `propose_report` / `search_law`). | • Model: `gemini-1.5-flash` <br>• API Endpoint: `generativelanguage.googleapis.com` |
+
+---
+
 
 ## 🛠️ Technical Details & System Flow Specifications
 
