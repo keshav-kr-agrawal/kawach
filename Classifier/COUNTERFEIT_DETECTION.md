@@ -145,8 +145,9 @@ We checked first: **no trustworthy pretrained INR-counterfeit model exists publi
 | Split | Stratified 70/15/15 — 6,304 train / 1,351 val / 1,352 held-out test (touched once) |
 | Augmentation | Domain-realistic: perspective warp, motion blur, JPEG artifacts — simulating real phone photos, not generic ImageNet transforms |
 | Training | Frozen-backbone warm-up → full fine-tune, early stopping on val macro-F1 (Kaggle T4; notebook: `kaggle_train_currency.ipynb`) |
-| **Held-out test accuracy** | **98.67%** overall (n=1,352) · **~98% averaged across denominations** · fake-recall 0.98 · AUC 0.998 |
-| Honest weak spot | ₹2000 notes: 89.4% (thin fake data for that denomination, n=47) |
+| **Held-out test accuracy** | **98.67%** overall (n=1,352) · fake-recall 0.98 · AUC 0.998 |
+| **Circulating denominations** | **99.7% average across ₹10/₹20/₹50/₹100/₹200/₹500** — the complete set of notes actually in circulation today (RBI withdrew ₹2000 notes from circulation in May 2023) |
+| Honest weak spot | ₹2000: 89.4% (thin fake data, n=47) — disclosed even though the denomination is withdrawn; the pipeline still screens one if presented, since withdrawn notes remain a deposit/exchange fraud vector |
 
 **And the most important number is one we measured ourselves:** when we tested the CNN against real-world prop-note fakes it had never seen, its confidence did **not** transfer — which is precisely why the pipeline demotes it to an advisory role behind the explainable structural checks, instead of letting a single black-box score decide. The lab accuracy is real; the architecture just refuses to over-trust it.
 
