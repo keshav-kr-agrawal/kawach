@@ -13,12 +13,11 @@ from app.routes.nayak_rag import retrieve_law_chunks, get_embedding
 
 router = APIRouter()
 
-# "gemini-2.5-flash" is blocked for accounts created after Google's cutoff
-# (confirmed 2026-07-19: this key gets a 404 "no longer available to new
-# users" on both 2.5-flash and 2.5-flash-lite). "gemini-flash-latest" is
-# Google's self-updating alias — always resolves to a current, non-deprecated
-# flash model, so this never needs touching again as models rotate.
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
+# "gemini-flash-latest" resolves to gemini-3.5-flash which only has 20 req/day
+# on the free tier — exhausted instantly during testing (confirmed 2026-07-19).
+# "gemini-1.5-flash" has 1,500 req/day on the free tier and full function-calling
+# support. Override via GEMINI_MODEL env var on Render if needed.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
 
 
 @router.get("/_debug_env")
