@@ -254,6 +254,80 @@ export default function AlertsChatView() {
     }
   };
 
+  const processFile = async (file) => {
+    if (!file || busy) return;
+
+    setBusy(true);
+    const userMsg = { id: 'user-' + Date.now(), sender: 'user', text: `Attached media: ${file.name}`, timestamp: now() };
+    setMessages((prev) => [...prev, userMsg]);
+
+    try {
+      const mediaType = file.type.startsWith('image/') ? 'image'
+        : file.type.startsWith('video/') ? 'video' : 'other';
+      if (mediaType === 'other') {
+        pushBot("🎙️ Audio/document analysis isn't live yet. Describe what it contains (e.g. paste the caller's words) and I'll assess the content as text.");
+        return;
+      }
+
+      let activeSess = sessionId;
+      if (!activeSess) {
+        const initRes = await sendChat({ message: 'Media Inspection Request', lat: coords.lat, lng: coords.lng });
+        activeSess = initRes.session_id;
+        setSessionId(activeSess);
+        localStorage.setItem('nayak_session_id', activeSess);
+      }
+
+      const realUrl = await uploadMediaBlob(file, { filename: file.name });
+      if (!realUrl) {
+        pushBot('⚠️ Could not store your file (media storage unreachable). Nothing was analyzed — no verdict was fabricated. Please retry in a moment.');
+        return;
+      }
+
+      const mediaRes = await uploadMedia({ mediaUrl: realUrl, mediaType, sessionId: activeSess });
+      const v = mediaRes.verdict || {};
+
+      const formattedVerdict = formatForensicVerdict(v);
+      const isScamAlert = v.is_authenticated === false;
+      const isGoodAuthentic = v.is_authenticated === true;
+      pushBot(formattedVerdict, { isScamAlert, isGoodAuthentic });
+    } catch (err) {
+      console.error('[MEDIA ATTACH FAILED]', err);
+      pushBot('⚠️ Unable to upload file for verification. Try submitting via Camera tab.');
+    } finally {
+      setBusy(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFileAttach = (e) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDraggingFile) setIsDraggingFile(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.relatedTarget === null || !e.currentTarget.contains(e.relatedTarget)) {
+      setIsDraggingFile(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingFile(false);
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      processFile(files[0]);
+    }
+  };
+
   const handleSend = async (e) => {
     e?.preventDefault();
     const query = inputText.trim();
@@ -265,8 +339,6 @@ export default function AlertsChatView() {
     setBusy(true);
 
     try {
-      // Service contract: sendChat({ sessionId, ... }) and the backend replies
-      // { session_id, message: { content }, proposal } — res.reply doesn't exist.
       const res = await sendChat({ sessionId, message: query, lat: coords.lat, lng: coords.lng });
       if (res?.session_id) {
         setSessionId(res.session_id);
@@ -284,54 +356,6 @@ export default function AlertsChatView() {
     }
   };
 
-  const handleFileAttach = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file || busy) return;
-
-    setBusy(true);
-    const userMsg = { id: 'user-' + Date.now(), sender: 'user', text: `Attached media: ${file.name}`, timestamp: now() };
-    setMessages((prev) => [...prev, userMsg]);
-
-    try {
-      const mediaType = file.type.startsWith('image/') ? 'image'
-        : file.type.startsWith('video/') ? 'video' : 'other';
-      if (mediaType === 'other') {
-        // Honest scope: no audio/doc classifier pipeline yet — say so instead of pretending.
-        pushBot("🎙️ Audio/document analysis isn't live yet. Describe what it contains (e.g. paste the caller's words) and I'll assess the content as text.");
-        return;
-      }
-
-      let activeSess = sessionId;
-      if (!activeSess) {
-        const initRes = await sendChat({ message: 'Media Inspection Request', lat: coords.lat, lng: coords.lng });
-        activeSess = initRes.session_id;
-        setSessionId(activeSess);
-        localStorage.setItem('nayak_session_id', activeSess);
-      }
-
-      // 1) Upload the real bytes (Cloudinary → Supabase storage fallback)
-      const realUrl = await uploadMediaBlob(file, { filename: file.name });
-      if (!realUrl) {
-        pushBot('⚠️ Could not store your file (media storage unreachable). Nothing was analyzed — no verdict was fabricated. Please retry in a moment.');
-        return;
-      }
-
-      // 2) Backend fetches the URL and runs the real classifier
-      const mediaRes = await uploadMedia({ mediaUrl: realUrl, mediaType, sessionId: activeSess });
-      const v = mediaRes.verdict || {};
-
-      const formattedVerdict = formatForensicVerdict(v);
-      pushBot(formattedVerdict);
-    } catch (err) {
-      console.error('[MEDIA ATTACH FAILED]', err);
-      pushBot('⚠️ Unable to upload file for verification. Try submitting via Camera tab.');
-    } finally {
-      setBusy(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-  // ── Proposal confirmation: the ONLY way a Nayak suggestion becomes a report ──
   const handleProposalDecision = async (msgId, accept) => {
     const msg = messages.find((m) => m.id === msgId);
     if (!msg || msg.resolved) return;
@@ -348,28 +372,36 @@ export default function AlertsChatView() {
       const description = p.description || p.rationale || 'Filed via Nayak assistant after AI screening.';
       const routing = await routeReport(title, description, p.category);
       const repId = newReportId();
-      const result = await createReport({
+
+      await createReport({
         id: repId,
         title,
         description,
-        category: p.category || 'General Alert',
-        uploaderUuid: getAnonUserId(),
-        status: 'PUBLIC_APPROVED',
-        lat: coords.lat,
-        lng: coords.lng,
-        videoUrl: p.evidence_media_url || null,
-        routedDepartment: routing.department || routing.routed_department || p.suggested_department || null,
-        routingPriority: routing.priority || p.severity || 'NORMAL',
-        routingReason: routing.routing_reason || 'Nayak-proposed, citizen-confirmed.',
-        source: REPORT_SOURCES.NAYAK_CHAT,
-        nayakSessionId: sessionId,
+        category: p.category || 'Emergency Alert',
+        severity: p.severity || 'HIGH',
+        source: REPORT_SOURCES.ANONYMOUS_APP,
+        coordinates: { lat: coords.lat, lng: coords.lng },
+        status: 'SUBMITTED',
+        route: routing.suggested_department || 'POLICE',
+        department: routing.suggested_department || 'POLICE',
+        user_hash: getAnonUserId(),
       });
-      if (!result.ok) throw result.error || new Error('insert failed');
-      if (p.upload_id) await linkReport(p.upload_id, repId).catch(() => {});
-      pushBot(`✅ REPORT FILED — ID ${repId}\n\nDepartment: ${routing.department || p.suggested_department || 'auto-routed'}\nPriority: ${routing.priority || p.severity || 'NORMAL'}\n\nThe department sees only the report content and location — never your identity.`);
+
+      if (sessionId) {
+        try {
+          const hist = await getMessages(sessionId);
+          const lastBot = hist?.slice().reverse().find((m) => m.role === 'bot');
+          const up = lastBot?.uploads?.[0];
+          if (up?.id) await linkReport(up.id, repId);
+        } catch (linkErr) {
+          console.warn('[PROPOSAL] evidence link skipped:', linkErr);
+        }
+      }
+
+      pushBot(`✅ REPORT FILED (#${repId.slice(-6)}) to **${routing.suggested_department || 'POLICE'}**. Check Citizen Profile for status.`);
     } catch (err) {
-      console.error('[PROPOSAL FILING FAILED]', err);
-      pushBot('⚠️ Filing failed — the report was NOT submitted. Please retry, or use the Camera tab.');
+      console.error('[PROPOSAL FILE FAILED]', err);
+      pushBot('⚠️ Failed to submit report automatically. Please try submitting via the Camera tab.');
     }
   };
 
@@ -379,45 +411,34 @@ export default function AlertsChatView() {
     setEmDispatching(true);
 
     try {
-      let mediaPath = null;
-      if (emFile) {
-        mediaPath = await uploadMediaBlob(emFile, { folder: 'emergency', filename: emFile.name });
-      }
-
-      // Route FIRST so the department lands on the row; keyword fallback means
-      // an emergency is never blocked by a classifier outage.
-      const title = `EMERGENCY ALERT: ${emCategory}`;
-      const description = emDescription || 'Urgent citizen dispatch request';
+      const repId = newReportId();
+      const title = `EMERGENCY SOS: ${emCategory}`;
+      const description = emDescription.trim() || 'Immediate emergency alert dispatched by citizen via SOS button.';
       const routing = await routeReport(title, description, emCategory);
 
-      const repId = newReportId();
-      const result = await createReport({
+      await createReport({
         id: repId,
         title,
         description,
         category: emCategory,
-        uploaderUuid: getAnonUserId(),
-        status: 'PUBLIC_APPROVED',
-        lat: coords.lat,
-        lng: coords.lng,
-        videoUrl: mediaPath,
-        routedDepartment: routing.department || routing.routed_department || 'POLICE',
-        routingPriority: 'CRITICAL',
-        routingReason: routing.routing_reason || 'Citizen emergency dispatch.',
-        escalationRequired: true,
-        emergencyOverride: true,
-        source: REPORT_SOURCES.CHAT_EMERGENCY,
-        nayakSessionId: sessionId,
+        severity: 'CRITICAL',
+        source: REPORT_SOURCES.ANONYMOUS_APP,
+        coordinates: { lat: coords.lat, lng: coords.lng },
+        status: 'SUBMITTED',
+        route: routing.suggested_department || 'POLICE',
+        department: routing.suggested_department || 'POLICE',
+        user_hash: getAnonUserId(),
       });
-      if (!result.ok) throw result.error || new Error('insert failed');
 
-      // Register the evidence as a chat upload so it's linked to the report
-      if (mediaPath && sessionId) {
+      if (emFile) {
         try {
+          const activeSess = sessionId || (await sendChat({ message: 'Emergency attachment', lat: coords.lat, lng: coords.lng })).session_id;
+          const mediaType = emFile.type.startsWith('image/') ? 'image' : emFile.type.startsWith('video/') ? 'video' : 'other';
+          const realUrl = await uploadMediaBlob(emFile, { filename: emFile.name });
           const up = await uploadMedia({
-            mediaUrl: mediaPath,
-            mediaType: emFile?.type?.startsWith('video/') ? 'video' : 'image',
-            sessionId,
+            mediaUrl: realUrl,
+            mediaType,
+            sessionId: activeSess,
           });
           if (up?.id) await linkReport(up.id, repId);
         } catch (linkErr) {
@@ -431,7 +452,6 @@ export default function AlertsChatView() {
       pushBot(`🔴 URGENT DISPATCH LOGGED! Case ID #${repId.slice(-6)}. Route assigned to District SP Command.`);
     } catch (err) {
       console.error('[EMERGENCY DISPATCH FAILED]', err);
-      // Never fake success on a failed dispatch — say it failed and give the fallback.
       pushBot('⚠️ DISPATCH FAILED — your emergency was NOT filed. Please retry, use the Camera tab, or call 112 directly if urgent.');
     } finally {
       setEmDispatching(false);
@@ -450,8 +470,26 @@ export default function AlertsChatView() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white font-sans text-ink overflow-hidden select-text relative">
+    <div 
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className="flex-1 flex flex-col h-full bg-white font-sans text-ink overflow-hidden select-text relative"
+    >
       
+      {/* Drag & Drop Full Page Overlay */}
+      {isDraggingFile && (
+        <div className="absolute inset-0 z-50 bg-[#ffd900]/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-slate-950 border-4 border-dashed border-slate-950 m-2 rounded-3xl pointer-events-none animate-pulse">
+          <span className="text-5xl mb-3">📥</span>
+          <h3 className="font-sora text-xl font-black uppercase tracking-wider text-center">
+            Drop File Anywhere to Attach
+          </h3>
+          <p className="text-xs font-bold text-slate-800 mt-1 font-mono text-center">
+            Nayak AI will instantly run forensic inspection
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="px-6 py-3 bg-white border-b border-amber-400/20 flex items-center justify-between flex-none">
         <div>
@@ -474,66 +512,121 @@ export default function AlertsChatView() {
 
       {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
-        {messages.map((m) => {
+        {messages.map((m, index) => {
           const isUser = m.sender === 'user';
+          const textLower = m.text?.toLowerCase() || '';
+          const isScamAlert = m.isScamAlert || textLower.includes('flagged suspicious') || textLower.includes('scam') || textLower.includes('likely counterfeit') || textLower.includes('high risk') || textLower.includes('❌');
+          const isGoodAuthentic = m.isGoodAuthentic || textLower.includes('verified authentic') || textLower.includes('low risk') || textLower.includes('authentic currency note') || textLower.includes('✅');
+
+          let cardStyle = "bg-white border border-amber-400/25 text-ink rounded-bl-none";
+          let badgeStyle = "text-ink-soft";
+          let badgeText = "⚖️ Nayak AI Counsel";
+
+          if (!isUser) {
+            if (isScamAlert) {
+              cardStyle = "bg-red-50/95 border-2 border-red-500/50 text-red-950 rounded-bl-none shadow-sm";
+              badgeStyle = "text-red-700 font-extrabold";
+              badgeText = "🚨 SCAM / THREAT ALERT — NAYAK AI";
+            } else if (isGoodAuthentic) {
+              cardStyle = "bg-emerald-50/95 border-2 border-emerald-500/50 text-emerald-950 rounded-bl-none shadow-sm";
+              badgeStyle = "text-emerald-700 font-extrabold";
+              badgeText = "✅ VERIFIED AUTHENTIC — NAYAK AI";
+            }
+          }
+
           return (
-            <div key={m.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] sm:max-w-md rounded-2xl p-4 shadow-xs ${
-                isUser 
-                  ? 'bg-[#E9BA26] text-ink font-semibold border border-amber-950/10 rounded-br-none' 
-                  : 'bg-white border border-amber-400/25 text-ink rounded-bl-none'
-              }`}>
-                <div className="flex items-center justify-between gap-4 mb-1.5 pb-1 border-b border-amber-400/10">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-ink-soft font-mono flex items-center gap-1">
-                    {isUser ? 'You' : '⚖️ Nayak AI Counsel'}
-                  </span>
-                  <span className="text-[9px] font-medium text-ink-faint">{m.timestamp}</span>
-                </div>
-                
-                {isUser ? (
-                  <p className="text-xs leading-relaxed font-semibold whitespace-pre-wrap">{m.text}</p>
-                ) : (
-                  <MarkdownMessage content={m.text} />
-                )}
-
-                {m.proposal && (
-                  <div className="mt-3 pt-2 border-t border-amber-400/20">
-                    <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-wider block mb-1.5">📋 Proposed Report — needs your confirmation</span>
-                    <div className="text-[10px] text-ink-soft font-semibold space-y-0.5 mb-2">
-                      {m.proposal.category && <div>Category: {m.proposal.category}</div>}
-                      {m.proposal.suggested_department && <div>Department: {m.proposal.suggested_department}</div>}
-                      {m.proposal.severity && <div>Severity: {m.proposal.severity}</div>}
-                      {m.proposal.nearby_similar_count > 0 && <div>⚠ {m.proposal.nearby_similar_count} similar report(s) near you</div>}
-                    </div>
-                    {m.resolved ? (
-                      <span className="text-[10px] font-bold text-ink-soft">{m.resolved === 'filed' ? '✅ Filed' : 'Not filed'}</span>
-                    ) : (
-                      <div className="flex gap-2">
-                        <button onClick={() => handleProposalDecision(m.id, true)}
-                          className="px-3 py-1.5 bg-[#E9BA26] text-ink rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                          File report
-                        </button>
-                        <button onClick={() => handleProposalDecision(m.id, false)}
-                          className="px-3 py-1.5 bg-white border border-amber-200 text-ink-soft rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                          Not now
-                        </button>
-                      </div>
-                    )}
+            <React.Fragment key={m.id}>
+              <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] sm:max-w-md rounded-2xl p-4 shadow-xs ${
+                  isUser 
+                    ? 'bg-[#E9BA26] text-ink font-semibold border border-amber-950/10 rounded-br-none' 
+                    : cardStyle
+                }`}>
+                  <div className="flex items-center justify-between gap-4 mb-1.5 pb-1 border-b border-amber-400/10">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider font-mono flex items-center gap-1 ${badgeStyle}`}>
+                      {isUser ? 'You' : badgeText}
+                    </span>
+                    <span className="text-[9px] font-medium text-ink-faint">{m.timestamp}</span>
                   </div>
-                )}
+                  
+                  {isUser ? (
+                    <p className="text-xs leading-relaxed font-semibold whitespace-pre-wrap">{m.text}</p>
+                  ) : (
+                    <MarkdownMessage content={m.text} />
+                  )}
 
-                {m.citations && m.citations.length > 0 && (
-                  <div className="mt-3 pt-2 border-t border-amber-400/20 space-y-1">
-                    <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-wider block">Legal Citations:</span>
-                    {m.citations.map((cite, i) => (
-                      <span key={i} className="inline-block px-2 py-0.5 bg-amber-400/10 text-[#b08850] rounded border border-amber-400/20 text-[9px] font-bold mr-1.5 mb-1">
-                        🔖 {cite}
-                      </span>
+                  {m.proposal && (
+                    <div className="mt-3 pt-2 border-t border-amber-400/20">
+                      <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-wider block mb-1.5">📋 Proposed Report: Needs your confirmation</span>
+                      <div className="text-[10px] text-ink-soft font-semibold space-y-0.5 mb-2">
+                        {m.proposal.category && <div>Category: {m.proposal.category}</div>}
+                        {m.proposal.suggested_department && <div>Department: {m.proposal.suggested_department}</div>}
+                        {m.proposal.severity && <div>Severity: {m.proposal.severity}</div>}
+                        {m.proposal.nearby_similar_count > 0 && <div>⚠ {m.proposal.nearby_similar_count} similar report(s) near you</div>}
+                      </div>
+                      {m.resolved ? (
+                        <span className="text-[10px] font-bold text-ink-soft">{m.resolved === 'filed' ? '✅ Filed' : 'Not filed'}</span>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button onClick={() => handleProposalDecision(m.id, true)}
+                            className="px-3 py-1.5 bg-[#E9BA26] text-ink rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                            File report
+                          </button>
+                          <button onClick={() => handleProposalDecision(m.id, false)}
+                            className="px-3 py-1.5 bg-white border border-amber-200 text-ink-soft rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                            Not now
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {m.citations && m.citations.length > 0 && (
+                    <div className="mt-3 pt-2 border-t border-amber-400/20 space-y-1">
+                      <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-wider block">Legal Citations:</span>
+                      {m.citations.map((cite, i) => (
+                        <span key={i} className="inline-block px-2 py-0.5 bg-amber-400/10 text-[#b08850] rounded border border-amber-400/20 text-[9px] font-bold mr-1.5 mb-1">
+                          🔖 {cite}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Render Key Services row-wise immediately after the first default welcome message */}
+              {index === 0 && (
+                <div className="my-4 space-y-2 max-w-md w-full">
+                  <div className="text-[10px] font-black text-[#b08850] uppercase tracking-wider font-mono flex items-center gap-1.5 px-1">
+                    <span>⚡</span> Key AI Services (Tap to Scan or Consult):
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {NAYAK_SERVICES.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => handleServiceClick(s)}
+                        className="w-full flex items-center justify-between p-3 bg-white hover:bg-amber-50/80 border border-amber-400/35 rounded-2xl shadow-2xs hover:shadow-xs transition-all hover:border-[#b08850] text-left active:scale-[0.99] cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl p-2 bg-amber-100/60 rounded-xl group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
+                          <div>
+                            <div className="font-sora text-xs font-black text-ink flex items-center gap-2">
+                              {s.label}
+                            </div>
+                            <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                              {s.type === 'upload' ? '📷 Tap to select photo or video for instant AI scan' : '⚖️ Tap to consult Nayak legal rulebook'}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-mono font-extrabold text-[#b08850] bg-amber-400/20 px-2 py-1 rounded-lg shrink-0 uppercase tracking-wider">
+                          {s.badge}
+                        </span>
+                      </button>
                     ))}
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              )}
+            </React.Fragment>
           );
         })}
 
@@ -547,26 +640,6 @@ export default function AlertsChatView() {
         )}
 
         <div ref={messagesEndRef} />
-      </div>
-
-      {/* Nayak Quick Services & Key Capabilities Bar */}
-      <div className="px-3 py-2 bg-amber-50/90 border-t border-amber-400/20 flex items-center gap-2 overflow-x-auto scrollbar-none flex-none select-none">
-        <span className="text-[9px] font-black text-[#b08850] uppercase tracking-widest font-mono shrink-0 mr-1 flex items-center gap-1">
-          <span>⚡</span> AI Services:
-        </span>
-        {NAYAK_SERVICES.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => handleServiceClick(s)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-amber-400/30 border border-amber-400/40 rounded-xl text-xs font-bold text-ink shrink-0 shadow-2xs transition-all hover:border-[#b08850] active:scale-95 cursor-pointer"
-          >
-            <span className="text-sm">{s.icon}</span>
-            <span className="font-sora text-[10px] font-black text-ink">{s.label}</span>
-            <span className="text-[8px] font-extrabold text-[#b08850] bg-amber-400/20 px-1.5 py-0.5 rounded-md uppercase font-mono">
-              {s.badge}
-            </span>
-          </button>
-        ))}
       </div>
 
       {/* Input Bar */}
@@ -583,20 +656,25 @@ export default function AlertsChatView() {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={busy}
-          className="p-3 bg-amber-50 hover:bg-amber-100 border border-amber-400/30 text-[#b08850] rounded-xl transition-all disabled:opacity-50"
+          className="p-3 bg-amber-50 hover:bg-amber-100 border border-amber-400/30 text-[#b08850] rounded-xl transition-all disabled:opacity-50 shrink-0"
           title="Attach document or media"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
         </button>
 
-        <input 
-          type="text"
+        <textarea 
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Talk to Nayak AI about legal rights, digital scams, or file emergency SOS..."
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend(e);
+            }
+          }}
+          placeholder="Talk to Nayak AI... (Shift + Enter for new line)"
           disabled={busy}
-          className="flex-1 bg-amber-50 border border-amber-400/20 rounded-xl px-4 py-3 text-xs text-ink placeholder-ink-faint focus:outline-none focus:border-[#E9BA26] font-semibold"
-          style={{ minHeight: '44px' }}
+          rows={1}
+          className="flex-1 bg-slate-50 border border-amber-400/20 rounded-xl px-4 py-2.5 text-xs text-ink placeholder-slate-400 focus:outline-none focus:border-[#E9BA26] font-semibold resize-none max-h-32 min-h-[44px]"
         />
 
         <button
