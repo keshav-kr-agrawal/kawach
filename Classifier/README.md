@@ -434,8 +434,12 @@ curl https://hikity-kawach-classifier.hf.space/health
   "scene_models_loaded": 2,
   "priority_validator_loaded": true,
   "device": "cpu",
-  "pipelines_active": 6,
-  "version": "2.1.0"
+  "pipelines_active": 7,
+  "version": "2.2.0",
+  "deepfake_mode": "real",
+  "routing_mode": "gemini",
+  "gemini_model": "gemini-2.5-flash",
+  "currency_mode": "cnn+heuristic"
 }
 ```
 

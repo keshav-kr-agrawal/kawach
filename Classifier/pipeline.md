@@ -121,7 +121,7 @@ Classifier/
 ├── requirements.txt
 ├── download_weights.py
 └── app/
-    ├── main.py             # FastAPI — 7 endpoints
+    ├── main.py             # FastAPI — 8 endpoints
     ├── schemas.py          # Pydantic models (all pipelines)
     ├── classifier.py       # EfficientNet-B7 ensemble deepfake prediction
     ├── face_extractor.py   # MTCNN face detection + cropping
@@ -801,25 +801,27 @@ ALTER TABLE citizen_reports
 - [x] `/health` returns `{"status":"ok","models_loaded":2}`
 
 ### ⚠️ Action Required
-- [ ] **Push v2.1 Classifier changes** to HF Spaces git remote
+- [ ] **Push v2.2 Classifier changes** to HF Spaces git remote
   ```bash
   cd Classifier
   git add -A
-  git commit -m "feat: v2.1 — trust scoring, temporal analysis, hotspot prediction, quick validate"
+  git commit -m "feat: v2.2 — counterfeit currency detection (Pipeline 7) and health updates"
   git push hf main
   ```
 - [ ] **Run `sqlq2.sql`** in Supabase if not done (Pipeline 2 routing columns)
 - [ ] **Run `sqlq3.sql` migration** to add trust_score, civic_urgency_score, sub_category columns
 - [ ] **Set `GEMINI_API_KEY`** in HF Space Secrets for full AI routing + hotspot prediction
 
-### What v2.1 Pushes to HF
+### What v2.2 Pushes to HF
 | File                        | Change                                              |
 |-----------------------------|-----------------------------------------------------|
 | `app/trust_scorer.py`       | **NEW** — unified trust + urgency scoring engine    |
 | `app/schemas.py`            | New fields on all responses + 3 new schema classes  |
 | `app/router.py`             | Enhanced Gemini prompt, sub_category, multi-keyword |
 | `app/scene_analyzer.py`     | Temporal consistency, bbox coverage, dominant class |
-| `app/main.py`               | 2 new endpoints + trust scoring across all handlers |
+| `app/main.py`               | 3 new endpoints + trust scoring + `/classify-currency` |
+| `app/currency_detector.py`  | **NEW** — counterfeit currency detection pipeline   |
+| `test_currency_v2.py`       | **NEW** — acceptance test suite for currency v2      |
 
 ### 🔄 Ongoing Operations
 - New code to `Classifier/` → push to HF remote → auto-rebuild Docker image

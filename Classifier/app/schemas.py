@@ -166,7 +166,7 @@ class HealthResponse(BaseModel):
     priority_validator_loaded: bool
     device: str
     pipelines_active: int = 0
-    version: str = "2.1.0"
+    version: str = "2.2.0"
     # Real-vs-mock transparency: if deepfake weights failed to load, /classify
     # and /full-analysis return mock results — this must be visible, not silent.
     deepfake_mode: str = "unknown"  # "real" | "mock_fallback"
