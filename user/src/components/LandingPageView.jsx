@@ -53,16 +53,27 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
     }
   };
 
-  const handleEnterPolice = () => {
+  const handleEnterPolice = async () => {
     autoProvisionSession('POLICE');
     const customUrl = localStorage.getItem('KAWACH_POLICE_URL');
     if (customUrl) {
       window.location.href = customUrl;
-    } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      window.location.href = 'http://localhost:5173/';
-    } else {
-      window.location.href = '/police/frontend/index.html';
+      return;
     }
+
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 800);
+        await fetch('http://localhost:5173/', { method: 'HEAD', mode: 'no-cors', signal: controller.signal });
+        clearTimeout(timeoutId);
+        window.location.href = 'http://localhost:5173/';
+        return;
+      } catch (e) {
+        // Fall back to workspace-served dist
+      }
+    }
+    window.location.href = '/police/frontend/index.html';
   };
 
   const handleEnterCivic = () => {
@@ -75,12 +86,12 @@ export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
     if (!username || !password) return;
     setLoading(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       setLoading(false);
       autoProvisionSession(dept);
 
       if (dept === 'POLICE') {
-        handleEnterPolice();
+        await handleEnterPolice();
       } else if (dept === 'ADMIN') {
         window.location.href = '/departments/admin.html';
       } else {
