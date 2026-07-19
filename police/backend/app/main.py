@@ -5,7 +5,11 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.database import Base, engine
+from app.database import Base, engine, SessionLocal
+import app.models as models  # noqa: F401 — import side-effect registers every
+# table on Base.metadata. MUST happen before create_all() below, or metadata
+# is empty and create_all() silently creates nothing (bug hit on first Render
+# deploy 2026-07-19: "relation nayak_sessions does not exist").
 
 # Fresh-database bootstrap (Render/HF free tiers have no shell):
 # create_all is idempotent — it only creates tables that don't exist yet.
@@ -14,7 +18,6 @@ from app.database import Base, engine
 try:
     Base.metadata.create_all(bind=engine)
     if os.environ.get("SEED_ON_START") == "1":
-        from app.database import SessionLocal
         from app.models import District
         _db = SessionLocal()
         try:
