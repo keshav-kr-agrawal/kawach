@@ -444,21 +444,44 @@ class CurrencyDetector:
         heur_says_fake = heur["genuine_score"] < 0.45
         heur_says_real = heur["genuine_score"] > 0.65
 
+        # serial_number_pattern and print_noise_profile are RBI's hardest-to-forge
+        # signals (a photocopier/reprint can fake a dark thread-like band and even
+        # decent print sharpness, but not telescopic numbering or offset-press
+        # noise texture). A strong red flag on either must block a confident
+        # "genuine" verdict even when the weighted average crosses the "real"
+        # line on the back of the two easier signals — caught 2026-07-19 when
+        # two known-fake test notes both scored LIKELY_GENUINE/HIGH despite
+        # their own serial/noise checks explicitly flagging red flags.
+        strong_red_flag = any(
+            c["feature"] in ("serial_number_pattern", "print_noise_profile") and c["score"] <= 0.2
+            for c in heur["checks"]
+        )
+
         if cnn is not None:
-            cnn_fake = cnn["fake_probability"] >= 0.5
-            # Agreement → strong verdict; disagreement → honest INCONCLUSIVE
-            if cnn_fake and (heur_says_fake or not heur_says_real):
-                verdict, confidence = "LIKELY_COUNTERFEIT", "HIGH" if heur_says_fake else "MEDIUM"
+            fp = cnn["fake_probability"]
+            cnn_fake = fp >= 0.5
+            # A bare >=0.5 cutoff claims false confidence on borderline scores —
+            # only trust the CNN's direction outside a [0.3, 0.7] uncertainty band.
+            cnn_confident = fp <= 0.30 or fp >= 0.70
+
+            if cnn_fake and heur_says_fake:
+                verdict, confidence = "LIKELY_COUNTERFEIT", "HIGH"
+            elif cnn_fake and cnn_confident:
+                verdict, confidence = "LIKELY_COUNTERFEIT", "MEDIUM"
+            elif heur_says_fake or strong_red_flag or cnn_fake:
+                verdict, confidence = "INCONCLUSIVE", "LOW"
+            elif (not cnn_fake) and heur_says_real and cnn_confident:
+                verdict, confidence = "LIKELY_GENUINE", "HIGH"
             elif (not cnn_fake) and (heur_says_real or not heur_says_fake):
-                verdict, confidence = "LIKELY_GENUINE", "HIGH" if heur_says_real else "MEDIUM"
+                verdict, confidence = "LIKELY_GENUINE", "MEDIUM"
             else:
                 verdict, confidence = "INCONCLUSIVE", "LOW"
-            fake_probability = cnn["fake_probability"]
+            fake_probability = fp
         else:
             # Heuristic-only mode: cap confidence at MEDIUM, always disclose
             if heur_says_fake:
                 verdict, confidence = "SUSPECT_FEATURES", "MEDIUM"
-            elif heur_says_real:
+            elif heur_says_real and not strong_red_flag:
                 verdict, confidence = "GENUINE_FEATURES", "MEDIUM"
             else:
                 verdict, confidence = "INCONCLUSIVE", "LOW"
