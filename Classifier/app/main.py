@@ -5,6 +5,12 @@ import time
 from contextlib import asynccontextmanager
 from typing import Optional
 
+try:  # local dev convenience: Classifier/.env; on HF Spaces, Space secrets win
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 import torch
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware

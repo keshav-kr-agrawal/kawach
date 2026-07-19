@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()  # local dev: reads police/backend/.env; hosted: real env/secrets win
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings

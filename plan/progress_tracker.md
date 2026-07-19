@@ -105,7 +105,9 @@ Last updated: 2026-07-17 (Phases 0-3 AI-tasks done; **currency CNN trained & dep
 | DP.4 | One dashboard shell (`dashboard.html?dept=<id>`) | Done | Spec principle #3 — replaces per-dept hand-building; added SLA-breached KPI |
 | DP.5 | Master Admin console (`admin.html`) | Done | City totals, per-dept pressure grid (breach-sorted), live escalation feed (breach+escalated) |
 | DP.6 | Retire `departments/app.js` | Done | Deleted; logic split into core/config modules; all 15 modules parse-checked |
-| DP.next | Deploy `police/backend` to Render (unblocks Nayak on the live site) | **User** | Render free web service; set `DATABASE_URL` to Supabase Postgres connection string + `GEMINI_API_KEY` + `CLASSIFIER_URL=https://hikity-kawach-classifier.hf.space`; then set `VITE_POLICE_API_URL` in user/.env |
+| DP.7 | Police in registry + admin aggregation | Done | 2026-07-17 — `depts/police.js` (matchCodes POLICE+DISASTER, HIGH SLA floor); admin now covers all 11; node test extended |
+| DP.8 | `police/backend/Dockerfile` for HF Spaces (port 7860) + dotenv wiring (`load_dotenv` in both backends) + gitignored `.env` files with placeholders | Done | 2026-07-17 — police backend can now deploy as its OWN HF Docker Space (recommended over merging into the Classifier Space: separate deps/restarts). `python-dotenv` added to both requirements |
+| DP.next | Deploy `police/backend` (unblocks Nayak on the live site) | **User** | Create a new HF Space (Docker SDK) → push `police/backend/` → set Space secrets: `DATABASE_URL` (Supabase Postgres URI), `GEMINI_API_KEY`, `CLASSIFIER_URL=https://hikity-kawach-classifier.hf.space`, `JWT_SECRET` → then set `VITE_POLICE_API_URL=https://<space>.hf.space` in user/.env and push |
 
 ## Nayak Assistant (parallel track — see `plan/nayak_assistant_plan.md`)
 

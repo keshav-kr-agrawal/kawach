@@ -14,10 +14,13 @@ import traffic from './depts/traffic.js';
 import fire from './depts/fire.js';
 import health from './depts/health.js';
 import education from './depts/education.js';
+import police from './depts/police.js';
 
+// 10 municipal departments + Police (spec §6.2's #11, the deepest branch).
+// The Master Admin console aggregates ALL of these — police included.
 export const DEPARTMENTS = [
   pwdRoads, pwdBuildings, electricity, water, sanitation,
-  pollutionNoise, traffic, fire, health, education,
+  pollutionNoise, traffic, fire, health, education, police,
 ];
 
 export function getDepartment(id) {
