@@ -106,7 +106,7 @@ The AI classifier is currently offline or unreachable. Your evidence has been se
     return `### 🛡️ Forensic Scanner Verdict
 
 #### ❌ **Flagged Suspicious Currency Note**
-**Risk Level:** ${riskText || 'High'}${structuralFlag ? '\n\n> Decisive factor: a hard security feature failed outright (wording, serial pattern, or denomination validity). This is a direct rule flag, not a probability estimate.' : ''}
+**Risk Level:** ${riskText || 'High'}${structuralFlag ? '\n\n> Decisive factor: a specific security feature failed (see findings below). The risk figure summarizes overall evidence strength on a 0 to 100 scale; it is not a calibrated statistical probability.' : ''}
 
 ---
 

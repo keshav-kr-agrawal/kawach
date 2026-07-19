@@ -75,13 +75,18 @@ def _get_ocr_reader():
 
 
 def _crop_bbox_region(image: np.ndarray, panel: dict, pad: int = 6) -> Optional[np.ndarray]:
-    """Re-crop a slightly padded region around a detected text panel by its
-    left edge + height (EasyOCR gives us bbox height/x already)."""
+    """Re-crop a padded region tightly around a detected text panel. Both
+    axes are restricted to the panel's own bbox — the earlier version scanned
+    the image's FULL vertical extent at the panel's x-window, so portraits/
+    patterns above and below the serial polluted the ink-height profile and
+    caused false 'non-ascending' reads on genuine notes (caught 2026-07-20)."""
     h_img, w_img = image.shape[:2]
     x = max(0, int(panel["x"]) - pad)
-    # bbox gives us height + left-x only; scan the full vertical extent
-    # restricted to this x-window (the panel row dominates the ink profile).
-    return image[:, x: min(w_img, x + max(int(panel["height"] * 6), 40))]
+    y = max(0, int(panel.get("y", 0)) - pad * 2)
+    y_end = min(h_img, int(panel.get("y", 0) + panel["height"]) + pad * 2)
+    if panel.get("y") is None:
+        y, y_end = 0, h_img  # legacy fallback: no y info, old behavior
+    return image[y:y_end, x: min(w_img, x + max(int(panel["height"] * 6), 40))]
 
 
 def _column_ink_heights(crop: np.ndarray) -> Optional[np.ndarray]:
@@ -393,8 +398,8 @@ class CurrencyDetector:
         for bbox, text, conf in results:
             xs = [p[0] for p in bbox]
             ys = [p[1] for p in bbox]
-            items.append({"text": text, "conf": float(conf),
-                          "x": min(xs), "height": max(ys) - min(ys)})
+            items.append({"text": text, "conf": float(conf), "x": min(xs),
+                          "y": min(ys), "height": max(ys) - min(ys)})
         return items
 
     @staticmethod
@@ -591,7 +596,8 @@ class CurrencyDetector:
         for it in ocr_items:
             clean = "".join(ch for ch in it["text"] if ch.isalnum())
             if 4 <= len(clean) <= 12 and it["conf"] > 0.3 and any(c.isdigit() for c in clean):
-                candidates.append({"text": clean, "height": it["height"], "x": it["x"]})
+                candidates.append({"text": clean, "height": it["height"],
+                                   "x": it["x"], "y": it.get("y")})
 
         if not candidates:
             return 0.5, "No serial-number-like text panel detected — image may not show the note's numbering corner."
@@ -619,15 +625,20 @@ class CurrencyDetector:
                 f"({growth*100:.0f}% growth left-to-right) — matches RBI's documented "
                 f"telescopic numbering security feature."
             )
-        if growth > -0.05:
+        # Red only on CLEARLY shrinking ink height — this is a CV proxy
+        # (angle/compression-sensitive), and a borderline negative read on a
+        # genuine note must never carry a counterfeit call (false-positive
+        # incident 2026-07-20: perspective made a genuine panel read flat).
+        if growth > -0.15:
             return 0.5, (
                 f"Serial panel '{panel['text']}' shows roughly flat numeral height "
                 f"({growth*100:.0f}% change) — inconclusive, may be angle/resolution."
             )
         return 0.2, (
-            f"Serial panel '{panel['text']}' shows NO ascending numeral growth "
-            f"({growth*100:.0f}% change) — genuine notes grow left-to-right; flat or "
-            f"shrinking size is a red flag."
+            f"Serial panel '{panel['text']}' measures clearly shrinking numeral height "
+            f"({growth*100:.0f}% change) left-to-right — genuine notes ascend. This is a "
+            f"camera-based measurement; corroboration from other checks is required before "
+            f"it can drive a counterfeit call."
         )
 
     @classmethod
@@ -815,7 +826,15 @@ class CurrencyDetector:
         tier_a = [c for c in checks if c["tier"] == "structural"]
         if uv_check["score"] is not None:
             tier_a = tier_a + [{"feature": "uv_fluorescence", "score": uv_check["score"]}]
-        structural_reds = [c["feature"] for c in tier_a if c["score"] <= 0.2]
+        # HARD reds = READ evidence (wrong wording, nonexistent denomination,
+        # dead UV) — robust, veto-worthy. The serial telescopic check is a
+        # MEASURED proxy (ink-height columns; angle/compression-sensitive) —
+        # a red there alone must not condemn a note (false-positive on a
+        # genuine note, 2026-07-20); it needs corroboration.
+        _HARD_RED_FEATURES = {"text_integrity", "denomination_validity", "uv_fluorescence"}
+        hard_reds = [c["feature"] for c in tier_a
+                     if c["score"] <= 0.2 and c["feature"] in _HARD_RED_FEATURES]
+        serial_soft_red = serial_s <= 0.2
         a_positive = any(c["score"] >= 0.8 for c in tier_a)
         uv_passed = uv_check["score"] is not None and uv_check["score"] >= 0.8
 
@@ -830,9 +849,13 @@ class CurrencyDetector:
         # 0.30-0.70 = dead band: the CNN's Kaggle-domain confidence doesn't
         # transfer (measured 2026-07-19), so mid scores are 'no read'.
 
+        serial_corroborated = serial_soft_red and (cnn_conf_fake or noise_red or b_red_majority)
+        condemning_red = bool(hard_reds) or serial_corroborated
+
         guidance = None
-        if structural_reds:
-            # Rule 1 — structural red flag caps at SUSPECT minimum; corroboration escalates
+        if condemning_red:
+            # Rule 1 — hard read-evidence red (wording/denomination/UV), or the
+            # measured serial red WITH corroboration, caps at SUSPECT minimum
             if cnn_conf_fake or noise_red or b_red_majority:
                 verdict = "LIKELY_COUNTERFEIT"
                 confidence = "HIGH" if (cnn_conf_fake and (noise_red or b_red_majority)) else "MEDIUM"
@@ -840,6 +863,15 @@ class CurrencyDetector:
                 verdict, confidence = "SUSPECT_FEATURES", "MEDIUM"
             guidance = ("Do not return this note to circulation. Have it physically verified "
                         "(tilt/UV/touch per RBI) at a bank branch, and report if confirmed.")
+        elif serial_soft_red:
+            # Serial proxy red ALONE: blocks GENUINE but never condemns — the
+            # measurement is angle/compression-sensitive and text/denomination
+            # evidence didn't corroborate (false-positive guard, 2026-07-20).
+            verdict, confidence = "INCONCLUSIVE", "LOW"
+            guidance = ("The serial-number size measurement read inconsistently, but no other "
+                        "security check corroborates it — this can be caused by camera angle or "
+                        "compression. This photo alone cannot determine authenticity; retake "
+                        "straight-on in daylight, or have the note checked at a bank.")
         elif cnn_conf_fake:
             # Rule 2 — CNN alone flags but never condemns (domain-gap humility)
             verdict, confidence = "SUSPECT_FEATURES", "MEDIUM"
@@ -890,10 +922,13 @@ class CurrencyDetector:
         authenticity = genuine_score
         if fp is not None and (cnn_conf_fake or cnn_conf_real):
             authenticity = 0.5 * authenticity + 0.5 * (1.0 - fp)
-        if structural_reds:
+        if condemning_red:
             authenticity = min(authenticity, 0.20)
+        elif serial_soft_red:
+            authenticity = min(authenticity, 0.50)  # uncorroborated proxy read: mid-band, not condemned
         verdict_basis = (
-            "structural_red_flag" if structural_reds
+            "structural_red_flag" if condemning_red
+            else "uncorroborated_measurement" if serial_soft_red
             else "cnn_flag" if (cnn_conf_fake and verdict in ("SUSPECT_FEATURES", "LIKELY_COUNTERFEIT"))
             else "fused_checks"
         )
