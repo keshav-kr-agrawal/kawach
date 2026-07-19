@@ -61,6 +61,84 @@ const NAYAK_SERVICES = [
   }
 ];
 
+function formatForensicVerdict(v) {
+  if (!v || v.verdict === 'PENDING_ANALYSIS') {
+    return `### 🛡️ Forensic Scanner Verdict
+
+#### ⏳ **Analysis Pending**
+The AI classifier is currently offline or unreachable. Your evidence has been securely stored. Please try again in a moment.`;
+  }
+
+  // Clean raw details text: strip em dashes, semicolons, raw technical tokens
+  let raw = (v.details || '')
+    .replace(/—/g, ': ')
+    .replace(/–/g, ': ')
+    .replace(/;+/g, '.')
+    .replace(/\s+\./g, '.')
+    .replace(/\.\s*\./g, '.');
+
+  const isAuthentic = v.is_authenticated === true;
+  const isSuspicious = v.is_authenticated === false;
+  const scoreText = v.score != null ? `${Number(v.score).toFixed(1)}%` : null;
+
+  // Split details into readable bullet points
+  const rawSentences = raw
+    .split(/\.\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0 && !s.toLowerCase().startsWith('currency screening') && !s.toLowerCase().startsWith('analysis mode'));
+
+  const bullets = rawSentences.map(s => {
+    let clean = s
+      .replace(/LIKELY_COUNTERFEIT/gi, 'Likely Counterfeit')
+      .replace(/LIKELY_GENUINE/gi, 'Likely Authentic')
+      .replace(/cnn\+heuristic/gi, 'Computer Vision & RBI Rulebook')
+      .replace(/\(-\d+%\s*change\)/gi, '')
+      .replace(/shows NO ascending numeral growth/gi, 'shows non-ascending font height (genuine RBI notes have numerals growing in size from left to right)');
+    return `* ${clean.endsWith('.') ? clean : clean + '.'}`;
+  });
+
+  if (isSuspicious) {
+    return `### 🛡️ Forensic Scanner Verdict
+
+#### ❌ **Flagged Suspicious Currency Note**
+**Confidence Rating:** ${scoreText || 'High Risk'}
+
+---
+
+#### 🔍 **Key Findings**
+${bullets.length > 0 ? bullets.join('\n\n') : '* Security features do not match RBI authentic currency standards.'}
+
+---
+
+#### 📋 **Recommended Action**
+1. Do not return this currency note to circulation.
+2. Have it physically verified (watermark, latent image, UV test) at a bank branch.
+3. If you received this note from an ATM, shop, or person, let me know where you received it so I can check for nearby reports and help you file a report.`;
+  }
+
+  if (isAuthentic) {
+    return `### 🛡️ Forensic Scanner Verdict
+
+#### ✅ **Verified Authentic Currency Note**
+**Confidence Rating:** ${scoreText || 'Verified'}
+
+---
+
+#### 🔍 **Key Findings**
+${bullets.length > 0 ? bullets.join('\n\n') : '* Key security features (RBI emblem, security thread, typography) match authentic standards.'}
+
+---
+
+#### 📋 **Recommended Action**
+Physical verification (paper texture, raised print) at your local bank branch remains the final authority.`;
+  }
+
+  return `### 🛡️ Forensic Scanner Verdict
+
+#### ℹ️ **Inspection Summary**
+${bullets.length > 0 ? bullets.join('\n\n') : '* Media stored and analyzed.'}`;
+}
+
 function MarkdownMessage({ content }) {
   return (
     <div className="prose prose-xs max-w-none text-slate-800 space-y-1.5 leading-relaxed select-text font-sans">
@@ -237,22 +315,8 @@ export default function AlertsChatView() {
       const mediaRes = await uploadMedia({ mediaUrl: realUrl, mediaType, sessionId: activeSess });
       const v = mediaRes.verdict || {};
 
-      let botText = '🛡️ KAWACH SCANNER VERDICT:\n\n';
-      if (v.verdict === 'PENDING_ANALYSIS') {
-        botText += '⏳ ANALYSIS PENDING — the AI classifier is unreachable right now. Your evidence is stored; no verdict was fabricated. Ask me again in a bit.';
-      } else if (v.is_authenticated === true) {
-        botText += `✅ VERIFIED AUTHENTIC${v.score != null ? ` (score: ${Number(v.score).toFixed(1)}%)` : ''}\n\n${v.details || ''}`;
-      } else if (v.is_authenticated === false) {
-        botText += `❌ FLAGGED SUSPICIOUS${v.score != null ? ` (score: ${Number(v.score).toFixed(1)}%)` : ''}\n\n${v.details || ''}`;
-      } else {
-        botText += `ℹ️ ${v.details || 'Stored for analysis.'}`;
-      }
-      if (v.model_mode) botText += `\n\nAnalysis mode: ${v.model_mode}`;
-      pushBot(botText);
-
-      if (v.is_authenticated === false) {
-        pushBot('If you\'d like, tell me where you received this (shop, ATM, person) — I can check for similar reports near you and help you file it to the right department. Nothing is reported without your confirmation.');
-      }
+      const formattedVerdict = formatForensicVerdict(v);
+      pushBot(formattedVerdict);
     } catch (err) {
       console.error('[MEDIA ATTACH FAILED]', err);
       pushBot('⚠️ Unable to upload file for verification. Try submitting via Camera tab.');
