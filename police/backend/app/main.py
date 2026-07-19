@@ -1,37 +1,33 @@
 from dotenv import load_dotenv
 load_dotenv()  # local dev: reads police/backend/.env; hosted: real env/secrets win
 
-import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.database import Base, engine, SessionLocal
+from app.database import Base, engine
 import app.models as models  # noqa: F401 — import side-effect registers every
 # table on Base.metadata. MUST happen before create_all() below, or metadata
 # is empty and create_all() silently creates nothing (bug hit on first Render
 # deploy 2026-07-19: "relation nayak_sessions does not exist").
 
 # Fresh-database bootstrap (Render/HF free tiers have no shell):
-# create_all is idempotent — it only creates tables that don't exist yet.
-# Set SEED_ON_START=1 (once) to also populate demo FIR/offender data when the
-# database is empty; unset it after the first successful boot.
+# create_all is idempotent and ADDITIVE ONLY — it creates missing tables and
+# never touches existing ones/data.
+#
+# Demo-data seeding is INTENTIONALLY NOT run automatically here anymore.
+# app/scripts/generate_data.py's seed_database() starts with
+# Base.metadata.drop_all(bind=engine) — it drops EVERY SQLAlchemy-mapped
+# table, including live Nayak chat data (nayak_sessions/messages/uploads).
+# Running that on every cold boot (as SEED_ON_START used to) is a standing
+# data-loss risk — caught 2026-07-19 when a boot attempted it against the
+# real production database (failed only on a lock timeout, not by design).
+# If you want demo FIR/offender data, run it manually, once, deliberately:
+#   DATABASE_URL=<target> python -m app.scripts.generate_data
 try:
     Base.metadata.create_all(bind=engine)
-    if os.environ.get("SEED_ON_START") == "1":
-        from app.models import District
-        _db = SessionLocal()
-        try:
-            if _db.query(District).count() == 0:
-                print("[BOOT] Empty database + SEED_ON_START=1 — running full demo seed...")
-                from app.scripts.generate_data import seed_database
-                seed_database()
-            else:
-                print("[BOOT] SEED_ON_START=1 but data exists — skipping seed (unset the env var).")
-        finally:
-            _db.close()
 except Exception as _e:
     # Don't block startup on DB issues — routes will surface errors honestly.
-    print(f"[BOOT] Database bootstrap warning: {_e}")
+    print(f"[BOOT] Database bootstrap warning: {_e}", flush=True)
 from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports, fraud_shield, ingestion, osint_scraper, webhooks, nayak, digital_arrest
 
 app = FastAPI(

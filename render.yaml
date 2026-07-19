@@ -34,5 +34,9 @@ services:
         sync: false   # any long random string
       - key: CLASSIFIER_URL
         value: https://hikity-kawach-classifier.hf.space
-      - key: SEED_ON_START
-        value: "1"    # first boot: creates tables + demo data on empty DB; set to 0 afterwards
+      # SEED_ON_START removed 2026-07-19 — auto-seeding on boot ran
+      # Base.metadata.drop_all() against the real production database on
+      # every cold start. Table creation is safe/automatic (main.py
+      # create_all, additive-only); if you want demo FIR/offender data, run
+      # `DATABASE_URL=<target> python -m app.scripts.generate_data` manually,
+      # once, deliberately — never as part of the boot sequence.
