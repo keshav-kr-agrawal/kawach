@@ -111,7 +111,7 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
   return (
     <div className="glass-panel flex-none" style={{
       width: '100%',
-      padding: '12px 16px',
+      padding: '8px 14px',
       borderBottom: '1px solid rgba(255, 217, 0, 0.2)',
       display: 'flex',
       alignItems: 'center',
@@ -129,8 +129,8 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
               else navigate('/user/profile');
             }}
             style={{
-              width: '34px',
-              height: '34px',
+              width: '32px',
+              height: '32px',
               borderRadius: '50%',
               backgroundColor: '#ffd900',
               border: '1.5px solid #000000',
@@ -143,14 +143,14 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
             }}
             title="Open User Profile"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2.5" className="w-4 h-4"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2.5" className="w-4 h-4"><path d="M20 21v-2a4 4 0 0 4-4H8a4 4 0 0 4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </button>
         ) : (
           <button
             onClick={() => navigate(-1)}
             style={{
-              width: '34px',
-              height: '34px',
+              width: '32px',
+              height: '32px',
               borderRadius: '10px',
               backgroundColor: '#f8fafc',
               border: '1px solid #e2e8f0',
@@ -181,8 +181,8 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
           <button
             onClick={onOpenLibrary}
             style={{
-              width: '34px',
-              height: '34px',
+              width: '32px',
+              height: '32px',
               borderRadius: '10px',
               backgroundColor: '#fffbeb',
               border: '1px solid rgba(255, 217, 0, 0.4)',
@@ -368,7 +368,7 @@ function UserLayout({ userReports }) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="absolute inset-0 flex flex-col"
+            className="absolute inset-0 flex flex-col pb-[76px]"
           >
             <Outlet />
           </motion.div>

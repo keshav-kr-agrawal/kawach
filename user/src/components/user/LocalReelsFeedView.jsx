@@ -120,7 +120,7 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
       </div>
 
       {/* Bottom Information Details */}
-      <div className="relative z-10 space-y-2 text-white max-w-[80%] pr-4 pb-20 md:pb-4">
+      <div className="relative z-10 space-y-2 text-white max-w-[80%] pr-4 pb-4">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-yellow-300 font-mono">📍 {reel.location || 'Bengaluru Ward'}</span>
         </div>

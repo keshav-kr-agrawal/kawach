@@ -417,7 +417,7 @@ export default function AlertsChatView() {
       </div>
 
       {/* Input Bar */}
-      <form onSubmit={handleSend} className="p-3 bg-white border-t border-yellow-400/20 flex items-center gap-2 flex-none pb-20 md:pb-3">
+      <form onSubmit={handleSend} className="p-3 bg-white border-t border-yellow-400/20 flex items-center gap-2 flex-none">
         <input 
           type="file"
           ref={fileInputRef}
