@@ -915,6 +915,23 @@ class CurrencyDetector:
             guidance = ((guidance + " ") if guidance else "") + (
                 "Note: ₹2000 notes were withdrawn from circulation in May 2023 — "
                 "accept only for bank deposit/exchange.")
+        elif denomination is None and verdict in ("LIKELY_GENUINE", "GENUINE_FEATURES"):
+            # OCR could not confirm ANY denomination on an otherwise-passing
+            # note (caught 2026-07-21: a real ₹2000 read as generic "Verified
+            # Authentic" with no denomination flag at all — OCR missed the
+            # numeral entirely, and the withdrawal warning above never fires
+            # without a confirmed 2000 read). Never claim unqualified
+            # authenticity on a denomination we couldn't actually identify —
+            # surface the uncertainty and the two special cases explicitly.
+            confidence = "MEDIUM" if confidence == "HIGH" else confidence
+            guidance = ((guidance + " ") if guidance else "") + (
+                "Denomination could not be confirmed from this photo — physical/print checks "
+                "passed, but this does NOT verify the note is one of the six currently "
+                "circulating denominations (₹10/20/50/100/200/500). If this is a ₹2000 note, "
+                "it was withdrawn from circulation in May 2023 (accept only for bank deposit/"
+                "exchange). If ₹1000, it is demonetized and invalid. Retake with the "
+                "denomination numeral clearly visible to confirm."
+            )
 
         checks.append(uv_check)  # informational placement at the end, as before
 
