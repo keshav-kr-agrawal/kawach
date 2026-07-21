@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
 import { sendChat, getMessages, uploadMedia, linkReport, getAnonUserId } from '../../api/nayakService';
 import { uploadMediaBlob } from '../../api/mediaService';
 import { createReport, newReportId, REPORT_SOURCES } from '../../api/reportService';
@@ -203,42 +202,42 @@ ${bullets.length > 0 ? bullets.join('\n\n') : '* Media stored and analyzed.'}`;
 }
 
 function MarkdownMessage({ content }) {
+  if (!content) return null;
+  const lines = content.split('\n');
   return (
-    <div className="prose prose-xs max-w-none text-ink space-y-1.5 leading-relaxed select-text font-sans">
-      <ReactMarkdown
-        components={{
-          h1: ({ children }) => <h1 className="text-sm font-black text-ink font-sora mt-2.5 mb-1.5 border-b border-amber-400/20 pb-1">{children}</h1>,
-          h2: ({ children }) => <h2 className="text-xs font-black text-ink font-sora mt-2 mb-1">{children}</h2>,
-          h3: ({ children }) => <h3 className="text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1">{children}</h3>,
-          p: ({ children }) => <p className="text-xs leading-relaxed font-semibold text-ink mb-1.5 last:mb-0">{children}</p>,
-          strong: ({ children }) => <strong className="font-extrabold text-ink bg-amber-400/25 px-1 py-0.5 rounded text-[11px] font-sora">{children}</strong>,
-          em: ({ children }) => <em className="font-serif italic text-[#b08850] font-normal">{children}</em>,
-          ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-1.5 text-xs font-semibold text-ink">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-1.5 text-xs font-semibold text-ink">{children}</ol>,
-          li: ({ children }) => <li className="text-xs text-ink font-semibold leading-relaxed">{children}</li>,
-          blockquote: ({ children }) => (
-            <blockquote className="border-l-3 border-[#E9BA26] bg-amber-50/80 p-2.5 rounded-r-xl my-2 text-xs italic text-ink font-medium">
-              {children}
-            </blockquote>
-          ),
-          code: ({ inline, children }) => inline ? (
-            <code className="bg-amber-950 text-amber-300 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{children}</code>
-          ) : (
-            <pre className="bg-amber-950 text-amber-50 p-3 rounded-xl overflow-x-auto my-2 text-[11px] font-mono border border-amber-800">
-              <code>{children}</code>
-            </pre>
-          ),
-          table: ({ children }) => (
-            <div className="overflow-x-auto my-2.5 rounded-xl border border-amber-400/30">
-              <table className="w-full text-xs text-left border-collapse">{children}</table>
+    <div className="space-y-1.5 leading-relaxed select-text font-sans text-xs text-ink">
+      {lines.map((line, idx) => {
+        if (!line.trim()) return <div key={idx} className="h-1" />;
+        
+        if (line.startsWith('# ')) {
+          return <h1 key={idx} className="text-sm font-black text-ink font-sora mt-2 mb-1 border-b border-amber-400/20 pb-1">{line.slice(2)}</h1>;
+        } else if (line.startsWith('## ')) {
+          return <h2 key={idx} className="text-xs font-black text-ink font-sora mt-2 mb-1">{line.slice(3)}</h2>;
+        } else if (line.startsWith('### ')) {
+          return <h3 key={idx} className="text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1">{line.slice(4)}</h3>;
+        } else if (line.startsWith('> ')) {
+          return <blockquote key={idx} className="border-l-3 border-[#E9BA26] bg-amber-50/80 p-2.5 rounded-r-xl my-1 text-xs italic text-ink">{line.slice(2)}</blockquote>;
+        }
+
+        const parts = line.split(/(\*\*.*?\*\*)/g);
+        const renderedParts = parts.map((part, pIdx) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={pIdx} className="font-extrabold text-ink bg-amber-400/25 px-1 py-0.5 rounded text-[11px] font-sora">{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        });
+
+        if (line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*')) {
+          return (
+            <div key={idx} className="flex gap-2 items-start my-0.5 pl-1">
+              <span className="text-[#b08850] font-bold text-xs">•</span>
+              <span className="flex-1 font-semibold">{renderedParts}</span>
             </div>
-          ),
-          th: ({ children }) => <th className="bg-amber-100/70 p-2 font-black text-ink border-b border-amber-400/30 text-[10px] uppercase font-mono">{children}</th>,
-          td: ({ children }) => <td className="p-2 border-b border-amber-100 text-ink font-medium">{children}</td>,
-        }}
-      >
-        {content}
-      </ReactMarkdown>
+          );
+        }
+
+        return <p key={idx} className="font-semibold text-ink leading-relaxed">{renderedParts}</p>;
+      })}
     </div>
   );
 }

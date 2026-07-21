@@ -68,13 +68,37 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     }
   };
 
+  const fileInputRef = useRef(null);
+
+  const handleVideoFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setRecordedBlob(file);
+    const url = URL.createObjectURL(file);
+    setVideoUrl(url);
+    setSheetOpen(true);
+    runQuickValidate(file);
+  };
+
   const startCamera = async () => {
     try {
       setCameraError(null);
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: true
-      });
+      let mediaStream = null;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: true
+        });
+      } catch {
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+        } catch (err) {
+          throw err;
+        }
+      }
       streamRef.current = mediaStream;
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
@@ -82,7 +106,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       setHasCameraAccess(true);
     } catch (err) {
       console.error('[CAMERA ACCESS FAILED]', err);
-      setCameraError('Camera access denied or unavailable on this device.');
+      setCameraError('Live camera stream unavailable. You can also pick any recorded video clip directly below.');
       setHasCameraAccess(false);
     }
   };
@@ -108,12 +132,30 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     if (!streamRef.current) return;
     chunksRef.current = [];
     try {
-      const recorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
+      let recorderOptions = {};
+      if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported) {
+        const supportedTypes = [
+          'video/mp4',
+          'video/webm;codecs=vp9,opus',
+          'video/webm;codecs=vp8,opus',
+          'video/webm',
+          'video/quicktime'
+        ];
+        for (const type of supportedTypes) {
+          if (MediaRecorder.isTypeSupported(type)) {
+            recorderOptions = { mimeType: type };
+            break;
+          }
+        }
+      }
+
+      const recorder = new MediaRecorder(streamRef.current, recorderOptions);
       recorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
       };
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/mp4' });
+        const mimeType = recorderOptions.mimeType || 'video/mp4';
+        const blob = new Blob(chunksRef.current, { type: mimeType });
         setRecordedBlob(blob);
         const url = URL.createObjectURL(blob);
         setVideoUrl(url);
@@ -136,7 +178,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       }, 1000);
     } catch (err) {
       console.error('[RECORDING START FAILED]', err);
-      alert('Failed to start recording on this browser.');
+      alert('Failed to start live recording stream. Please use the Select Video File button to select your clip.');
     }
   };
 
@@ -232,6 +274,14 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
 
       {/* Camera Viewport Canvas */}
       <div className="flex-1 relative bg-amber-950 flex items-center justify-center overflow-hidden">
+        <input 
+          type="file"
+          ref={fileInputRef}
+          accept="video/*"
+          className="hidden"
+          onChange={handleVideoFileSelect}
+        />
+
         {hasCameraAccess ? (
           <video
             ref={videoRef}
@@ -244,11 +294,35 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
           <div className="p-6 text-center text-ink-faint space-y-3">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-10 h-10 mx-auto text-amber-400"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             <p className="text-xs font-semibold">{cameraError || 'Initializing device camera...'}</p>
+            <div className="flex flex-wrap gap-2 justify-center pt-2">
+              <button
+                type="button"
+                onClick={startCamera}
+                className="px-4 py-2 bg-[#E9BA26] text-ink font-bold rounded-xl text-xs font-sora shadow-sm"
+              >
+                Retry Camera
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 bg-white text-ink border border-amber-400/40 font-bold rounded-xl text-xs font-sora shadow-sm"
+              >
+                📁 Pick Video File
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Top Control Bar */}
+        {!sheetOpen && (
+          <div className="absolute top-4 right-4 z-20">
             <button
-              onClick={startCamera}
-              className="px-4 py-2 bg-[#E9BA26] text-ink font-bold rounded-xl text-xs font-sora"
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3 py-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full text-xs font-bold backdrop-blur-md flex items-center gap-1.5 border border-white/20 shadow-md"
+              title="Upload existing video clip from device gallery"
             >
-              Grant Camera Access
+              <span>📁 Upload Clip</span>
             </button>
           </div>
         )}

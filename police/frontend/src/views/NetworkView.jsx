@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import ForceGraph2D from 'react-force-graph-2d';
 import { api } from '../api/client.js';
 import { ViewFrame, Panel, LoadingLine, ErrorNote, Idx } from '../ui/kit.jsx';
 
@@ -26,6 +25,7 @@ const TYPE_TONE = {
 };
 
 export default function NetworkView() {
+  const canvasRef = useRef(null);
   const wrapRef = useRef(null);
   const [size, setSize] = useState({ w: 600, h: 480 });
   const [data, setData] = useState(null);
@@ -39,54 +39,106 @@ export default function NetworkView() {
   useEffect(() => {
     if (!wrapRef.current) return;
     const ro = new ResizeObserver(([entry]) => {
-      setSize({ w: entry.contentRect.width, h: 480 });
+      setSize({ w: entry.contentRect.width || 600, h: 480 });
     });
     ro.observe(wrapRef.current);
     return () => ro.disconnect();
   }, [data]);
 
-  const graphData = useMemo(() => {
-    if (!data) return { nodes: [], links: [] };
-    return {
-      nodes: data.nodes.map((n) => ({ ...n })),
-      links: data.links.map((l) => ({ ...l })),
-    };
-  }, [data]);
+  const positionedNodes = useMemo(() => {
+    if (!data || !data.nodes) return [];
+    const w = size.w || 600;
+    const h = size.h || 480;
+    const count = data.nodes.length;
+    return data.nodes.map((node, idx) => {
+      const angle = (idx / count) * 2 * Math.PI;
+      const radius = 120 + ((idx % 3) * 50);
+      return {
+        ...node,
+        x: w / 2 + radius * Math.cos(angle),
+        y: h / 2 + radius * Math.sin(angle),
+      };
+    });
+  }, [data, size]);
+
+  const nodeMap = useMemo(() => {
+    const map = new Map();
+    positionedNodes.forEach(n => map.set(n.id, n));
+    return map;
+  }, [positionedNodes]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !data) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, size.w, size.h);
+
+    // Draw Links
+    (data.links || []).forEach(link => {
+      const source = nodeMap.get(link.source);
+      const target = nodeMap.get(link.target);
+      if (source && target) {
+        ctx.beginPath();
+        ctx.moveTo(source.x, source.y);
+        ctx.lineTo(target.x, target.y);
+        ctx.strokeStyle = 'rgba(163,123,11,0.25)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    });
+
+    // Draw Nodes
+    positionedNodes.forEach(node => {
+      const r = node.type === 'Person' ? 6 + (node.risk_score || 0) / 25 : node.type === 'Gang' ? 8 : 4;
+      const tone = TYPE_TONE[node.type] || '#C9990F';
+
+      if (node.mule_flag) {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, r + 4, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#3E2F06';
+        ctx.setLineDash([2, 2]);
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+      ctx.fillStyle = tone;
+      ctx.fill();
+      ctx.strokeStyle = selected?.id === node.id ? '#09090b' : '#FFFFFF';
+      ctx.lineWidth = selected?.id === node.id ? 2.5 : 1;
+      ctx.stroke();
+
+      if (node.type === 'Person' || node.type === 'Gang') {
+        ctx.font = '10px "Spline Sans Mono", monospace';
+        ctx.fillStyle = '#171307';
+        ctx.textAlign = 'center';
+        ctx.fillText(node.label || '', node.x, node.y + r + 11);
+      }
+    });
+  }, [positionedNodes, data, size, selected, nodeMap]);
+
+  const handleCanvasClick = (e) => {
+    if (!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    const hit = positionedNodes.find(node => {
+      const dist = Math.hypot(node.x - clickX, node.y - clickY);
+      return dist <= 14;
+    });
+
+    setSelected(hit || null);
+  };
 
   const mules = useMemo(
     () => (data?.nodes || []).filter((n) => n.mule_flag && n.type === 'Person'),
     [data],
   );
-
-  const paintNode = (node, ctx, scale) => {
-    const r = node.type === 'Person' ? 5 + (node.risk_score || 0) / 25 : node.type === 'Gang' ? 7 : 3.5;
-    const tone = TYPE_TONE[node.type] || '#C9990F';
-
-    if (node.mule_flag) {
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, r + 3.5, 0, 2 * Math.PI);
-      ctx.strokeStyle = '#3E2F06';
-      ctx.setLineDash([2, 2]);
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
-    ctx.fillStyle = tone;
-    ctx.fill();
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    if (scale > 1.4 && (node.type === 'Person' || node.type === 'Gang')) {
-      ctx.font = `${10 / scale}px "Spline Sans Mono", monospace`;
-      ctx.fillStyle = '#171307';
-      ctx.textAlign = 'center';
-      ctx.fillText(node.label, node.x, node.y + r + 10 / scale);
-    }
-  };
 
   return (
     <ViewFrame
@@ -102,22 +154,12 @@ export default function NetworkView() {
         <div className="grid gap-6 lg:grid-cols-3">
           <Panel className="lg:col-span-2" title="Entity graph" tag={`${data.nodes.length} nodes · ${data.links.length} ties`}>
             <div ref={wrapRef} className="overflow-hidden rounded-ledger border border-amber-100 bg-paper-warm">
-              <ForceGraph2D
+              <canvas
+                ref={canvasRef}
                 width={size.w}
                 height={size.h}
-                graphData={graphData}
-                nodeCanvasObject={paintNode}
-                nodePointerAreaPaint={(node, color, ctx) => {
-                  ctx.beginPath();
-                  ctx.arc(node.x, node.y, 9, 0, 2 * Math.PI);
-                  ctx.fillStyle = color;
-                  ctx.fill();
-                }}
-                linkColor={() => 'rgba(163,123,11,0.25)'}
-                linkWidth={1}
-                onNodeClick={(n) => setSelected(n)}
-                cooldownTicks={90}
-                backgroundColor="#FEFCF5"
+                onClick={handleCanvasClick}
+                className="cursor-pointer block"
               />
             </div>
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[0.66rem] text-ink-faint">
@@ -148,7 +190,7 @@ export default function NetworkView() {
                     <div className="flex justify-between"><dt className="text-ink-faint">Betweenness</dt><dd className="font-mono tabular-nums">{selected.betweenness_centrality}</dd></div>
                   )}
                   {selected.mule_flag && (
-                    <p className="rounded-ledger border border-amber-500 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
+                    <p className="rounded-ledger border border-amber-500 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 font-semibold">
                       {selected.mule_reason || 'Flagged as probable mule.'}
                     </p>
                   )}

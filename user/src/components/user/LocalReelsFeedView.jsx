@@ -159,7 +159,8 @@ export default function LocalReelsFeedView({ userReports = [], onReportVideo }) 
       location: '100ft Road, Indiranagar',
       timestamp: '10 mins ago',
       upvotes: 42,
-      status: 'PUBLIC_APPROVED'
+      status: 'PUBLIC_APPROVED',
+      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4'
     },
     {
       id: 'feed-2',
@@ -169,7 +170,8 @@ export default function LocalReelsFeedView({ userReports = [], onReportVideo }) 
       location: '5th Block, Koramangala',
       timestamp: '25 mins ago',
       upvotes: 89,
-      status: 'PUBLIC_APPROVED'
+      status: 'PUBLIC_APPROVED',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
     },
     {
       id: 'feed-3',
@@ -179,9 +181,12 @@ export default function LocalReelsFeedView({ userReports = [], onReportVideo }) 
       location: 'Silk Board Junction',
       timestamp: '1 hour ago',
       upvotes: 120,
-      status: 'PUBLIC_APPROVED'
+      status: 'PUBLIC_APPROVED',
+      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4'
     }
   ];
+
+  const defaultSampleVideo = "https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4";
 
   // Merge user reports
   const allReels = [
@@ -194,7 +199,7 @@ export default function LocalReelsFeedView({ userReports = [], onReportVideo }) 
       timestamp: r.timestamp || 'Just now',
       upvotes: r.views || 5,
       status: r.status,
-      videoUrl: r.videoUrl
+      videoUrl: r.videoUrl || defaultSampleVideo
     })),
     ...mockFeeds
   ];

@@ -27,7 +27,6 @@ function MapRecenter({ center, forceRecenter, onRecenterDone }) {
   return null;
 }
 
-<<<<<<< HEAD
 // Interactive floating zoom and recenter control buttons subcomponent
 function FloatingMapControls({ gpsCoords, onRecenterClick }) {
   const map = useMap();
@@ -129,8 +128,6 @@ function FloatingMapControls({ gpsCoords, onRecenterClick }) {
 }
 
 // Component to listen to zoom level changes on Leaflet map
-=======
->>>>>>> 1973594f728f37aba2a9b52a07157e3c09c61ac4
 function MapZoomListener({ onChange }) {
   const map = useMap();
   useEffect(() => {
@@ -150,61 +147,13 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(14);
   const [triggerRecenter, setTriggerRecenter] = useState(false);
-  const [playingVideo, setPlayingVideo] = useState(false);
-  const [playProgress, setPlayProgress] = useState(0);
   const [showFlagNotice, setShowFlagNotice] = useState(false);
 
   const mapVideoRef = useRef(null);
-  const [mapIsPaused, setMapIsPaused] = useState(false);
-  const [mapIs2xSpeed, setMapIs2xSpeed] = useState(false);
-  const [showMapCenterIcon, setShowMapCenterIcon] = useState(null);
-  const [mapIsMuted, setMapIsMuted] = useState(false);
-  const [showMapMuteIconOverlay, setShowMapMuteIconOverlay] = useState(null);
 
-  const mapPressTimerRef = useRef(null);
-  const mapPressStartTimeRef = useRef(0);
+  const defaultCenter = [gpsCoords?.lat || 12.9716, gpsCoords?.lng || 77.5946];
 
-  useEffect(() => {
-    setMapIsPaused(false);
-    setMapIs2xSpeed(false);
-    setShowMapCenterIcon(null);
-    setMapIsMuted(false);
-    setShowMapMuteIconOverlay(null);
-    if (mapVideoRef.current) {
-      mapVideoRef.current.playbackRate = 1.0;
-    }
-  }, [selectedVideo]);
-
-  const handleMapVideoTap = () => {
-    if (!mapVideoRef.current) return;
-    if (mapVideoRef.current.paused) {
-      mapVideoRef.current.play().catch(err => console.log(err));
-      setMapIsPaused(false);
-      setShowMapCenterIcon('play');
-    } else {
-      mapVideoRef.current.pause();
-      setMapIsPaused(true);
-      setShowMapCenterIcon('pause');
-    }
-    setTimeout(() => {
-      setShowMapCenterIcon(null);
-    }, 800);
-  };
-
-  const toggleMapMute = (e) => {
-    if (e) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
-    const nextMuted = !mapIsMuted;
-    setMapIsMuted(nextMuted);
-    setShowMapMuteIconOverlay(nextMuted ? 'mute' : 'unmute');
-    setTimeout(() => {
-      setShowMapMuteIconOverlay(null);
-    }, 800);
-  };
-
-  // Merge map pins
+  // Merge map pins with user reports
   const allPinsRaw = [
     ...userReports
       .filter(r => r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2' || r.status === 'DEPT_ROUTING' || r.status === 'REPORTED_SUSPICIOUS')
@@ -220,7 +169,7 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
         status: r.status,
         views: r.views || 0,
         feedType: r.category || 'General Alert',
-        videoUrl: r.videoUrl
+        videoUrl: r.videoUrl || "https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4"
       }))
   ];
 
@@ -232,15 +181,11 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
 
   const openVideoModal = (pin) => {
     setSelectedVideo(pin);
-    setPlayingVideo(true);
-    setPlayProgress(0);
     setShowFlagNotice(false);
   };
 
   const closeVideoModal = () => {
     setSelectedVideo(null);
-    setPlayingVideo(false);
-    setPlayProgress(0);
     setShowFlagNotice(false);
   };
 
@@ -253,71 +198,115 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
     }, 2000);
   };
 
-  const getSnapchatStatusColor = (status) => {
-    if (status === 'REPORTED_SUSPICIOUS') return '#ef4444';
-    if (status === 'PUBLIC_APPROVED') return '#E9BA26';
-    return '#E9BA26';
-  };
-
   const getSnapchatStatusLabel = (status) => {
     if (status === 'AI_CHECK_1') return '⚡ Safety Verification Active';
     if (status === 'AI_CHECK_2') return '🛡️ Protocol Audit Active';
     return getStatusLabel(status);
   };
 
-  const defaultCenter = [gpsCoords?.lat || 12.9716, gpsCoords?.lng || 77.5946];
+  const showHeatmap = zoomLevel < 16;
+  const heatmapOpacity = showHeatmap ? Math.max(0.2, Math.min(0.85, (16 - zoomLevel) / 2)) : 0;
+  const showAvatars = zoomLevel >= 15;
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
       
-      {/* Map Canvas */}
-      <MapContainer
-        center={defaultCenter}
-        zoom={14}
-        style={{ width: '100%', height: '100%', zIndex: 1 }}
+      {/* Leaflet Interactive Map */}
+      <MapContainer 
+        center={defaultCenter} 
+        zoom={14} 
         zoomControl={false}
+        scrollWheelZoom={true}
+        doubleClickZoom={true}
+        dragging={true}
+        touchZoom={true}
+        keyboard={true}
+        zoomAnimation={true}
+        style={{ width: '100%', height: '100%', zIndex: 1 }}
       >
-        <MapRecenter center={defaultCenter} />
-        <MapZoomListener onChange={setZoomLevel} />
-        
-        {/* CartoDB Voyager Light Map Tiles */}
         <TileLayer
-          attribution='&copy; <a href="https://carto.com/">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          maxZoom={19}
+          attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
         />
 
-        {/* User GPS Location Marker */}
-        <Circle
-          center={defaultCenter}
-          radius={300}
-          pathOptions={{ fillColor: '#E9BA26', fillOpacity: 0.2, color: '#E9BA26', weight: 2 }}
-        />
+        {/* Recenter Map when triggered */}
+        <MapRecenter center={defaultCenter} forceRecenter={triggerRecenter} onRecenterDone={() => setTriggerRecenter(false)} />
+        <MapZoomListener onChange={setZoomLevel} />
+        <FloatingMapControls gpsCoords={defaultCenter} onRecenterClick={() => setTriggerRecenter(true)} />
 
-        {/* Render Incident Pins */}
-        {allPins.map((pin) => (
-          <Marker
-            key={pin.id}
-            position={[pin.lat, pin.lng]}
-            eventHandlers={{
-              click: () => openVideoModal(pin)
-            }}
-          >
-            <Popup>
-              <div className="p-1 font-sora">
-                <h4 className="font-bold text-xs text-ink">{pin.title}</h4>
-                <p className="text-[10px] text-ink-soft font-semibold mt-0.5">{pin.description}</p>
-                <button
-                  onClick={() => openVideoModal(pin)}
-                  className="mt-2 w-full py-1 bg-[#E9BA26] text-ink font-black rounded text-[10px] uppercase"
-                >
-                  View Stream
-                </button>
+        {/* User Current Location Marker */}
+        <Marker 
+          position={defaultCenter}
+          interactive={false}
+          icon={L.divIcon({
+            className: 'custom-user-marker',
+            html: `
+              <div class="user-pulse-container" style="pointer-events: none;">
+                <div class="user-pulse-dot"></div>
               </div>
-            </Popup>
-          </Marker>
+            `,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          })}
+        />
+
+        {/* Heatmap concentric circles */}
+        {showHeatmap && allPins.map((pin) => (
+          <React.Fragment key={`heat-${pin.id}`}>
+            <Circle 
+              center={[pin.lat, pin.lng]} 
+              radius={240} 
+              pathOptions={{ className: 'heatmap-circle-blue', fillOpacity: heatmapOpacity * 0.4 }} 
+            />
+            <Circle 
+              center={[pin.lat, pin.lng]} 
+              radius={160} 
+              pathOptions={{ className: 'heatmap-circle-green', fillOpacity: heatmapOpacity * 0.55 }} 
+            />
+            <Circle 
+              center={[pin.lat, pin.lng]} 
+              radius={90} 
+              pathOptions={{ className: 'heatmap-circle-yellow', fillOpacity: heatmapOpacity * 0.7 }} 
+            />
+            <Circle 
+              center={[pin.lat, pin.lng]} 
+              radius={40} 
+              pathOptions={{ className: 'heatmap-circle-red', fillOpacity: heatmapOpacity * 0.85 }} 
+            />
+          </React.Fragment>
         ))}
 
+        {/* Video Thumbnail Markers */}
+        {showAvatars && allPins.map((pin) => {
+          const isVerified = pin.status === 'PUBLIC_APPROVED';
+          const isChecking = pin.status === 'AI_CHECK_1' || pin.status === 'AI_CHECK_2';
+          
+          let borderClass = '';
+          if (isVerified) borderClass = 'verified';
+          else if (isChecking) borderClass = 'suspicious';
+
+          return (
+            <Marker
+              key={pin.id}
+              position={[pin.lat, pin.lng]}
+              eventHandlers={{
+                click: () => openVideoModal(pin)
+              }}
+              icon={L.divIcon({
+                className: 'custom-map-avatar',
+                html: `
+                  <div class="avatar-marker-container ${borderClass}" style="background-image: linear-gradient(135deg, #ffd900 0%, #ff9500 100%)">
+                    <div class="avatar-marker-play">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                  </div>
+                `,
+                iconSize: [50, 50],
+                iconAnchor: [25, 25]
+              })}
+            />
+          );
+        })}
       </MapContainer>
 
       {/* Floating Info Banner Overlay */}
@@ -336,108 +325,6 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
           </span>
         </div>
       </div>
-
-      {/* Leaflet Map (Light Tiles - CartoDB Voyager) */}
-      <MapContainer 
-        center={gpsCoords} 
-        zoom={14} 
-        zoomControl={false}
-        scrollWheelZoom={true}
-        doubleClickZoom={true}
-        dragging={true}
-        touchZoom={true}
-        keyboard={true}
-        zoomAnimation={true}
-        style={{ width: '100%', height: '100%' }}
-      >
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
-        />
-
-        {/* Recenter Map when triggered */}
-        <MapRecenter center={gpsCoords} forceRecenter={triggerRecenter} onRecenterDone={() => setTriggerRecenter(false)} />
-        <MapZoomListener onChange={setZoomLevel} />
-        <FloatingMapControls gpsCoords={gpsCoords} onRecenterClick={() => setTriggerRecenter(true)} />
-
-        {/* User Current Location Marker (Non-interactive visual guide to prevent overlapping click blocking) */}
-        <Marker 
-          position={gpsCoords}
-          interactive={false}
-          icon={L.divIcon({
-            className: 'custom-user-marker',
-            html: `
-              <div class="user-pulse-container" style="pointer-events: none;">
-                <div class="user-pulse-dot"></div>
-              </div>
-            `,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
-          })}
-        />
-
-        {/* Snapchat-style Heatmap concentric circles */}
-        {showHeatmap && allPins.map((pin) => (
-          <React.Fragment key={`heat-${pin.id}`}>
-            {/* Outer Blue Circle */}
-            <Circle 
-              center={[pin.lat, pin.lng]} 
-              radius={240} 
-              pathOptions={{ className: 'heatmap-circle-blue', fillOpacity: heatmapOpacity * 0.4 }} 
-            />
-            {/* Mid Green Circle */}
-            <Circle 
-              center={[pin.lat, pin.lng]} 
-              radius={160} 
-              pathOptions={{ className: 'heatmap-circle-green', fillOpacity: heatmapOpacity * 0.55 }} 
-            />
-            {/* Inner Yellow Circle */}
-            <Circle 
-              center={[pin.lat, pin.lng]} 
-              radius={90} 
-              pathOptions={{ className: 'heatmap-circle-yellow', fillOpacity: heatmapOpacity * 0.7 }} 
-            />
-            {/* Core Red Circle */}
-            <Circle 
-              center={[pin.lat, pin.lng]} 
-              radius={40} 
-              pathOptions={{ className: 'heatmap-circle-red', fillOpacity: heatmapOpacity * 0.85 }} 
-            />
-          </React.Fragment>
-        ))}
-
-        {/* Video Thumbnail Markers */}
-        {showAvatars && allPins.map((pin) => {
-          const isVerified = pin.status === 'PUBLIC_APPROVED';
-          const isChecking = pin.status === 'AI_CHECK_1' || pin.status === 'AI_CHECK_2';
-          
-          let borderClass = '';
-          if (isVerified) borderClass = 'verified';
-          else if (isChecking) borderClass = 'suspicious'; // renders standard border color rule
-
-          return (
-            <Marker
-              key={pin.id}
-              position={[pin.lat, pin.lng]}
-              eventHandlers={{
-                click: () => openVideoModal(pin)
-              }}
-              icon={L.divIcon({
-                className: 'custom-map-avatar',
-                html: `
-                  <div class="avatar-marker-container ${borderClass}" style="background-image: ${pin.avatarGradient || 'linear-gradient(135deg, #e5e5e5 0%, #b3b3b3 100%)'}">
-                    <div class="avatar-marker-play">
-                      <svg width="8" height="8" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
-                    </div>
-                  </div>
-                `,
-                iconSize: [50, 50],
-                iconAnchor: [25, 25]
-              })}
-            />
-          );
-        })}
-      </MapContainer>
 
       {/* Video Modal Overlay */}
       {selectedVideo && (
