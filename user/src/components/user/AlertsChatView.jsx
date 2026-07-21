@@ -203,7 +203,8 @@ ${bullets.length > 0 ? bullets.join('\n\n') : '* Media stored and analyzed.'}`;
 
 function MarkdownMessage({ content }) {
   if (!content) return null;
-  const lines = content.split('\n');
+  const str = typeof content === 'string' ? content : (typeof content === 'object' ? JSON.stringify(content) : String(content));
+  const lines = str.split('\n');
   return (
     <div className="space-y-1.5 leading-relaxed select-text font-sans text-xs text-ink">
       {lines.map((line, idx) => {
@@ -558,6 +559,10 @@ export default function AlertsChatView() {
     } else if (service.type === 'query') {
       setInputText(service.query);
     }
+  };
+
+  const handleQuickQuestion = (questionText) => {
+    setInputText(questionText);
   };
 
   const chipStyle = {
