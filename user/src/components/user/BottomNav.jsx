@@ -54,7 +54,7 @@ export default function BottomNav() {
       label: 'Feed', 
       path: '/user/feed',
       renderIcon: (isActive) => (
-        <svg viewBox="0 0 24 24" fill={isActive ? '#09090b' : 'none'} stroke={isActive ? '#09090b' : 'rgba(9, 9, 11, 0.65)'} strokeWidth={isActive ? '2.5' : '2'} className="w-5 h-5 transition-all">
+        <svg viewBox="0 0 24 24" fill={isActive ? '#09090b' : 'none'} stroke={isActive ? '#09090b' : 'rgba(9, 9, 11, 0.65)'} strokeWidth={isActive ? '2.5' : '2'} className="w-4 h-4 transition-all">
           <polygon points="12 2 19 21 12 17 5 21 12 2"/>
         </svg>
       )
@@ -77,16 +77,16 @@ export default function BottomNav() {
 
   return (
     <div className="flex-none w-full relative z-40 select-none" style={{
-      height: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+      height: 'calc(48px + env(safe-area-inset-bottom, 0px))',
       background: '#E9BA26', // Sophisticated Safety Yellow (#E9BA26)
-      boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.08)',
-      borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+      boxShadow: '0 -2px 12px rgba(0, 0, 0, 0.06)',
+      borderTop: '1px solid rgba(0, 0, 0, 0.08)',
       overflow: 'visible'
     }}>
       <div style={{
         position: 'relative',
         width: '100%',
-        height: '64px',
+        height: '48px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-around',
@@ -98,15 +98,15 @@ export default function BottomNav() {
             className="nav-sliding-circle"
             style={{
               position: 'absolute',
-              width: '44px',
-              height: '44px',
+              width: '34px',
+              height: '34px',
               borderRadius: '50%',
               backgroundColor: '#ffffff', // White sliding indicator circle
-              top: '6px',
-              left: `calc(${activeIndex * 20}% + (20% - 44px) / 2)`,
+              top: '4px',
+              left: `calc(${activeIndex * 20}% + (20% - 34px) / 2)`,
               transition: 'left 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
               zIndex: 1,
-              boxShadow: '0 6px 20px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06)',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06)',
               pointerEvents: 'none'
             }}
           />
@@ -134,17 +134,17 @@ export default function BottomNav() {
                 zIndex: 2,
                 WebkitTapHighlightColor: 'transparent',
                 outline: 'none',
-                paddingTop: '6px'
+                paddingTop: '4px'
               }}
             >
               <div style={{
-                transform: isActive ? 'translateY(-3px) scale(1.18)' : 'translateY(0) scale(1)',
+                transform: isActive ? 'translateY(-2px) scale(1.1)' : 'translateY(0) scale(1)',
                 transition: 'transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '44px',
-                height: '44px',
+                width: '34px',
+                height: '34px',
                 borderRadius: '50%',
                 backgroundColor: 'transparent'
               }}>
@@ -153,15 +153,15 @@ export default function BottomNav() {
               
               {/* Label inside the yellow bar */}
               <span style={{
-                fontSize: '9px',
-                marginTop: '1px',
+                fontSize: '8px',
+                marginTop: '-2px',
                 fontWeight: isActive ? '800' : '600',
                 opacity: isActive ? 1 : 0.65,
                 fontFamily: 'Sora, sans-serif',
                 letterSpacing: '0.01em',
                 color: '#09090b',
                 transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                transform: isActive ? 'translateY(-1px) scale(1.06)' : 'translateY(0) scale(1)'
+                transform: isActive ? 'translateY(-1px) scale(1.04)' : 'translateY(0) scale(1)'
               }}>
                 {tab.label}
               </span>

@@ -8,65 +8,6 @@ import React, { useEffect, useState } from 'react';
  */
 
 const POLICE_URL = '/police/index.html';
-const DEPT_HOME = '/departments/index.html';
-const DEPT_ADMIN = '/departments/admin.html';
-const deskUrl = (id) => `/departments/dashboard.html?dept=${id}`;
-
-const DESKS = [
-  { id: 'pwd-roads', name: 'Public Works — Roads', note: 'Potholes · road damage' },
-  { id: 'pwd-buildings', name: 'Public Works — Buildings', note: 'Unsafe structures' },
-  { id: 'electricity', name: 'Electricity', note: 'Outages · live-wire hazards' },
-  { id: 'water', name: 'Water Supply', note: 'Bursts · contamination · floods' },
-  { id: 'sanitation', name: 'Sanitation', note: 'Garbage · blackspots' },
-  { id: 'pollution-noise', name: 'Pollution & Noise', note: 'Effluents · noise' },
-  { id: 'traffic', name: 'Traffic', note: 'Signals · obstructions' },
-  { id: 'fire', name: 'Fire & Emergency', note: '15-minute SLA floor' },
-  { id: 'health', name: 'Public Health', note: 'Outbreaks · food safety' },
-  { id: 'education', name: 'Education', note: 'School infrastructure' },
-  { id: 'police', name: 'Police & Law Enforcement', note: 'Crime · fraud · 4-hour floor' },
-];
-
-const PIPELINES = [
-  ['Deepfake forensics', 'MTCNN + dual EfficientNet-B7 vote on every frame before evidence is trusted.'],
-  ['Routing & urgency', 'Free text becomes the right desk and tier — with an offline keyword fallback.'],
-  ['Scene verification', 'YOLO12s + SigLIP confirm the video shows what the report claims.'],
-  ['Trust fusion', 'Deterministic 0–100 trust and urgency scores. Same input, same score.'],
-  ['Hotspot clustering', 'DBSCAN on real haversine distance turns incidents into patrol targets.'],
-  ['Counterfeit currency', '98.67% CNN + RBI telescopic-serial OCR checks on a single photo.'],
-  ['Digital-arrest interception', 'Live call signals fuse to one score; dispatch fires before the transfer.'],
-];
-
-const PILLARS = [
-  { num: '01', title: 'Data Ingestion', desc: 'Multi-modal ingestion of complaint diaries, beat patrols, FIR databases, and public feeds.' },
-  { num: '02', title: 'Entity Resolution', desc: 'High-speed deduplication matching phone numbers, suspect aliases, and multiple identities.' },
-  { num: '03', title: 'Criminal Intelligence Graph', desc: 'Force-directed network analysis linking suspects to bank accounts, IMEIs, and locations.' },
-  { num: '04', title: 'Repeat Offender Rank', desc: 'Calculates dynamic recidivism risks for active gang clusters and parolees.' },
-  { num: '05', title: 'Hotspot Analytics', desc: 'Spatial DBSCAN clustering overlays mapping high-density crime sectors.' },
-  { num: '06', title: 'Predictive Policing', desc: 'Proximity-based risk forecasting without community profiling or demographic bias.' },
-  { num: '07', title: 'AI Anomaly Detection', desc: 'Unsupervised neural networks spotting localized burglary and theft spikes.' },
-  { num: '08', title: 'Socio-Economic Correlation', desc: 'Overlays streetlight outages, employment rates, and ward income data with incidents.' },
-  { num: '09', title: 'GEOINT GIS Layers', desc: 'Dynamic spatial layers showing police station boundaries, patrol zones, and hospitals.' },
-  { num: '10', title: 'Real-Time Control Room', desc: 'Centralized dispatches and live emergency interlocks for command operators.' },
-  { num: '11', title: 'Emergency Interlock Dispatch', desc: 'Automated routing of critical citizen alerts directly to precinct patrol cars.' },
-  { num: '12', title: 'AI Investigation Copilot', desc: 'High-speed Graph-RAG timeline summaries and court-ready Section 65B dossiers.' },
-  { num: '13', title: 'Computer Vision Analytics', desc: 'Live 4-grid street video analysis checking for weapons, crowd sizes, and counter-trespass.' },
-  { num: '14', title: 'Face Analytics Watchlist', desc: 'Real-time facial recognition comparing camera feeds against missing persons files.' },
-  { num: '15', title: 'District Performance Analytics', desc: 'SP-level clearance speed charts, conviction ratios, and patrol response times.' },
-  { num: '16', title: 'Mobile Field Patrolling', desc: 'Offline-first SQLite patrolling grids with automatic background cloud synchronization.' },
-  { num: '17', title: 'DGP/SP Executive Console', desc: 'Command dashboard for top-level officers tracking statewide metrics.' },
-  { num: '18', title: 'Immutable Audit Trails', desc: 'Section 65B SHA-256 compliance hashing securing legal chain of custody.' },
-  { num: '19', title: 'Secure Compliance Vault', desc: 'Access control logging that logs all suspect profile updates.' },
-  { num: '20', title: 'Ethics & Fairness Guardrails', desc: 'Strict algorithmic boundaries blocking caste, religion, or community profiling.' },
-  { num: '21', title: 'Multi-Factor Passcode Gateway', desc: 'Cryptographic MFA protecting command console intranet sessions.' },
-  { num: '22', title: 'Station Clearance Metrics', desc: 'Station-by-station response speeds and case resolution statistics.' },
-  { num: '23', title: 'WhatsApp Webhook Scanners', desc: 'Automates public scanning of suspect messages and links using text classifiers.' },
-  { num: '24', title: 'ANPR Vehicle Spotting', desc: 'Automatic license plate recognition spotting watchlist cars at toll gates.' },
-  { num: '25', title: 'Database Case Extender', desc: 'Seamlessly scales databases with missing persons, unidentified bodies, and CDRs.' },
-  { num: '26', title: 'Sentinel Ghost Grid', desc: 'Encrypted citizen PWA with on-device EXIF scrubbing for anonymous reporting.' },
-  { num: '27', title: 'Multilingual Copilot', desc: 'Speech-to-text voice command inputs supporting English and Kannada.' },
-  { num: '28', title: 'Socio-Economic Choropleth', desc: 'Visual choropleth map overlays identifying poverty-crime causal links.' },
-  { num: '29', title: 'Deepfake & Spoof Defense', desc: 'Identifies synthesized voice clones and checks CBI video call authenticity.' },
-];
 
 function ShieldMark({ className }) {
   return (
@@ -159,125 +100,187 @@ export default function LandingPageView({ onEnterCitizen }) {
         </div>
       </section>
 
-      {/* S·02 access gate — the three surfaces */}
+      {/* S·02 access gate — the two portal surfaces */}
       <section id="access" className="border-t border-amber-300 px-5 py-20 md:px-12">
-        <BandHead num="S·02">Three surfaces. <em className="font-light italic text-amber-700">Pick your side of the shield.</em></BandHead>
-        <div className="grid gap-6 md:grid-cols-3">
+        <BandHead num="S·02">Two surfaces. <em className="font-light italic text-amber-700">Pick your side of the shield.</em></BandHead>
+        <div className="grid gap-6 md:grid-cols-2 max-w-5xl">
           <button onClick={onEnterCitizen} className={CARD}>
             <ShieldMark className="h-11 w-10 text-amber-700" />
-            <h3 className="font-display text-xl font-medium">Citizen App</h3>
-            <p className="flex-1 text-sm text-ink-soft">
-              Report hazards, verify suspect notes and calls, talk to Nayak — the
-              law-backed counsel. De-identified before anything leaves your phone.
+            <h3 className="font-display text-2xl font-semibold">Citizen App</h3>
+            <p className="flex-1 text-sm text-ink-soft leading-relaxed">
+              Report hazards, verify suspect currency notes &amp; digital-arrest calls with Nayak — the
+              law-backed AI counsel. De-identified before anything leaves your phone.
             </p>
             <span className={CARD_CTA}>Enter as citizen →</span>
           </button>
-
-          <a href={DEPT_HOME} className={CARD}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" className="h-11 w-10 text-amber-700" aria-hidden="true">
-              <path d="M4 21 V8 H11 V21 M14 21 V4 H20 V21 M2 21 H22" />
-              <path d="M6.5 11 H8.5 M6.5 14.5 H8.5 M16 7.5 H18 M16 11 H18 M16 14.5 H18" />
-            </svg>
-            <h3 className="font-display text-xl font-medium">Department Grid</h3>
-            <p className="flex-1 text-sm text-ink-soft">
-              Eleven municipal desks, one dashboard shell, one SLA engine. Fire answers in
-              fifteen minutes; nothing expires quietly.
-            </p>
-            <span className={CARD_CTA}>Enter the grid →</span>
-          </a>
 
           <a href={POLICE_URL} className={CARD}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" className="h-11 w-10 text-amber-700" aria-hidden="true">
               <path d="M12 2 L21 5.5 V12 C21 18 17 21.5 12 23 C7 21.5 3 18 3 12 V5.5 Z" />
               <path d="M12 8 L13.2 10.6 L16 10.9 L14 12.9 L14.5 15.7 L12 14.3 L9.5 15.7 L10 12.9 L8 10.9 L10.8 10.6 Z" opacity="0.55" />
             </svg>
-            <h3 className="font-display text-xl font-medium">Police Command Console</h3>
-            <p className="flex-1 text-sm text-ink-soft">
-              Hotspot clustering, fraud-ring graphs, live digital-arrest interception, and
-              hash-sealed dossiers — scoped by rank, audit-logged.
+            <h3 className="font-display text-2xl font-semibold">Police Command Console</h3>
+            <p className="flex-1 text-sm text-ink-soft leading-relaxed">
+              Hotspot DBSCAN spatial clustering, Louvain fraud-ring graphs, live digital-arrest interception, and
+              SHA-256 court-admissible evidence dossiers.
             </p>
-            <span className={CARD_CTA}>Open the console →</span>
+            <span className={CARD_CTA}>Open command console →</span>
           </a>
         </div>
       </section>
 
-      {/* S·03 all eleven desks, individually wired */}
+      {/* S·03 the dual-frontline paradox */}
       <section className="border-t border-amber-300 px-5 py-20 md:px-12">
-        <BandHead num="S·03">Every desk, <em className="font-light italic text-amber-700">one click deep.</em></BandHead>
-        <div className="border-t border-amber-300">
-          {DESKS.map((d, i) => (
-            <a
-              key={d.id}
-              href={deskUrl(d.id)}
-              className="group grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-4 border-b border-amber-200 px-2 py-4 transition hover:bg-amber-50 md:grid-cols-[64px_minmax(0,1fr)_auto]"
-            >
-              <span className="font-mono text-[0.7rem] tracking-tag text-amber-500">{String(i + 1).padStart(2, '0')}</span>
-              <span>
-                <span className="font-display text-base font-medium md:text-lg">{d.name}</span>
-                <span className="block text-xs text-ink-faint">{d.note}</span>
-              </span>
-              <span className="hidden font-mono text-[0.6rem] uppercase tracking-tag text-amber-700 transition-all group-hover:tracking-[0.28em] md:block">
-                Open desk →
-              </span>
-            </a>
-          ))}
-        </div>
-        <a href={DEPT_ADMIN} className="mt-6 inline-block rounded-sm border border-amber-500 px-5 py-3 font-mono text-[0.64rem] uppercase tracking-tag text-amber-800 transition hover:bg-amber-950 hover:text-amber-50">
-          Master console — all queues, worst first →
-        </a>
-      </section>
-
-      {/* S·04 pipelines */}
-      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
-        <BandHead num="S·04">Seven pipelines <em className="font-light italic text-amber-700">under the hood.</em></BandHead>
-        <div className="grid gap-px overflow-hidden rounded-sm border border-amber-300 bg-amber-300 sm:grid-cols-2 lg:grid-cols-4">
-          {PIPELINES.map(([title, desc], i) => (
-            <div key={title} className="bg-white p-6">
-              <p className="mb-2 font-mono text-[0.66rem] tracking-tag text-amber-500">{String(i + 1).padStart(2, '0')}</p>
-              <h4 className="text-sm font-semibold">{title}</h4>
-              <p className="mt-1 text-xs leading-relaxed text-ink-faint">{desc}</p>
+        <BandHead num="S·03">The dual-frontline <em className="font-light italic text-amber-700">paradox.</em></BandHead>
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="space-y-4 text-sm leading-relaxed text-ink-soft">
+            <p>Modern cities suffer from two concurrent emergencies: physical infrastructure decay on the streets and high-tech extortion in citizen pockets.</p>
+            <p>A "digital arrest" call holds a victim hostage for hours via fake CBI video calls until life savings disappear. Simultaneously, physical potholes and municipal hazards go unaddressed due to fragmented routing.</p>
+          </div>
+          <div className="space-y-4">
+            <div className="rounded-sm border-l-4 border-amber-950 border-y border-r border-amber-300 bg-white p-6">
+              <span className="font-mono text-[0.62rem] uppercase tracking-tag text-amber-600">FRONTLINE 01 · Physical Safety</span>
+              <h3 className="mt-1 font-display text-lg font-semibold">Street &amp; Civic Hazards</h3>
+              <p className="mt-1 text-xs text-ink-faint">Potholes, structural fires, water main bursts, illegal dumping, and unlit transit corridors.</p>
             </div>
-          ))}
-          <div className="flex items-center justify-center bg-amber-950 p-6">
-            <p className="text-center font-display text-sm italic text-amber-200">One classifier serves all three surfaces.</p>
+            <div className="rounded-sm border-l-4 border-amber-600 border-y border-r border-amber-300 bg-white p-6">
+              <span className="font-mono text-[0.62rem] uppercase tracking-tag text-amber-600">FRONTLINE 02 · Digital Threats</span>
+              <h3 className="mt-1 font-display text-lg font-semibold">Cyber &amp; Financial Extortion</h3>
+              <p className="mt-1 text-xs text-ink-faint">Digital arrest scams, deepfake video impersonation, counterfeit currency notes, and syndicate bank mule networks.</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* S·05 the 29 strategic pillars */}
+      {/* S·04 7-core AI neural engines */}
       <section className="border-t border-amber-300 px-5 py-20 md:px-12">
-        <BandHead num="S·05">Twenty-nine pillars, <em className="font-light italic text-amber-700">one doctrine.</em></BandHead>
-        <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-          {PILLARS.map((p) => (
-            <div key={p.num} className="border-l-2 border-amber-300 pl-4">
-              <p className="font-mono text-[0.62rem] tracking-tag text-amber-500">P·{p.num}</p>
-              <h4 className="mt-0.5 text-sm font-semibold">{p.title}</h4>
-              <p className="mt-0.5 text-xs leading-relaxed text-ink-faint">{p.desc}</p>
+        <BandHead num="S·04">7-Core AI <em className="font-light italic text-amber-700">neural engines.</em></BandHead>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            ['🎭 Deepfake Forensics', 'Dual EfficientNet-B7 ensemble sampling 32 frames deep. MTCNN face detection calculates frame-consensus authenticity scores.', 'MTCNN + 2× EfficientNet-B7'],
+            ['💵 Counterfeit Currency CNN', 'Trained on 6,304 note images. Integrates 4 classical checks: security thread, microprint sharpness, and RBI serial OCR.', '98.67% Accuracy · AUC 0.998'],
+            ['🚨 Scene Verification', 'YOLO12s road damage detection fused with SigLIP waste classifier. Persistence ratio gate prevents single-frame synthetic illusions.', 'YOLO12s + SigLIP'],
+            ['🗺️ DBSCAN Hotspotting', 'Haversine spatial clustering groups incidents into real-time patrol zones with centroid threat vectors.', 'DBSCAN Spatial Clustering'],
+            ['🕸️ Fraud Ring Graph AI', 'Louvain community detection & betweenness centrality reveal hidden syndicate mule accounts and phone networks.', 'Louvain Graph AI'],
+            ['⚖️ Nayak BNS Legal RAG', '3,974 indexed sections across BNS, Motor Vehicles Act, CrPC & RBI circulars. Citation-backed legal advice.', '3,974 Sections Indexed']
+          ].map(([title, desc, badge]) => (
+            <div key={title} className="rounded-sm border border-amber-300 bg-white p-6 flex flex-col justify-between">
+              <div>
+                <h4 className="font-display text-base font-semibold text-ink">{title}</h4>
+                <p className="mt-2 text-xs leading-relaxed text-ink-faint">{desc}</p>
+              </div>
+              <span className="mt-4 inline-block font-mono text-[0.6rem] uppercase tracking-tag text-amber-700 bg-amber-100/70 px-2 py-1 rounded-sm w-fit">{badge}</span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* S·06 anonymity — dark beat */}
-      <section className="border-t border-amber-300 bg-amber-950 px-5 py-24 text-amber-50 md:px-12">
-        <p className="font-mono text-[0.68rem] uppercase tracking-wide2 text-amber-300">S·06 · The boundary</p>
-        <h2 className="mt-4 max-w-3xl font-display text-3xl font-medium leading-tight tracking-tight md:text-5xl">
-          A report crosses the wall carrying evidence, location, and urgency —{' '}
-          <em className="font-light italic text-amber-200">never a name.</em>
-        </h2>
-        <p className="mt-6 max-w-xl text-sm leading-relaxed text-amber-200">
-          Department and police queries read a fixed, identity-free column list. Who filed
-          stays on the citizen side, permanently, by construction.
-        </p>
+      {/* S·05 live digital-arrest interception */}
+      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·05">Live digital-arrest <em className="font-light italic text-amber-700">interception.</em></BandHead>
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="space-y-4 text-sm leading-relaxed text-ink-soft">
+            <p>A "digital arrest" scam relies on keeping the victim isolated on continuous video calls while impersonating enforcement agencies (CBI, ED, Cyber Crime Police).</p>
+            <p>KAWACH monitors active sessions using a 4-phase weighted fusion engine: script keyphrase match (.30), voice-spoof probability (.20), deepfake video consensus (.20), and transaction anomaly (.30). When the score crosses 70, dispatch fires automatically before money leaves the account.</p>
+          </div>
+          <div className="grid grid-cols-3 gap-4 border border-amber-300 bg-white p-6 rounded-sm text-center">
+            <div>
+              <p className="font-mono text-xl font-bold text-amber-950">.30 / .20</p>
+              <p className="font-mono text-[0.6rem] uppercase tracking-tag text-ink-faint mt-1">Weighted Fusion</p>
+            </div>
+            <div>
+              <p className="font-mono text-xl font-bold text-amber-950">&ge; 70</p>
+              <p className="font-mono text-[0.6rem] uppercase tracking-tag text-ink-faint mt-1">Auto Dispatch</p>
+            </div>
+            <div>
+              <p className="font-mono text-xl font-bold text-amber-950">Pre-Transfer</p>
+              <p className="font-mono text-[0.6rem] uppercase tracking-tag text-ink-faint mt-1">Bank Interception</p>
+            </div>
+          </div>
+        </div>
       </section>
 
-      {/* S·07 closing gate */}
-      <section className="px-5 py-20 md:px-12">
-        <BandHead num="S·07">The city is already reporting. <em className="font-light italic text-amber-700">Take your seat.</em></BandHead>
+      {/* S·06 louvain mule & syndicate graph */}
+      <section className="border-t border-amber-300 bg-amber-950 px-5 py-24 text-amber-50 md:px-12">
+        <p className="font-mono text-[0.68rem] uppercase tracking-wide2 text-amber-300">S·06 · Syndicate Intelligence</p>
+        <h2 className="mt-4 max-w-3xl font-display text-3xl font-medium leading-tight tracking-tight md:text-5xl">
+          Offenders, SIMs, bank accounts, &amp; UPI handles form{' '}
+          <em className="font-light italic text-amber-200">one connected graph.</em>
+        </h2>
+        <div className="mt-8 grid gap-6 md:grid-cols-3 text-xs text-amber-200 border-t border-amber-800 pt-6">
+          <div>
+            <b className="block text-sm text-white mb-1">Louvain Community Detection</b>
+            Discovers hidden criminal clusters across complex inter-bank transfer networks.
+          </div>
+          <div>
+            <b className="block text-sm text-white mb-1">Betweenness Centrality</b>
+            Highlights high-frequency broker nodes connecting disparate fraud rings.
+          </div>
+          <div>
+            <b className="block text-sm text-white mb-1">Explainable Mule Flags</b>
+            Every flag carries step-by-step human-readable audit justification for court.
+          </div>
+        </div>
+      </section>
+
+      {/* S·07 SLA guarantee ladder */}
+      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·07">15-Minute SLA <em className="font-light italic text-amber-700">guarantee ladder.</em></BandHead>
+        <div className="grid gap-4 max-w-3xl">
+          {[
+            ['Critical Emergency', '15 min floor', 'bg-red-600 text-white'],
+            ['High Priority Threat', '4 hrs floor', 'bg-amber-600 text-white'],
+            ['Normal Incident', '24 hrs window', 'bg-amber-800 text-white'],
+            ['Standard Civic Query', '72 hrs window', 'bg-slate-700 text-white']
+          ].map(([label, time, badge]) => (
+            <div key={label} className="flex items-center justify-between border border-amber-300 bg-white p-4 rounded-sm">
+              <span className="font-display text-sm font-semibold">{label}</span>
+              <span className={`font-mono text-[0.62rem] uppercase tracking-tag px-3 py-1 rounded-sm ${badge}`}>{time}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* S·08 BSA §63 court dossiers */}
+      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·08">BSA §63 Court-Admissible <em className="font-light italic text-amber-700">dossiers.</em></BandHead>
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="space-y-4 text-sm leading-relaxed text-ink-soft">
+            <p>Incidents generate SHA-256 hash-sealed PDF dossiers directly from database records. Hashed over final output bytes and registered in an immutable audit ledger, every dossier maintains court-ready chain of custody under Bharatiya Sakshya Adhiniyam 2023 §63.</p>
+          </div>
+          <div className="space-y-3 font-mono text-xs text-ink-faint border-l-2 border-amber-500 pl-4">
+            <p><b className="text-ink">Cryptographic Validation:</b> SHA-256 checksum printed in PDF footer matches court exports.</p>
+            <p><b className="text-ink">Chain-of-Custody Log:</b> Every access, verification, and dispatch action timestamped.</p>
+            <p><b className="text-ink">Instant PDF Export:</b> Single-click dossier compilation for investigating officers.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* S·09 zero-cost production stack */}
+      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·09">Zero-cost <em className="font-light italic text-amber-700">production stack.</em></BandHead>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-5 text-center">
+          {[
+            ['Vercel', 'Citizen PWA Frontend'],
+            ['Render', 'FastAPI Backend'],
+            ['HF Spaces', 'AI Microservice'],
+            ['Supabase', 'Postgres & Legal RAG'],
+            ['Cloudinary', 'Evidence Media CDN']
+          ].map(([tech, role]) => (
+            <div key={tech} className="border border-amber-300 bg-white p-4 rounded-sm">
+              <b className="font-mono text-lg text-amber-950 block">{tech}</b>
+              <span className="font-mono text-[0.6rem] uppercase tracking-tag text-ink-faint mt-1 block">{role}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* S·10 closing gate */}
+      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·10">The city is reporting. <em className="font-light italic text-amber-700">Take your seat.</em></BandHead>
         <div className="flex flex-wrap gap-4">
-          <button onClick={onEnterCitizen} className={GATE_BTN}>Citizen App</button>
-          <a href={DEPT_HOME} className={GATE_BTN}>Department Grid</a>
-          <a href={POLICE_URL} className={GATE_BTN}>Police Console</a>
+          <button onClick={onEnterCitizen} className={GATE_BTN}>Launch Citizen App</button>
+          <a href={POLICE_URL} className={GATE_BTN}>Open Police Console</a>
         </div>
       </section>
 

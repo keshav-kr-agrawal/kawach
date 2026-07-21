@@ -22,6 +22,10 @@ export default function UserProfileView({
 }) {
   const handleSignOut = onSignOut || onLogout;
 
+  const [ghostMode, setGhostMode] = useState(true);
+  const [activeTab, setActiveTab] = useState('posted'); // 'posted' or 'liked'
+  const [selectedReport, setSelectedReport] = useState(null);
+
   if (isLoading) {
     return (
       <div className="flex h-[100dvh] items-center justify-center bg-white">
@@ -29,10 +33,6 @@ export default function UserProfileView({
       </div>
     );
   }
-
-  const [ghostMode, setGhostMode] = useState(true);
-  const [activeTab, setActiveTab] = useState('posted'); // 'posted' or 'liked'
-  const [selectedReport, setSelectedReport] = useState(null);
 
   const safeReports = Array.isArray(userReports) ? userReports : [];
   const safeBookmarkedLaws = Array.isArray(bookmarkedLaws) ? bookmarkedLaws : [];
@@ -43,14 +43,17 @@ export default function UserProfileView({
   return (
     <div className="flex-1 flex flex-col h-full bg-white font-sans text-ink overflow-y-auto pb-24 select-text">
       
-      {/* Header Banner */}
-      <div className="px-6 pt-6 pb-4 bg-white border-b border-amber-400/20">
-        <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block mb-1 font-mono">
-          PRIVACY CONTROL & INCIDENT HISTORY
+      {/* Header Banner — Restored with top notch safety padding */}
+      <div className="px-4 pt-6 pb-3 bg-white border-b border-amber-400/20 md:px-6 md:pt-8 md:pb-4">
+        <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block mb-0.5 font-mono">
+          PRIVACY CONTROL &amp; INCIDENT HISTORY
         </span>
-        <h2 className="text-2xl font-black text-ink font-sora">
+        <h2 className="text-xl font-black text-ink font-sora md:text-2xl">
           Citizen <span className="font-serif italic font-normal text-[#b08850] pr-1">Profile</span>
         </h2>
+        <p className="text-ink-soft text-xs font-semibold mt-1 leading-relaxed hidden sm:block">
+          Manage your anonymous sentinel identity, saved law codes, and public report status.
+        </p>
       </div>
 
       <div className="p-5 space-y-6">

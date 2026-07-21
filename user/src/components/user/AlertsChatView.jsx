@@ -9,55 +9,113 @@ const EMERGENCY_CATEGORIES = ['Infrastructure', 'Violence/Loitering', 'Theft/Pro
 const DEFAULT_COORDS = { lat: 12.9716, lng: 77.5946 }; // Bengaluru fallback
 
 const NAYAK_SERVICES = [
+  // Category: DIGITAL_SAFETY (🛡️ Digital Safety & Forensics)
   {
     id: 'currency',
-    label: 'Counterfeit Currency Detection',
+    category: 'DIGITAL_SAFETY',
+    label: 'Counterfeit Currency Detector',
     icon: '💵',
-    badge: 'Computer Vision',
+    badge: 'CNN & RBI Rulebook',
     type: 'upload',
     accept: 'image/*',
     prompt: '💵 Upload photo of ₹500 or ₹200 note for Computer Vision counterfeit scan...'
   },
   {
     id: 'deepfake',
-    label: 'Deepfake Identification',
+    category: 'DIGITAL_SAFETY',
+    label: 'Deepfake & Face Swap Inspector',
     icon: '🎭',
-    badge: 'MTCNN + CNN',
+    badge: 'MTCNN + EfficientNet-B7',
     type: 'upload',
     accept: 'video/*,image/*',
-    prompt: '🎭 Upload video clip for AI facial deepfake analysis...'
+    prompt: '🎭 Upload video clip or photo for AI facial deepfake analysis...'
   },
   {
     id: 'scam-script',
-    label: 'Scam Script & Voice Spoofing',
+    category: 'DIGITAL_SAFETY',
+    label: 'Digital Arrest & Call Spoof Verifier',
     icon: '📞',
-    badge: 'NLP & Speech AI',
+    badge: 'Voiceprint & Speech AI',
     type: 'query',
     query: 'I received a video/voice call claiming to be CBI / ED threatening digital arrest. Is this a scam?'
   },
   {
     id: 'fraud-ring',
-    label: 'Fraud Ring Mapping',
+    category: 'DIGITAL_SAFETY',
+    label: 'Cyber Fraud Ring & Mule Mapper',
     icon: '🕸️',
-    badge: 'Graph AI',
+    badge: 'Louvain Graph AI',
     type: 'query',
     query: 'Analyze recent cyber fraud numbers and check if there is an active fraud ring targeting my area.'
   },
+
+  // Category: GEO_SAFETY (🗺️ Emergency & Geo Safety)
   {
     id: 'geospatial',
-    label: 'Geospatial Crime Grid',
+    category: 'GEO_SAFETY',
+    label: 'Geospatial Crime & Patrol Grid',
     icon: '🗺️',
-    badge: 'Geo AI',
+    badge: 'DBSCAN Geo AI',
     type: 'query',
     query: 'Show geospatial safety intelligence and verified incident density near my current GPS location.'
   },
   {
+    id: 'sos-dispatch',
+    category: 'GEO_SAFETY',
+    label: 'Direct Emergency Dispatch SOS',
+    icon: '🚨',
+    badge: '112 Police & Fire Routing',
+    type: 'query',
+    query: 'EMERGENCY SOS: Require immediate police patrol and emergency unit dispatch to my location.'
+  },
+
+  // Category: LEGAL (⚖️ BNS Legal Rulebooks)
+  {
     id: 'legal-rights',
+    category: 'LEGAL',
     label: 'Legal Rights & Cop Powers',
     icon: '⚖️',
-    badge: 'BNS 2026',
+    badge: 'BNS 2026 Rulebook',
     type: 'query',
     query: 'What are my constitutional rights during police vehicle checks under BNS and Motor Vehicles Act?'
+  },
+  {
+    id: 'vehicle-rights',
+    category: 'LEGAL',
+    label: 'Vehicle Stop & Traffic Law Rights',
+    icon: '🚗',
+    badge: 'Motor Vehicles Act',
+    type: 'query',
+    query: 'What documents am I required to show during a late-night police traffic stop under Motor Vehicles Act?'
+  },
+
+  // Category: WORK_SHORTCUTS (🛠️ Citizen Work Shortcuts)
+  {
+    id: 'voice-dictate',
+    category: 'WORK_SHORTCUTS',
+    label: 'Voice-to-Report Dictation',
+    icon: '🎙️',
+    badge: 'Hands-Free AI',
+    type: 'query',
+    query: '🎙️ Voice Dictation Mode: Speak your complaint in Hindi, Kannada, or English. Nayak will format a BNS report draft.'
+  },
+  {
+    id: 'bilingual-pdf',
+    category: 'WORK_SHORTCUTS',
+    label: 'Bilingual Station Complaint Generator',
+    icon: '📝',
+    badge: 'Station Draft',
+    type: 'query',
+    query: 'Draft an official police complaint letter in English & Kannada formatted for submission at the local SP office.'
+  },
+  {
+    id: 'cyber-1930',
+    category: 'WORK_SHORTCUTS',
+    label: 'National Cyber Crime (1930) Helper',
+    icon: '🔍',
+    badge: 'Helpline 1930',
+    type: 'query',
+    query: 'Prepare cyber fraud report payload formatted for the National Cyber Crime Portal (1930 helpline).'
   }
 ];
 
@@ -205,7 +263,12 @@ export default function AlertsChatView() {
   const [emFile, setEmFile] = useState(null);
   const [emDispatching, setEmDispatching] = useState(false);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
   const messagesEndRef = useRef(null);
+
+  const displayedServices = selectedCategory === 'ALL'
+    ? NAYAK_SERVICES
+    : NAYAK_SERVICES.filter((s) => s.category === selectedCategory);
   const fileInputRef = useRef(null);
   const emFileInputRef = useRef(null);
 
@@ -259,7 +322,18 @@ export default function AlertsChatView() {
     if (!file || busy) return;
 
     setBusy(true);
-    const userMsg = { id: 'user-' + Date.now(), sender: 'user', text: `Attached media: ${file.name}`, timestamp: now() };
+    const previewUrl = URL.createObjectURL(file);
+    const isImg = file.type.startsWith('image/');
+    const isVid = file.type.startsWith('video/');
+    const userMsg = {
+      id: 'user-' + Date.now(),
+      sender: 'user',
+      text: `Attached media: ${file.name}`,
+      mediaUrl: previewUrl,
+      isImage: isImg,
+      isVideo: isVid,
+      timestamp: now()
+    };
     setMessages((prev) => [...prev, userMsg]);
 
     try {
@@ -509,20 +583,20 @@ export default function AlertsChatView() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="px-6 py-3 bg-white border-b border-amber-400/20 flex items-center justify-between flex-none">
+      {/* Header — Restored with top notch safety margin */}
+      <div className="px-4 pt-4 pb-3 bg-white border-b border-amber-400/20 flex items-center justify-between flex-none md:px-6 md:pt-6 md:pb-3">
         <div>
           <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
-            LAW-BACKED LEGAL & THREAT COUNSEL
+            LAW-BACKED LEGAL &amp; THREAT COUNSEL
           </span>
-          <h2 className="text-xl font-black text-ink font-sora">
+          <h2 className="text-lg font-black text-ink font-sora md:text-xl">
             Nayak <span className="font-serif italic font-normal text-[#b08850] pr-1">AI Counsel</span>
           </h2>
         </div>
 
         <button
           onClick={() => setEmergencyOpen(true)}
-          className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs uppercase tracking-wider font-sora animate-pulse"
+          className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs uppercase tracking-wider font-sora animate-pulse shrink-0"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           Emergency SOS
@@ -569,7 +643,26 @@ export default function AlertsChatView() {
                   </div>
                   
                   {isUser ? (
-                    <p className="text-xs leading-relaxed font-semibold whitespace-pre-wrap">{m.text}</p>
+                    <div>
+                      <p className="text-xs leading-relaxed font-semibold whitespace-pre-wrap">{m.text}</p>
+                      {m.mediaUrl && (
+                        <div className="mt-2.5 rounded-xl overflow-hidden border border-amber-950/20 max-w-xs shadow-xs bg-slate-900">
+                          {!m.isVideo && (m.isImage || m.mediaUrl.startsWith('blob:') || m.mediaUrl.startsWith('data:image') || m.mediaUrl.match(/\.(jpeg|jpg|png|webp|gif)/i)) ? (
+                            <img 
+                              src={m.mediaUrl} 
+                              alt="Uploaded Evidence" 
+                              className="w-full h-auto max-h-56 object-cover rounded-xl transition-transform hover:scale-105" 
+                            />
+                          ) : (
+                            <video 
+                              src={m.mediaUrl} 
+                              controls 
+                              className="w-full h-auto max-h-56 object-cover rounded-xl" 
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <MarkdownMessage content={m.text} />
                   )}
@@ -613,31 +706,48 @@ export default function AlertsChatView() {
                 </div>
               </div>
 
-              {/* Render Key Services row-wise immediately after the first default welcome message */}
+              {/* Render Interactive Category Dropdown & Filtered Services */}
               {index === 0 && (
-                <div className="my-4 space-y-2 max-w-md w-full">
-                  <div className="text-[10px] font-black text-[#b08850] uppercase tracking-wider font-mono flex items-center gap-1.5 px-1">
-                    <span>⚡</span> Key AI Services (Tap to Scan or Consult):
+                <div className="my-4 p-4 bg-amber-50/80 border border-amber-400/35 rounded-2xl max-w-md w-full shadow-2xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2.5 border-b border-amber-400/20">
+                    <span className="text-[10px] font-black text-[#b08850] uppercase tracking-wider font-mono flex items-center gap-1.5">
+                      <span>⚡</span> Select AI Refinery &amp; Tool:
+                    </span>
+                    
+                    {/* Category Dropdown */}
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="bg-white border border-amber-400/40 rounded-xl px-2.5 py-1 text-xs font-bold text-ink focus:outline-none focus:border-[#b08850] shadow-2xs cursor-pointer"
+                    >
+                      <option value="ALL">📁 All Refineries ({NAYAK_SERVICES.length})</option>
+                      <option value="DIGITAL_SAFETY">🛡️ Digital Safety &amp; Forensics</option>
+                      <option value="GEO_SAFETY">🗺️ Emergency &amp; Geo Safety</option>
+                      <option value="LEGAL">⚖️ BNS Legal Rulebooks</option>
+                      <option value="WORK_SHORTCUTS">🛠️ Citizen Work Shortcuts</option>
+                    </select>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    {NAYAK_SERVICES.map((s) => (
+
+                  {/* Services List inside selected category */}
+                  <div className="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
+                    {displayedServices.map((s) => (
                       <button
                         key={s.id}
                         onClick={() => handleServiceClick(s)}
-                        className="w-full flex items-center justify-between p-3 bg-white hover:bg-amber-50/80 border border-amber-400/35 rounded-2xl shadow-2xs hover:shadow-xs transition-all hover:border-[#b08850] text-left active:scale-[0.99] cursor-pointer group"
+                        className="w-full flex items-center justify-between p-3 bg-white hover:bg-amber-100/60 border border-amber-400/30 rounded-xl shadow-2xs transition-all hover:border-[#b08850] text-left active:scale-[0.99] cursor-pointer group"
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-xl p-2 bg-amber-100/60 rounded-xl group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
-                          <div>
-                            <div className="font-sora text-xs font-black text-ink flex items-center gap-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-xl p-2 bg-amber-100/70 rounded-xl group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
+                          <div className="truncate">
+                            <div className="font-sora text-xs font-black text-ink truncate">
                               {s.label}
                             </div>
-                            <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                              {s.type === 'upload' ? '📷 Tap to select photo or video for instant AI scan' : '⚖️ Tap to consult Nayak legal rulebook'}
+                            <p className="text-[10px] text-slate-500 font-semibold mt-0.5 truncate">
+                              {s.type === 'upload' ? '📷 Tap to select file for AI scan' : '⚖️ Tap to launch automated AI query'}
                             </p>
                           </div>
                         </div>
-                        <span className="text-[9px] font-mono font-extrabold text-[#b08850] bg-amber-400/20 px-2 py-1 rounded-lg shrink-0 uppercase tracking-wider">
+                        <span className="text-[9px] font-mono font-extrabold text-[#b08850] bg-amber-400/20 px-2 py-1 rounded-lg shrink-0 uppercase tracking-wider ml-2">
                           {s.badge}
                         </span>
                       </button>
