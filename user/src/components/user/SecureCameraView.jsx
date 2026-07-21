@@ -9,12 +9,6 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
   const [recordTime, setRecordTime] = useState(0);
-  const [videoDuration, setVideoDuration] = useState(0);
-  const [flashActive, setFlashActive] = useState(false);
-
-  // Trim configuration state
-  const [trimStart, setTrimStart] = useState(0);
-  const [trimEnd, setTrimEnd] = useState(0);
 
   // Upload Form details
   const [title, setTitle] = useState('');
@@ -23,7 +17,6 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
   const [emergencyOverride, setEmergencyOverride] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [cameraError, setCameraError] = useState(null);
-  const [saveLocalCopy, setSaveLocalCopy] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   // Media Analysis state
@@ -31,13 +24,14 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
   const [isValidating, setIsValidating] = useState(false);
 
   const videoRef = useRef(null);
-  const reviewVideoRef = useRef(null);
   const streamRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const timerRef = useRef(null);
 
   const getApiBase = () =>
     (import.meta.env.VITE_CLASSIFIER_API_URL || 'http://localhost:8001/classify').replace(/\/classify$/, '');
 
-  // Quick scene scan, runs immediately on recording stop
   const runQuickValidate = async (blob) => {
     if (!blob) return;
     setIsValidating(true);
@@ -68,18 +62,6 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     }
   };
 
-  const fileInputRef = useRef(null);
-
-  const handleVideoFileSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setRecordedBlob(file);
-    const url = URL.createObjectURL(file);
-    setVideoUrl(url);
-    setSheetOpen(true);
-    runQuickValidate(file);
-  };
-
   const startCamera = async () => {
     try {
       setCameraError(null);
@@ -89,24 +71,21 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
           video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: true
         });
-      } catch {
+      } catch (err1) {
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: false
           });
-        } catch (err) {
-          throw err;
+        } catch (err2) {
+          throw err2;
         }
       }
       streamRef.current = mediaStream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
       setHasCameraAccess(true);
     } catch (err) {
       console.error('[CAMERA ACCESS FAILED]', err);
-      setCameraError('Live camera stream unavailable. You can also pick any recorded video clip directly below.');
+      setCameraError('Camera access blocked or unavailable. Please enable camera permissions in your device settings.');
       setHasCameraAccess(false);
     }
   };
@@ -124,9 +103,13 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     return () => stopCamera();
   }, []);
 
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
-  const timerRef = useRef(null);
+  // Ensure live camera stream is attached whenever video element is mounted
+  useEffect(() => {
+    if (hasCameraAccess && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(err => console.log('Camera video play error:', err));
+    }
+  }, [hasCameraAccess]);
 
   const startRecording = () => {
     if (!streamRef.current) return;
@@ -134,19 +117,9 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
     try {
       let recorderOptions = {};
       if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported) {
-        const supportedTypes = [
-          'video/mp4',
-          'video/webm;codecs=vp9,opus',
-          'video/webm;codecs=vp8,opus',
-          'video/webm',
-          'video/quicktime'
-        ];
-        for (const type of supportedTypes) {
-          if (MediaRecorder.isTypeSupported(type)) {
-            recorderOptions = { mimeType: type };
-            break;
-          }
-        }
+        if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) recorderOptions = { mimeType: 'video/webm;codecs=vp9' };
+        else if (MediaRecorder.isTypeSupported('video/webm')) recorderOptions = { mimeType: 'video/webm' };
+        else if (MediaRecorder.isTypeSupported('video/mp4')) recorderOptions = { mimeType: 'video/mp4' };
       }
 
       const recorder = new MediaRecorder(streamRef.current, recorderOptions);
@@ -162,7 +135,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
         setSheetOpen(true);
         runQuickValidate(blob);
       };
-      recorder.start(500);
+      recorder.start(250);
       mediaRecorderRef.current = recorder;
       setIsRecording(true);
       setRecordTime(0);
@@ -178,7 +151,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       }, 1000);
     } catch (err) {
       console.error('[RECORDING START FAILED]', err);
-      alert('Failed to start live recording stream. Please use the Select Video File button to select your clip.');
+      alert('Camera recording error: ' + (err.message || 'Unable to record live stream'));
     }
   };
 
@@ -188,9 +161,6 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       mediaRecorderRef.current.stop();
     }
     setIsRecording(false);
-    setVideoDuration(recordTime);
-    setTrimStart(0);
-    setTrimEnd(recordTime);
   };
 
   const handleRetake = () => {
@@ -214,14 +184,20 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       const fileName = `clip_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `citizen_clips/${fileName}`;
 
-      const { data, error } = await supabase.storage
-        .from('citizen-reports')
-        .upload(filePath, recordedBlob, { contentType: 'video/mp4' });
-
       let publicUrl = videoUrl;
-      if (!error && data) {
-        const { data: pubData } = supabase.storage.from('citizen-reports').getPublicUrl(filePath);
-        publicUrl = pubData.publicUrl;
+      try {
+        const { data, error } = await supabase.storage
+          .from('citizen-reports')
+          .upload(filePath, recordedBlob, { contentType: 'video/mp4' });
+
+        if (!error && data) {
+          const { data: pubData } = supabase.storage.from('citizen-reports').getPublicUrl(filePath);
+          if (pubData?.publicUrl) {
+            publicUrl = pubData.publicUrl;
+          }
+        }
+      } catch (e) {
+        console.warn('Supabase storage upload skipped, using active live video blob URL.', e);
       }
 
       const localUuid = localStorage.getItem('kawach_uploader_uuid') || `anon_${Date.now()}`;
@@ -244,11 +220,16 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       routeReport(newReport);
       if (onUploadComplete) onUploadComplete(newReport);
 
-      alert('Evidence Uploaded Successfully! Metadata scrubbed & signed.');
-      handleRetake();
+      alert('Evidence Saved & Transmitted Successfully! Metadata scrubbed & signed.');
+      setSheetOpen(false);
+      setRecordedBlob(null);
+      setVideoUrl(null);
+      setTitle('');
+      setDescription('');
+      startCamera();
     } catch (err) {
       console.error('[UPLOAD EVIDENCE FAILED]', err);
-      alert('Network upload failed. Local draft saved.');
+      alert('Upload failed. Please try recording again.');
     } finally {
       setUploading(false);
     }
@@ -274,14 +255,6 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
 
       {/* Camera Viewport Canvas */}
       <div className="flex-1 relative bg-amber-950 flex items-center justify-center overflow-hidden">
-        <input 
-          type="file"
-          ref={fileInputRef}
-          accept="video/*"
-          className="hidden"
-          onChange={handleVideoFileSelect}
-        />
-
         {hasCameraAccess ? (
           <video
             ref={videoRef}
@@ -293,36 +266,13 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
         ) : (
           <div className="p-6 text-center text-ink-faint space-y-3">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-10 h-10 mx-auto text-amber-400"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <p className="text-xs font-semibold">{cameraError || 'Initializing device camera...'}</p>
-            <div className="flex flex-wrap gap-2 justify-center pt-2">
-              <button
-                type="button"
-                onClick={startCamera}
-                className="px-4 py-2 bg-[#E9BA26] text-ink font-bold rounded-xl text-xs font-sora shadow-sm"
-              >
-                Retry Camera
-              </button>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 bg-white text-ink border border-amber-400/40 font-bold rounded-xl text-xs font-sora shadow-sm"
-              >
-                📁 Pick Video File
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Top Control Bar */}
-        {!sheetOpen && (
-          <div className="absolute top-4 right-4 z-20">
+            <p className="text-xs font-semibold">{cameraError || 'Initializing live camera...'}</p>
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="px-3 py-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full text-xs font-bold backdrop-blur-md flex items-center gap-1.5 border border-white/20 shadow-md"
-              title="Upload existing video clip from device gallery"
+              onClick={startCamera}
+              className="px-4 py-2 bg-[#E9BA26] text-ink font-bold rounded-xl text-xs font-sora shadow-sm"
             >
-              <span>📁 Upload Clip</span>
+              Grant Camera Access
             </button>
           </div>
         )}
@@ -361,7 +311,7 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
             
             <div className="flex items-center justify-between border-b border-amber-100 pb-3">
               <h3 className="font-black text-ink text-base font-sora">
-                Review & Upload Evidence
+                Review &amp; Upload Evidence
               </h3>
               <button onClick={handleRetake} className="text-ink-faint hover:text-ink-soft font-bold text-xs">
                 Retake Clip ✕
@@ -374,102 +324,73 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
                 <video
                   src={videoUrl}
                   controls
+                  autoPlay
                   playsInline
                   className="w-full h-full object-cover"
                 />
               )}
             </div>
 
-            {/* Quick Threat Validation Status */}
-            {isValidating && (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-[#b08850] font-bold flex items-center gap-2">
-                <span className="w-3.5 h-3.5 border-2 border-[#E9BA26] border-t-transparent rounded-full animate-spin" />
-                Validating scene objects & authenticity...
-              </div>
-            )}
-
-            {quickValidateResult && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-bold space-y-1">
-                <span>✔ Scene Validation Complete:</span>
-                <p className="text-[11px] font-semibold text-emerald-700">
-                  Predicted Class: {quickValidateResult.predicted_class} (Confidence: {Math.round((quickValidateResult.confidence || 0.9) * 100)}%)
-                </p>
-              </div>
-            )}
-
-            {/* Form Inputs */}
+            {/* Form Details */}
             <form onSubmit={handleSubmitUpload} className="space-y-4">
               <div>
                 <label className="text-[10px] font-bold text-ink-soft uppercase tracking-wider block mb-1">
-                  Incident Title
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Street Light Outage / Water Pipe Burst"
-                  required
-                  className="w-full bg-amber-50 border border-amber-400/20 rounded-xl px-4 py-3 text-xs text-ink font-semibold focus:outline-none focus:border-[#E9BA26]"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-ink-soft uppercase tracking-wider block mb-1">
-                  Department Category
+                  Incident Category
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full bg-amber-50 border border-amber-400/20 rounded-xl px-4 py-3 text-xs font-bold text-ink focus:outline-none focus:border-[#E9BA26]"
+                  className="w-full bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs font-bold text-ink"
                 >
-                  <option value="Infrastructure">Infrastructure (BWSSB / BBMP)</option>
-                  <option value="Traffic Warning">Traffic Warning (KSP Traffic)</option>
-                  <option value="Electricity">Electricity Hazard (BESCOM)</option>
-                  <option value="Violence/Loitering">Violence / Loitering (Police)</option>
-                  <option value="Emergency Alert">Emergency SOS Alert</option>
+                  <option value="Infrastructure">Infrastructure (Burst main, road hazard)</option>
+                  <option value="Traffic Warning">Traffic Warning (Cave-in, signal failure)</option>
+                  <option value="Emergency Alert">Emergency Alert (Fire, electric spark)</option>
+                  <option value="Violence/Loitering">Violence / Loitering</option>
+                  <option value="Theft/Property">Theft / Property Crime</option>
                 </select>
               </div>
 
               <div>
                 <label className="text-[10px] font-bold text-ink-soft uppercase tracking-wider block mb-1">
-                  Additional Context
+                  Title / Headline
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Transformer spark near 5th Block..."
+                  className="w-full bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs font-semibold text-ink"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-ink-soft uppercase tracking-wider block mb-1">
+                  Brief Description
                 </label>
                 <textarea
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Add specific landmark details or vehicle numbers..."
-                  className="w-full bg-amber-50 border border-amber-400/20 rounded-xl p-3 text-xs text-ink font-semibold focus:outline-none focus:border-[#E9BA26]"
+                  placeholder="Provide location details or observations..."
+                  className="w-full bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs font-semibold text-ink"
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="emOverride"
-                  checked={emergencyOverride}
-                  onChange={(e) => setEmergencyOverride(e.target.checked)}
-                  className="w-4 h-4 accent-[#E9BA26]"
-                />
-                <label htmlFor="emOverride" className="text-xs font-bold text-red-600">
-                  Mark as High-Priority Emergency Dispatch
-                </label>
-              </div>
-
-              <div className="flex gap-3 pt-2">
+              <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={handleRetake}
-                  className="flex-1 py-3 bg-amber-50 hover:bg-amber-100 text-ink-soft font-bold rounded-xl text-xs"
+                  className="px-4 py-2.5 bg-amber-50 text-ink-soft font-bold rounded-xl text-xs"
                 >
-                  Discard
+                  Retake
                 </button>
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="flex-2 py-3 bg-[#E9BA26] hover:bg-amber-400 text-ink font-black rounded-xl text-xs uppercase tracking-wider font-sora shadow-xs border border-amber-950/10"
+                  className="px-5 py-2.5 bg-[#E9BA26] hover:bg-amber-400 text-ink font-black rounded-xl text-xs uppercase tracking-wider font-sora shadow-sm"
                 >
-                  {uploading ? 'Scrubbing & Uploading...' : 'Upload Anonymized Evidence'}
+                  {uploading ? 'Transmitting...' : 'Upload Evidence'}
                 </button>
               </div>
             </form>

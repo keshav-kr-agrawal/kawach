@@ -60,8 +60,10 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
       <div className="absolute inset-0 bg-amber-950 z-0">
         {reel.videoUrl ? (
           <video
+            key={reel.videoUrl || reel.id}
             ref={videoRef}
             src={reel.videoUrl}
+            autoPlay
             loop
             muted={isMuted}
             playsInline
