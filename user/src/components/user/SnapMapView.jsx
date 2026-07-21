@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
-import { X, Play, ShieldAlert, Award, Radio, Eye, AlertOctagon, BookOpen, User, Volume2, VolumeX } from 'lucide-react';
+import { X, Play, ShieldAlert, Award, Radio, Eye, AlertOctagon, BookOpen, User, Volume2, VolumeX, Plus, Minus, Navigation } from 'lucide-react';
 import { getStatusLabel, getStatusColor } from '../../api/videoService';
 
 // Fix Leaflet default marker icons in React Leaflet
@@ -12,15 +12,119 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Component to dynamically pan and center map when user location changes
-function MapRecenter({ center }) {
+// Component to dynamically pan and center map on initial load or explicit trigger
+function MapRecenter({ center, forceRecenter, onRecenterDone }) {
   const map = useMap();
+  const hasInitialized = useRef(false);
+
   useEffect(() => {
-    if (center) {
-      map.setView(center, 13);
+    if (center && (!hasInitialized.current || forceRecenter)) {
+      map.setView(center, 15, { animate: true });
+      hasInitialized.current = true;
+      if (onRecenterDone) onRecenterDone();
     }
-  }, [center, map]);
+  }, [center, forceRecenter, map, onRecenterDone]);
   return null;
+}
+
+// Interactive floating zoom and recenter control buttons subcomponent
+function FloatingMapControls({ gpsCoords, onRecenterClick }) {
+  const map = useMap();
+
+  return (
+    <div 
+      className="floating-map-controls"
+      style={{
+        position: 'absolute',
+        right: '16px',
+        bottom: '90px',
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        pointerEvents: 'auto'
+      }}
+    >
+      <button 
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          map.zoomIn();
+        }}
+        title="Zoom In (+)"
+        style={{
+          width: '42px',
+          height: '42px',
+          borderRadius: '12px',
+          backgroundColor: '#ffffff',
+          color: '#09090b',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease'
+        }}
+      >
+        <Plus size={20} strokeWidth={2.5} />
+      </button>
+
+      <button 
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          map.zoomOut();
+        }}
+        title="Zoom Out (-)"
+        style={{
+          width: '42px',
+          height: '42px',
+          borderRadius: '12px',
+          backgroundColor: '#ffffff',
+          color: '#09090b',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease'
+        }}
+      >
+        <Minus size={20} strokeWidth={2.5} />
+      </button>
+
+      <button 
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          map.setView(gpsCoords, 15, { animate: true });
+          if (onRecenterClick) onRecenterClick();
+        }}
+        title="Recenter My Location"
+        style={{
+          width: '42px',
+          height: '42px',
+          borderRadius: '12px',
+          backgroundColor: '#ffffff',
+          color: '#2563eb',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease'
+        }}
+      >
+        <Navigation size={18} strokeWidth={2.5} />
+      </button>
+    </div>
+  );
 }
 
 // Component to listen to zoom level changes on Leaflet map
@@ -43,6 +147,7 @@ function MapZoomListener({ onChange }) {
 export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onOpenProfile, onOpenLibrary }) {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(14);
+  const [triggerRecenter, setTriggerRecenter] = useState(false);
   const [playingVideo, setPlayingVideo] = useState(false);
   const [playProgress, setPlayProgress] = useState(0);
   const [showFlagNotice, setShowFlagNotice] = useState(false);
@@ -311,7 +416,12 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
         center={gpsCoords} 
         zoom={14} 
         zoomControl={false}
-        zoomAnimation={false}
+        scrollWheelZoom={true}
+        doubleClickZoom={true}
+        dragging={true}
+        touchZoom={true}
+        keyboard={true}
+        zoomAnimation={true}
         style={{ width: '100%', height: '100%' }}
       >
         <TileLayer
@@ -319,9 +429,10 @@ export default function SnapMapView({ gpsCoords, userReports, onReportVideo, onO
           attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
         />
 
-        {/* Recenter Map when GPS coordinates update */}
-        <MapRecenter center={gpsCoords} />
+        {/* Recenter Map when triggered */}
+        <MapRecenter center={gpsCoords} forceRecenter={triggerRecenter} onRecenterDone={() => setTriggerRecenter(false)} />
         <MapZoomListener onChange={setZoomLevel} />
+        <FloatingMapControls gpsCoords={gpsCoords} onRecenterClick={() => setTriggerRecenter(true)} />
 
         {/* User Current Location Marker (Non-interactive visual guide to prevent overlapping click blocking) */}
         <Marker 

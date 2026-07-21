@@ -318,9 +318,10 @@ export default function AlertsChatView() {
   };
 
   const chipStyle = {
-    padding: '8px 14px', borderRadius: '20px', border: '1px solid #e5e5e5',
+    padding: '6px 12px', borderRadius: '16px', border: '1px solid #e2e8f0',
     backgroundColor: '#f8fafc', fontSize: '11px', color: '#09090B', cursor: 'pointer',
-    whiteSpace: 'nowrap', fontWeight: '600', minHeight: '36px'
+    whiteSpace: 'nowrap', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '5px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.03)', flexShrink: 0, transition: 'all 0.15s ease'
   };
 
   return (
@@ -492,12 +493,30 @@ export default function AlertsChatView() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick query chips */}
-      <div style={{ padding: '0 16px 8px 16px', display: 'flex', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none', backgroundColor: '#ffffff' }}>
-        <button onClick={() => handleQuickQuestion('Verify kidnap rumor in Koramangala')} style={chipStyle}>🔍 Kidnap Rumor Check</button>
+      {/* Side-scrollable AI Refinery & Prompt Shortcut small buttons right above the message box */}
+      <div 
+        style={{ 
+          padding: '8px 16px', 
+          display: 'flex', 
+          gap: '8px', 
+          overflowX: 'auto', 
+          scrollbarWidth: 'none', 
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch',
+          backgroundColor: '#ffffff',
+          borderTop: '1px solid #f1f5f9'
+        }}
+      >
+        <button onClick={() => handleQuickQuestion('Verify kidnap rumor in Koramangala')} style={chipStyle}>🔍 Fake News & Rumor Check</button>
         <button onClick={() => handleQuickQuestion('Is the route to HSR safe right now?')} style={chipStyle}>🗺️ Safe Route Check</button>
         <button onClick={() => handleQuickQuestion('I received a phone call claiming to be CBI placing me under digital arrest')} style={chipStyle}>⚠️ Digital Arrest Help</button>
+        <button onClick={() => handleQuickQuestion('How do I verify if a currency note is authentic or fake?')} style={chipStyle}>💵 Currency Note Scan</button>
         <button onClick={() => handleQuickQuestion('What is the RBI circular on UPI fraud customer liability?')} style={chipStyle}>📚 UPI Fraud Liability</button>
+        <button onClick={() => handleQuickQuestion('Check if this website link or SMS code is a phishing scam')} style={chipStyle}>🛡️ Phishing Link Check</button>
+        <button onClick={() => handleQuickQuestion('How to check traffic violations & dispute an unfair traffic fine?')} style={chipStyle}>🚗 Traffic Fine Dispute</button>
+        <button onClick={() => handleQuickQuestion('Guide me step-by-step on how to file a Zero FIR at any police station')} style={chipStyle}>📑 Zero FIR Guide</button>
+        <button onClick={() => handleQuickQuestion('What are my rights under BNS regarding police questioning and arrest?')} style={chipStyle}>⚖️ BNS Legal Rights</button>
+        <button onClick={() => setEmergencyOpen(true)} style={{ ...chipStyle, backgroundColor: '#fef2f2', borderColor: '#fecaca', color: '#dc2626' }}>🚨 Emergency Dispatch</button>
       </div>
 
       {/* Message Input Panel */}

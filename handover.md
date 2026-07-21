@@ -1,213 +1,174 @@
-# 🛡️ KAWACH & Nayak AI — Full-Stack Technical Handover & System Architecture Specification
+# 🛡️ KAWACH Project Handover Document
+
+This document serves as a comprehensive technical handover for **KAWACH** — a Unified Public Safety & Threat Intelligence Grid. It details the architecture, tech stack, AI models, and deployment instructions necessary for any developer or team to take over, maintain, and scale the project.
 
 ---
 
-## 📌 Executive Summary
+## 1. Project Overview
 
-**KAWACH** is an enterprise-grade, multi-tenant public safety grid, digital fraud defense ecosystem, and geospatial threat intelligence platform. Built for Indian Public Safety (targeting both AI-driven crime analytics and digital public safety challenges), KAWACH bridges the critical gap between citizens, law enforcement agencies, and municipal civic departments.
+**KAWACH** is a multi-tenant public safety ecosystem designed to bridge the trust gap between citizens and municipal/law enforcement authorities. It allows citizens to report incidents via an encrypted PWA, which are then analyzed in real-time by multiple AI pipelines for validation, urgency, and routing before reaching the respective department dashboards.
 
-### Key Capabilities:
-* **Proactive Fraud & Scam Defense:** Intercepts digital arrest calls, UPI scams, fake government links, deepfakes, and counterfeit currency before citizen financial loss occurs.
-* **Agentic Citizen Assistant (Nayak):** RAG-powered AI assistant backed by a 3,974-section database of Indian laws (BNS, BNSS, BSA, IT Act, RBI circulars) providing citation-backed legal guidance and auto-drafting reports.
-* **Section 65B Certified Chain of Custody:** Generates SHA-256 ledger-hashed court dossiers admissible under Indian Evidence Act Section 65B / BSA rules.
-* **Multi-Tenant Civic Routing & SLA Engine:** Zero-bias automated routing across 11 municipal departments (Police, Fire, PWD, Health, Water, etc.) with strict SLA escalation countdowns.
-
----
-
-## 🏗️ System Architecture & Deployment Overview
-
-```
-[ Citizen Sentinel PWA (Vite + React 19) ] ── (HTTPS) ──► [ Vercel Production Deployment ]
-       │                                                          │
-       ├──► [ Nayak Agent RAG & Emergency API ] ─────────► [ Police Backend (FastAPI + Render) ]
-       │                                                         │ ├── PostgreSQL / Supabase DB
-       │                                                         │ └── Neo4j Graph DB / In-Memory Mock
-       │
-       └──► [ Multi-Modal Media Forensic Scan ] ────────► [ AI Classifier Microservice (HF Space) ]
-                                                                 ├── PyTorch EfficientNet-B7 (Deepfake)
-                                                                 ├── EfficientNet-B0 + EasyOCR (Currency)
-                                                                 ├── YOLO12s + SigLIP (Scene Check)
-                                                                 └── DistilBERT (Urgency Classifier)
-```
-
-### Live Deployment URLs:
-* **Citizen PWA Frontend:** `https://kawach-two.vercel.app/`
-* **AI Classifier Microservice:** `https://hikity-kawach-classifier.hf.space`
-* **Police Command Backend:** Deployed via Docker on Render (`render.yaml`) connected to Supabase Postgres.
+### Core Portals
+1. **Citizen Sentinel PWA:** A React-based mobile-first web app for anonymous reporting (Ghost Mode), scam verification, and interacting with the Nayak AI Legal Assistant.
+2. **Police Command Console:** A dashboard for law enforcement featuring GIS spatial maps, repeat offender network graphs, and court-ready Section 65B PDF generation.
+3. **Civic Departments Console:** Isolated dashboards (Fire, Health, PWD, Sanitation) to review AI-routed reports and manage service tickets.
+4. **Super Admin Console:** System-wide monitoring and audit trails.
 
 ---
 
-## 💻 Microservices Breakdown
+## 2. System Architecture
 
-| Service | Location | Tech Stack | Local Port | Deployment Target | Description |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Citizen PWA** | `user/` | React 19 + Vite | `5175` | Vercel | Mobile PWA for citizens, EXIF scrubbing, Nayak AI chat, Snap-style safety maps. |
-| **AI Classifier** | `Classifier/` | FastAPI + PyTorch + OpenCV | `8001` | HuggingFace Spaces (`7860`) | Multi-modal forensic scanning microservice (Deepfakes, Scene, Currency, Routing). |
-| **Police Command Backend** | `police/backend` | FastAPI + SQLAlchemy + Neo4j | `8000` | Render Docker | Offender graph intelligence, DBSCAN hotspot clustering, Digital Arrest monitor, Section 65B PDF dossier generator. |
-| **Police Console Frontend** | `police/frontend` | React + Vite | `5173` | Vercel / Static | SP/DGP Command console, GIS maps, offender network graphs, Section 65B exports. |
-| **Civic Departments Dashboard** | `departments/` | HTML5 + Vanilla JS + Supabase | Static | Static Web Host | Parameterized shell (`?dept=<id>`) for 11 municipal departments with live SLA countdowns. |
+The system follows a microservices-inspired architecture, separating the citizen-facing frontend, the central police/routing backend, and the specialized AI classifier service.
 
----
-
-## 🧠 AI & ML Pipeline Architecture
-
-KAWACH operates **seven distinct AI/ML and computer vision pipelines**:
-
-### 1. Pipeline 1: Deepfake Video & Audio Forensics (`app/classifier.py`)
-* **Architecture:** Frame extraction via `cv2` (32 frames) $\rightarrow$ Face detection via MTCNN $\rightarrow$ Dual **TF-EfficientNet-B7** classifier ensemble.
-* **Function:** Detects synthetic media, facial swapping, and voice cloning in uploaded files.
-* **Output:** `is_deepfake: bool`, `confidence: float`, `face_count: int`.
-
-### 2. Pipeline 2: Zero-Shot Agency Router & Urgency Classifier (`app/router.py`)
-* **Architecture:** **Gemini 2.5 Flash** (zero-shot department mapping) $\rightarrow$ **DistilBERT** (`mrigaanksh/priority-classification-distilbert`) urgency validation.
-* **Function:** Maps free-text incident descriptions to matching departments and calculates priority upgrades (LOW, MEDIUM, HIGH, CRITICAL).
-* **Fallback:** Local keyword heuristic fallback if API key or network is unreachable.
-
-### 3. Pipeline 3: Visual Scene Analyzer (`app/scene_analyzer.py`)
-* **Architecture:** Samples 8 frames $\rightarrow$ **YOLO12s** (Road Damage D00-D44) + **SigLIP TrashNet** classification.
-* **Temporal Consistency Engine:** Filters out false positives by enforcing a persistence ratio ($\ge 0.5$) across sampled frames.
-
-### 4. Pipeline 4: Signal Fusion Scoring Engine (`app/trust_scorer.py`)
-* **Deterministic Scoring:** Fuses deepfake confidence, visual scene consistency, and NLP priority into two 0–100 metrics:
-  * **Unified Trust Score (0–100):** Authenticity rating of the media report.
-  * **Civic Urgency Score (0–100):** Dispatch sorting priority.
-
-### 5. Pipeline 5: GIS DBSCAN Hotspot Clustering (`police/backend/app/routes/geo.py`)
-* **Algorithm:** DBSCAN with Haversine spatial distance metric (`eps_km=1.0`, `min_samples=3`).
-* **Function:** Identifies emerging crime clusters and calculates centroid coordinates for patrol dispatch.
-
-### 6. Pipeline 6: Counterfeit Currency Screening (`Classifier/app/currency_detector.py`)
-* **Architecture:** Trained **EfficientNet-B0** CNN (Kaggle T4 trained) + 4 Classical Computer Vision checks:
-  1. Security thread continuity & alignment check.
-  2. Microprint Laplacian sharpness score.
-  3. Print-noise profile analysis.
-  4. **Telescopic Serial Number Check:** EasyOCR + column ink-height profiling to verify ascending numeral sizing (RBI anti-counterfeit standard).
-* **Performance:** **98.67% test accuracy** (AUC 0.998).
-* **UV Mode:** Gated check for `capture_mode="uv"`.
-
-### 7. Pipeline 7: Digital Arrest Live-Session Monitor (`police/backend/app/routes/digital_arrest.py`)
-* **Architecture:** Real-time multi-modal session scoring (`POST /api/digital-arrest/session/{id}/signal`).
-* **Weights:** Text scam-script scoring (.30) + Voice spoof prob (.20) + Video deepfake prob (.20) + Transaction anomaly (.30).
-* **Automated Alerting:** Dispatches `ALERT_DISPATCHED` warning at $\ge 70\%$ threshold *before* monetary transfer completes.
+### 2.1 Tech Stack Summary
+*   **Frontend (Citizen PWA):** React.js (Vite), Tailwind CSS.
+*   **Frontend (Dashboards):** Vanilla HTML/JS/CSS (for lightweight department portals) and React for Police.
+*   **Backend (Core Services):** Python, FastAPI.
+*   **Backend (AI Classifier):** Python, FastAPI, PyTorch, TensorFlow, OpenCV.
+*   **Databases:**
+    *   **Relational:** SQLite (Development) / PostgreSQL (Production)
+    *   **Vector:** pgvector (for RAG embeddings)
+    *   **Graph:** Neo4j (for offender/incident relationship networks)
+    *   **Auth/Storage:** Supabase
 
 ---
 
-## 🗄️ Database Schemas & Models
+## 3. AI Models & Forensic Pipelines
 
-### 1. PostgreSQL / Supabase Schema (`police/backend/app/models.py` & `citizen_reports`)
+KAWACH relies on six core AI pipelines to process and validate incoming reports:
 
-#### `citizen_reports` (Public Citizen Table):
-```sql
-CREATE TABLE citizen_reports (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tracking_id TEXT UNIQUE NOT NULL,
-    category TEXT NOT NULL,
-    sub_category TEXT,
-    description TEXT NOT NULL,
-    latitude DOUBLE PRECISION,
-    longitude DOUBLE PRECISION,
-    media_url TEXT,
-    media_type TEXT,
-    routed_department TEXT NOT NULL,
-    priority TEXT DEFAULT 'MEDIUM',
-    status TEXT DEFAULT 'OPEN',
-    trust_score DOUBLE PRECISION DEFAULT 100.0,
-    is_public_visible BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
+### Pipeline 1: Deepfake Video/Audio Forensics
+*   **Function:** Detects synthetic or manipulated media.
+*   **Workflow:** OpenCV extracts frames $\rightarrow$ MTCNN extracts faces $\rightarrow$ Dual **TF-EfficientNet-B7** classifier ensemble flags anomalies.
 
-#### `nayak_law_chunks` (Standardized Legal Rulebook Database):
-* **Total Records:** 3,974 sections of Indian Law (BNS, BNSS, BSA, IPC, CrPC, IT Act, MVA, COI, etc.).
-* **Columns:** `id`, `act`, `section`, `title`, `official_text`, `citizen_scenario`, `citizen_explanation`, `recommended_action`, `penalty_summary`, `tags`, `embedding`.
+### Pipeline 2: AI Agency Router & Priority NLP
+*   **Function:** Parses textual reports, routes them to the correct department, and assigns urgency.
+*   **Models:** 
+    *   **Gemini 1.5-Flash (Zero-shot):** Department classification (Police, Fire, Health, Sanitation, etc.).
+    *   **DistilBERT (`mrigaanksh/priority-classification-distilbert`):** Validates urgency and flags high-priority incidents.
 
-#### `fir_records`, `offenders`, `vehicles`, `phones`, `calls`, `gangs`, `audit_logs`:
-* **FIR Record:** Stores FIR case ID, station info, SLA deadline, status, and timeline arrays.
-* **Offender:** Stores priors count, risk score, vehicles, phones, gang affiliations, and associate links.
-* **Audit Log:** Hashed, immutable log of all officer queries and PDF exports.
+### Pipeline 3: Visual Scene Analyzer (Object Detection)
+*   **Function:** Corroborates user text with image/video content.
+*   **Models:**
+    *   **YOLO12s:** Detects specific issues like Road Damage (D00-D44).
+    *   **SigLIP:** Zero-shot classification for generalized scenes (e.g., TrashNet categories).
+    *   **Temporal Consistency Engine:** Filters out noise in videos (requires $\ge 0.5$ persistence ratio across frames).
 
-### 2. Neo4j Graph DB Schema (`police/backend/app/routes/network.py`)
-* **Nodes:** `Person`, `Phone`, `Account`, `Incident`, `Location`, `Gang`.
-* **Relationships:** `ASSOCIATED_WITH`, `OWNED`, `USED_IN`, `OCCURRED_AT`.
-* **Intelligence Logic:** Louvain community detection + betweenness centrality + Money Mule flag calculation (`mule_flag` = clean history tied to $\ge 2$ high-risk associates).
+### Pipeline 4: Signal Fusion (Scoring Engine)
+*   **Function:** Aggregates AI outputs into actionable metrics.
+*   **Outputs:** 
+    *   **Unified Trust Score (0-100):** Confidence that the report is genuine (not a deepfake or spam).
+    *   **Civic Urgency Score (0-100):** Severity of the incident.
+
+### Pipeline 5: Predictive Hotspots (GIS)
+*   **Function:** Identifies emerging threat zones.
+*   **Algorithm:** **DBSCAN** spatial clustering over geographic coordinates of recent high-urgency reports.
+
+### Pipeline 6: Currency Authentication (Counterfeit Detection)
+*   **Function:** Analyzes images of banknotes to detect fakes.
+*   **Model:** Custom **PyTorch CNN** trained on Indian currency datasets.
 
 ---
 
-## 🔌 Core API Route Catalog
+## 4. Nayak AI Legal Assistant (RAG System)
 
-### Classifier Microservice (Port 8001 / HF Space 7860)
-* `POST /classify` — Runs deepfake video/audio detection on media URL.
-* `POST /classify-currency` — Evaluates banknote images (CNN + EasyOCR serial check).
-* `POST /route` — Zero-shot NLP department and priority classification.
-* `POST /full-analysis` — Unified execution of Pipelines 1, 2, 3, and 4.
-* `GET /health` — Diagnostics endpoint reporting `deepfake_mode`, `currency_mode`, and `routing_mode`.
-
-### Police Backend Service (Port 8000 / Render)
-* `POST /api/nayak/chat` — Conversational Nayak AI endpoint with session memory & tool calling.
-* `GET /api/nayak/search` — Direct keyword/vector search over the 3,974 legal rulebook chunks.
-* `POST /api/nayak/upload` — Media scan attachment handler inside citizen chat.
-* `POST /api/digital-arrest/session/start` — Initializes live scam tracking session.
-* `POST /api/digital-arrest/session/{id}/signal` — Ingests live multi-modal threat signals.
-* `POST /api/ai/query` — Police Copilot investigation terminal (FIR summary, offender lookup, plate search).
-* `POST /api/reports/generate` — Generates Section 65B compliant PDF dossier with SHA-256 hash seal.
-* `GET /api/reports/download/{id}` — Serves signed evidence PDF download.
-* `GET /api/geo/hotspots` — Runs real-time DBSCAN spatial clustering over reports.
-* `GET /api/network/graph` — Returns graph nodes, Louvain communities, and money mule flags.
+Nayak is an intelligent chatbot designed to help citizens understand their legal rights and verify scams.
+*   **Knowledge Base:** Over 3,900+ vectorized sections of Indian Law, including the Bharatiya Nyaya Sanhita (BNS), BNSS, BSA, IT Act, and RBI Circulars.
+*   **Technology:** 
+    *   Primary: Retrieval-Augmented Generation (RAG) using the **Gemini API**.
+    *   Fallback: If the API key is missing or offline, Nayak gracefully degrades to a keyword-based retrieval system providing structured, bulleted advice and legal citations.
+*   **Features:** Scam Verification (Digital Arrests, Extortion), Traffic Rights, UPI Fraud guidance.
 
 ---
 
-## 🚦 Non-Negotiable System Guardrails
+## 5. Security & Compliance Features
 
-1. **Separation of Detection and Reporting:** The AI classifier microservice never files a complaint automatically; it always presents a pre-filled proposal card requiring explicit citizen confirmation.
-2. **Identity-Free Department Boundary:** Department dashboards (`departments/`) operate strictly on anonymized data (`DEPT_SAFE_COLUMNS`). Reporter identities never pass the boundary to civic queues.
-3. **Guilt Inference Lock:** The Police AI Copilot displays strict legal disclaimers explicitly locking guilt inference or automated arrest recommendations.
-4. **Honest System Degradation:** When external AI services or databases (Gemini, Neo4j) are offline, the system seamlessly transitions to local keyword search, deterministic heuristics, and mock graph buffers without crashing.
+*   **EXIF Scrubbing:** The Citizen PWA automatically strips metadata from images before upload to maintain anonymity (Ghost Mode).
+*   **Section 65B Admissibility:** All media uploads generate a SHA-256 hash. The system creates PDF dossiers compliant with the Indian Evidence Act / BSA to preserve the chain of custody.
+*   **Zero-Bias Guardrails:** The NLP routing pipeline is explicitly prompted and constrained to avoid demographic, caste, or religious profiling.
 
 ---
 
-## 🛠️ How to Run & Verify the Ecosystem
+## 6. Directory Structure
 
-### 1. Run Citizen PWA (`user/`)
-```bash
-cd user
-npm install
-npm run dev -- --port 5175
-```
-*Access at:* `http://localhost:5175`
-
-### 2. Run Police Backend (`police/backend/`)
-```bash
-cd police/backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python app/scripts/seed_entire_rulebook.py  # Seed 3,974 law sections
-python -m uvicorn app.main:app --port 8000
-```
-*Access OpenAPI Docs at:* `http://localhost:8000/docs`
-
-### 3. Run AI Classifier Microservice (`Classifier/`)
-```bash
-cd Classifier
-pip install -r requirements.txt
-python download_weights.py
-python -m uvicorn app.main:app --port 8001
-```
-*Access at:* `http://localhost:8001`
-
-### 4. Run Department Dashboards (`departments/`)
-```bash
-npx serve departments
-```
-*Access parameterized shell:* `http://localhost:3000/dashboard.html?dept=traffic`
-
-### 5. Execute Automated System Test Suites
-```bash
-cd police/backend
-PYTHONPATH=. ./venv/bin/python3 app/tests/test_nayak.py       # Integration tests
-PYTHONPATH=. ./venv/bin/python3 app/tests/test_no_api_key.py # Offline zero-key tests
+```text
+/
+├── Classifier/             # AI Microservice (YOLO, EfficientNet, PyTorch)
+│   ├── app/                # FastAPI app for model inference
+│   ├── weights/            # Pre-trained model weights (.pt, .h5)
+│   └── requirements.txt
+├── departments/            # Civic Department HTML/JS Dashboards
+├── plan/                   # Project planning docs and progress trackers
+├── police/
+│   └── backend/            # Main Core Backend (FastAPI, Neo4j, DB Models)
+│       ├── app/
+│       │   ├── routes/     # API Endpoints (Nayak, Digital Arrest, etc.)
+│       │   └── scripts/    # Data ingestion and DB setup scripts
+├── user/                   # Citizen Sentinel PWA (React + Vite)
+│   ├── src/
+│   │   ├── components/     # UI Components (ChatView, AdminView, etc.)
+│   │   └── api/            # API service calls
+├── info.md                 # Brief project info
+└── README.md               # Quickstart guide
 ```
 
 ---
 
-*Handover document compiled for **CodeKrafters — KAWACH Platform**.*
+## 7. Environment Variables & Configuration
+
+You will need the following environment variables configured across the services:
+
+### Police Backend (`police/backend/.env`)
+```env
+DATABASE_URL=sqlite:///./test.db # Or PostgreSQL connection string
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=password
+GEMINI_API_KEY=your_gemini_api_key # For Nayak RAG
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
+```
+
+### Citizen PWA (`user/.env`)
+```env
+VITE_API_BASE_URL=http://localhost:8000
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+---
+
+## 8. Development & Deployment Guide
+
+### Local Setup
+1.  **Citizen PWA:**
+    ```bash
+    cd user
+    npm install
+    npm run dev -- --port 5175
+    ```
+2.  **Core Backend:**
+    ```bash
+    cd police/backend
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    uvicorn app.main:app --port 8000 --reload
+    ```
+3.  **AI Classifier:**
+    ```bash
+    cd Classifier
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    python download_weights.py
+    uvicorn app.main:app --port 8001 --reload
+    ```
+
+### Known Issues & Maintenance Notes
+*   **Neo4j Fallback:** If the Neo4j graph database is unavailable, the backend gracefully falls back to an in-memory mock graph to prevent API crashes.
+*   **Nayak Offline Mode:** The system is thoroughly tested to function without a Gemini API key using keyword matching. (See `police/backend/app/tests/test_no_api_key.py`).
+*   **Model Weights:** Ensure `download_weights.py` is run in the Classifier service to fetch YOLO and DistilBERT models before starting the server.
+
+---
+*Document created during project handover. Please refer to `plan/` directory for historical context and future roadmap items.*

@@ -3,6 +3,7 @@ import { Shield, Eye, EyeOff, MapPin, Camera, Video, AlertTriangle, RefreshCw, F
 
 function SentinelMapView({ token, user }) {
   const [viewMode, setViewMode] = useState('citizen'); // 'citizen' or 'police'
+  const [mapScale, setMapScale] = useState(1);
   const [newsPins, setNewsPins] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -153,7 +154,39 @@ function SentinelMapView({ token, user }) {
 
           {/* SVG Map Workspace */}
           <div className="flex-1 w-full bg-slate-900 rounded-2xl border border-slate-950 relative flex items-center justify-center overflow-hidden min-h-[340px] shadow-inner">
-            <svg className="w-full h-full max-h-[380px]" viewBox="0 0 500 350">
+            {/* Zoom Controls Overlay */}
+            <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-20">
+              <button 
+                type="button"
+                onClick={() => setMapScale(prev => Math.min(prev + 0.25, 2.5))} 
+                className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700 flex items-center justify-center text-sm font-bold shadow-md transition-all"
+                title="Zoom In"
+              >
+                +
+              </button>
+              <button 
+                type="button"
+                onClick={() => setMapScale(prev => Math.max(prev - 0.25, 0.75))} 
+                className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700 flex items-center justify-center text-sm font-bold shadow-md transition-all"
+                title="Zoom Out"
+              >
+                −
+              </button>
+              <button 
+                type="button"
+                onClick={() => setMapScale(1)} 
+                className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 flex items-center justify-center text-[9px] font-bold shadow-md transition-all"
+                title="Reset Zoom"
+              >
+                Reset
+              </button>
+            </div>
+
+            <svg 
+              className="w-full h-full max-h-[380px]" 
+              viewBox="0 0 500 350"
+              style={{ transform: `scale(${mapScale})`, transition: 'transform 0.2s ease-out', transformOrigin: 'center center' }}
+            >
               {/* Karnataka / Bengaluru District Grid representation */}
               <path d="M 50,80 Q 150,50 250,80 T 450,80 T 450,280 T 250,300 Z" fill="#1e293b" stroke="#334155" strokeWidth={2} />
               

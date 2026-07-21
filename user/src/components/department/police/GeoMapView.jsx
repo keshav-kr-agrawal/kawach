@@ -210,7 +210,12 @@ function GeoMapView({ token, user }) {
           <MapContainer 
             center={[12.9500, 77.6200]} 
             zoom={11} 
+            zoomControl={true}
             scrollWheelZoom={true}
+            doubleClickZoom={true}
+            dragging={true}
+            touchZoom={true}
+            keyboard={true}
             style={{ height: "100%", width: "100%" }}
           >
             {/* Standard CartoDB Dark Matter premium tiles */}
