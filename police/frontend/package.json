@@ -1,7 +1,7 @@
 {
-  "name": "frontend",
+  "name": "kawach-command",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,18 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.108.2",
-    "deck.gl": "^9.3.4",
     "framer-motion": "^12.40.0",
-    "gsap": "^3.15.0",
-    "jspdf": "^4.2.1",
-    "jspdf-autotable": "^5.0.8",
     "leaflet": "^1.9.4",
-    "lucide-react": "^1.18.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-force-graph": "^1.48.2",
-    "react-is": "^19.2.7",
+    "react-force-graph-2d": "^1.29.0",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.17.0",
     "recharts": "^3.8.1"

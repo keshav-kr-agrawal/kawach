@@ -29,7 +29,7 @@ license: mit
 | `POST /full-analysis` | 4 | All 3 pipelines in one call (recommended) |
 | `POST /predict-hotspot` | 5 ⭐ | Geographic hotspot prediction from report patterns |
 | `POST /validate-report` | 6 ⭐ | Quick single-image civic scan |
-| `POST /classify-currency` | 7 ⭐ | Counterfeit INR banknote screening (98.67% test accuracy) |
+| `POST /classify-currency` | 7 ⭐ | Counterfeit INR banknote screening (91.9% CNN test accuracy, fused with explainable RBI-feature checks) |
 
 ---
 
@@ -314,10 +314,10 @@ POST /classify-currency  (note photo JPG/PNG, optional capture_mode=uv)
 
 | Metric | Score | | Denomination | Accuracy (n) |
 |---|---|---|---|---|
-| Overall accuracy | **98.67%** | | ₹10 | 99.2% (378) |
-| Fake precision | 96.39% | | ₹20 / ₹50 / ₹100 / ₹200 | 100% (88–146) |
-| Fake recall | 98.16% | | ₹500 | 99.1% (220) |
-| AUC | 0.998 | | ₹2000 | 89.4% (47) — thinnest test sample |
+| Overall accuracy | **91.9%** | | ₹10 | 93.5% (378) |
+| Fake precision | 90.7% | | ₹20 / ₹50 / ₹100 / ₹200 | 92.1–93.2% (88–146) |
+| Fake recall | 91.4% | | ₹500 | 93.9% (220) |
+| AUC | 0.964 | | ₹2000 | 85.1% (47) — thinnest sample; denomination withdrawn from circulation May 2023 |
 
 Full breakdown in `Classifier/weights/currency/eval_report.json`. No trustworthy pretrained INR-counterfeit model exists publicly (checked HF Hub + GitHub) — this is a from-scratch training run, not a fine-tune of an existing model.
 
@@ -347,7 +347,7 @@ Full breakdown in `Classifier/weights/currency/eval_report.json`. No trustworthy
 | DistilBERT civic | [mrigaanksh/priority-classification-distilbert](https://huggingface.co/mrigaanksh/priority-classification-distilbert) | ~268MB | Priority validation |
 | YOLO12s RDD2022 | [rezzzq/yolo12s-road-damage-rdd2022](https://huggingface.co/rezzzq/yolo12s-road-damage-rdd2022) | ~19MB | Road damage detection |
 | TrashNet SigLIP | [prithivMLmods/Trash-Net](https://huggingface.co/prithivMLmods/Trash-Net) | ~372MB | Waste classification |
-| EfficientNet-B0 (currency) | Trained in-house — `kaggle_train_currency.ipynb` | ~16MB | Counterfeit INR screening — 98.67% test accuracy (n=1,352) on 6 merged public datasets |
+| EfficientNet-B0 (currency) | Trained in-house — `kaggle_train_currency.ipynb` | ~16MB | Counterfeit INR screening — 91.9% test accuracy (n=1,352) on 6 merged public datasets |
 | EasyOCR | JaidedAI/EasyOCR | ~64MB | Serial-number ascending-numeral security check |
 
 ---
@@ -434,8 +434,12 @@ curl https://hikity-kawach-classifier.hf.space/health
   "scene_models_loaded": 2,
   "priority_validator_loaded": true,
   "device": "cpu",
-  "pipelines_active": 6,
-  "version": "2.1.0"
+  "pipelines_active": 7,
+  "version": "2.2.0",
+  "deepfake_mode": "real",
+  "routing_mode": "gemini",
+  "gemini_model": "gemini-2.5-flash",
+  "currency_mode": "cnn+heuristic"
 }
 ```
 

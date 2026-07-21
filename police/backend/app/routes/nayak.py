@@ -13,12 +13,36 @@ from app.routes.nayak_rag import retrieve_law_chunks, get_embedding
 
 router = APIRouter()
 
-# "gemini-2.5-flash" is blocked for accounts created after Google's cutoff
-# (confirmed 2026-07-19: this key gets a 404 "no longer available to new
-# users" on both 2.5-flash and 2.5-flash-lite). "gemini-flash-latest" is
-# Google's self-updating alias — always resolves to a current, non-deprecated
-# flash model, so this never needs touching again as models rotate.
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
+# Free-tier daily quotas are per-model, not just per-project — exhausting
+# gemini-2.5-flash (20 req/day) does NOT affect other models' buckets.
+# "gemini-flash-lite-latest" (resolves to gemini-3.1-flash-lite as of
+# 2026-07-19) is a separate, much higher-limit quota pool, confirmed working
+# with full function-calling (classify_text/propose_report chaining) intact.
+# Override via GEMINI_MODEL env var on Render if you need a different model.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-lite-latest")
+
+
+@router.get("/_debug_env")
+def _debug_env():
+    """
+    TEMPORARY diagnostic route — remove once the live Nayak fallback bug is
+    resolved. Reports what the running process actually sees, without leaking
+    the full API key. Added 2026-07-19 to break a debugging deadlock where
+    Render's log viewer wasn't showing expected [NAYAK] print output.
+    """
+    import sys
+    key = os.environ.get("GEMINI_API_KEY", "")
+    return {
+        "gemini_key_present": bool(key),
+        "gemini_key_length": len(key),
+        "gemini_key_prefix": key[:6] if key else None,
+        "gemini_key_suffix": key[-4:] if key else None,
+        "gemini_model": GEMINI_MODEL,
+        "python_utf8_env": os.environ.get("PYTHONUTF8"),
+        "python_unbuffered_env": os.environ.get("PYTHONUNBUFFERED"),
+        "stdout_encoding": sys.stdout.encoding,
+        "stderr_encoding": sys.stderr.encoding,
+    }
 
 # Input Models
 class ChatRequest(BaseModel):
@@ -109,7 +133,7 @@ def run_check_link(url: str, api_key: str = None) -> dict:
                 result = json.loads(res.json()["candidates"][0]["content"]["parts"][0]["text"])
                 return result
         except Exception as e:
-            print(f"[NAYAK] check_link Gemini fallback error: {e}")
+            print(f"[NAYAK] check_link Gemini fallback error: {e}", flush=True)
             
     # Default fallback
     return {
@@ -151,7 +175,7 @@ def run_classify_text(text_content: str, api_key: str = None) -> dict:
                 result = json.loads(res.json()["candidates"][0]["content"]["parts"][0]["text"])
                 return result
         except Exception as e:
-            print(f"[NAYAK] classify_text Gemini fallback error: {e}")
+            print(f"[NAYAK] classify_text Gemini fallback error: {e}", flush=True)
             
     return {
         "is_scam": False,
@@ -285,7 +309,7 @@ def enrich_proposal(prefilled: dict, db: Session, session_id: str, lat, lng) -> 
             incidents = run_get_area_incidents(lat, lng, 5.0, db)
             nearby_count = len(incidents) if isinstance(incidents, list) else 0
         except Exception as e:
-            print(f"[NAYAK] area check failed during proposal enrichment: {e}")
+            print(f"[NAYAK] area check failed during proposal enrichment: {e}", flush=True)
 
     return {
         **prefilled,
@@ -442,7 +466,7 @@ def handle_nayak_chat(
     # 4. Check for Gemini Key
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        print("[NAYAK] No GEMINI_API_KEY — running honest fallback.")
+        print("[NAYAK] No GEMINI_API_KEY — running honest fallback.", flush=True)
         reply_txt = generate_fallback_chat_reply(req.message, db, session_id)
         bot_reply = NayakMessage(
             session_id=session_id,
@@ -570,124 +594,137 @@ def handle_nayak_chat(
     )
     
     # Construct Gemini contents list from chat history
+    # Build conversation history for Gemini.
+    # Gemini requires: alternating user/model turns, starts with user,
+    # and the LAST entry must be a user turn (the current message).
+    # We exclude tool-only rows here; they were already baked into prior
+    # model replies. We also skip the just-saved user message row —
+    # we'll append it explicitly at the end so it's always present.
     contents = []
-    for h_msg in history:
-        # Map roles to gemini model tags ('user', 'model')
-        role = "user" if h_msg.role == "user" else "model"
-        
-        # If it was a tool call
+    for h_msg in history[:-1]:  # all but the last (current user message)
         if h_msg.tool_name:
-            # We don't map tool contents directly, but we can send them as model parts or pass the simplified message text
-            # For simplicity in request payloads, we build standard text structures
+            # Represent tool calls as a model text turn (simplest safe form)
             contents.append({
                 "role": "model",
                 "parts": [
-                    {"text": f"[Tool Call: {h_msg.tool_name} with result {json.dumps(h_msg.tool_result)}]"}
+                    {"text": f"[Tool: {h_msg.tool_name} → {json.dumps(h_msg.tool_result)[:300]}]"}
                 ]
             })
         else:
+            role = "user" if h_msg.role == "user" else "model"
             contents.append({
                 "role": role,
                 "parts": [{"text": h_msg.content}]
             })
-            
+
+    # Always append the current user message last — this is what Gemini responds to.
+    contents.append({"role": "user", "parts": [{"text": req.message}]})
+
     payload = {
         "contents": contents,
         "tools": tools_manifest,
         "systemInstruction": {"parts": [{"text": system_instruction}]}
     }
-    
+
+    # Gemini can legitimately chain multiple tool calls in sequence (the
+    # system prompt itself asks for get_area_incidents THEN propose_report,
+    # or classify_text THEN propose_report) — a single request/tool/response
+    # round-trip isn't enough; loop until Gemini returns text or we hit a
+    # safety cap. On the cap, force a text-only final call (tools stripped)
+    # so the citizen always gets a real answer, never a generic apology.
+    MAX_TOOL_HOPS = 4
+    proposal = None
+
+    def _actual_parts(parts):
+        """Filter gemini-2.5-flash's internal 'thought' reasoning parts,
+        keeping only the real functionCall/text content."""
+        filtered = [p for p in parts if not p.get("thought")]
+        return filtered or parts  # safety fallback if everything was a thought
+
     try:
-        res = requests.post(gemini_url, headers=headers, json=payload, timeout=10)
-        if res.status_code == 200:
-            res_json = res.json()
-            candidate = res_json.get("candidates", [{}])[0]
-            content = candidate.get("content", {})
-            parts = content.get("parts", [{}])
-            
-            # Check for functionCall
-            fn_call = parts[0].get("functionCall")
-            if fn_call:
-                tool_name = fn_call.get("name")
-                tool_args = fn_call.get("args", {})
-                
-                # Execute tool call locally
-                tool_result = call_agent_tool(tool_name, tool_args, db, api_key)
+        for hop in range(MAX_TOOL_HOPS):
+            res = requests.post(gemini_url, headers=headers, json=payload, timeout=25)
+            if res.status_code != 200:
+                print(f"[NAYAK] Gemini HTTP {res.status_code} (hop {hop}): {res.text[:400]}", flush=True)
+                break
 
-                # propose_report drafts get enriched with department, severity,
-                # session evidence, and nearby-similar context before they
-                # reach the citizen's confirmation card.
-                proposal = None
-                if tool_name == "propose_report" and "prefilled_report" in tool_result:
-                    proposal = enrich_proposal(
-                        tool_result["prefilled_report"], db, session_id, req.lat, req.lng)
-                    tool_result = {"prefilled_report": proposal,
-                                   "requires_user_confirmation": True}
+            candidate = res.json().get("candidates", [{}])[0]
+            parts = candidate.get("content", {}).get("parts", [{}])
+            actual_parts = _actual_parts(parts)
+            fn_call = actual_parts[0].get("functionCall")
 
-                # Save tool message to DB
-                tool_msg = NayakMessage(
-                    session_id=session_id,
-                    role="tool",
-                    content=f"Executed tool: {tool_name}",
-                    tool_name=tool_name,
-                    tool_result=tool_result
-                )
-                db.add(tool_msg)
-                db.commit()
-
-                # Send tool response back to Gemini to finalize reply.
-                # (Per the Gemini REST API, functionResponse parts are sent
-                # with role "user".)
-                tool_part = {
-                    "role": "user",
-                    "parts": [
-                        {
-                            "functionResponse": {
-                                "name": tool_name,
-                                "response": {"output": tool_result}
-                            }
-                        }
-                    ]
-                }
-                
-                # Append functions to payload contents
-                payload["contents"].append({
-                    "role": "model",
-                    "parts": [{"functionCall": fn_call}]
-                })
-                payload["contents"].append(tool_part)
-                
-                # Re-invoke Gemini
-                second_res = requests.post(gemini_url, headers=headers, json=payload, timeout=10)
-                if second_res.status_code == 200:
-                    model_reply = second_res.json()["candidates"][0]["content"]["parts"][0]["text"]
-                    bot_reply = NayakMessage(
-                        session_id=session_id,
-                        role="assistant",
-                        content=model_reply
-                    )
-                    db.add(bot_reply)
-                    db.commit()
-                    return {
-                        "session_id": session_id,
-                        "message": {"role": "assistant", "content": model_reply},
-                        "proposal": proposal
-                    }
-            else:
-                model_reply = parts[0].get("text", "I'm sorry, I was unable to compile an answer.")
-                bot_reply = NayakMessage(
-                    session_id=session_id,
-                    role="assistant",
-                    content=model_reply
-                )
+            if not fn_call:
+                # Real text answer — done.
+                model_reply = actual_parts[0].get("text") or "I'm sorry, I was unable to compile an answer."
+                bot_reply = NayakMessage(session_id=session_id, role="assistant", content=model_reply)
                 db.add(bot_reply)
                 db.commit()
                 return {
                     "session_id": session_id,
-                    "message": {"role": "assistant", "content": model_reply}
+                    "message": {"role": "assistant", "content": model_reply},
+                    "proposal": proposal
                 }
+
+            # Execute the tool Gemini asked for.
+            tool_name = fn_call.get("name")
+            tool_args = fn_call.get("args", {})
+            tool_result = call_agent_tool(tool_name, tool_args, db, api_key)
+
+            # propose_report drafts get enriched with department, severity,
+            # session evidence, and nearby-similar context before they reach
+            # the citizen's confirmation card.
+            if tool_name == "propose_report" and "prefilled_report" in tool_result:
+                proposal = enrich_proposal(
+                    tool_result["prefilled_report"], db, session_id, req.lat, req.lng)
+                tool_result = {"prefilled_report": proposal, "requires_user_confirmation": True}
+
+            db.add(NayakMessage(
+                session_id=session_id, role="tool",
+                content=f"Executed tool: {tool_name}",
+                tool_name=tool_name, tool_result=tool_result
+            ))
+            db.commit()
+
+            # Feed the call + its result back for the next hop. Echo the
+            # FULL original part (not just {"functionCall": fn_call}) — it
+            # carries "thoughtSignature", which gemini-flash-lite-latest
+            # requires on replay for multi-hop tool calls or it 400s with
+            # "Function call is missing a thought_signature" (confirmed
+            # 2026-07-19; gemini-2.5-flash didn't enforce this as strictly).
+            # (Per the Gemini REST API, functionResponse parts use role "user".)
+            payload["contents"].append({"role": "model", "parts": [actual_parts[0]]})
+            payload["contents"].append({
+                "role": "user",
+                "parts": [{"functionResponse": {"name": tool_name, "response": {"output": tool_result}}}]
+            })
+        else:
+            # Hit MAX_TOOL_HOPS still mid-tool-call — force one final
+            # text-only completion (strip tools) so we never return a
+            # generic apology when we actually have real tool context.
+            final_payload = {**payload, "tools": []}
+            res = requests.post(gemini_url, headers=headers, json=final_payload, timeout=25)
+            if res.status_code == 200:
+                parts = res.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])
+                model_reply = _actual_parts(parts)[0].get("text") or (
+                    "I've gathered the relevant information but couldn't finalize a summary — "
+                    "please review the proposal above if one was drafted."
+                )
+            else:
+                print(f"[NAYAK] Gemini final-completion HTTP {res.status_code}: {res.text[:400]}", flush=True)
+                model_reply = (
+                    "I've gathered the relevant information but couldn't finalize a summary — "
+                    "please review the proposal above if one was drafted."
+                )
+            bot_reply = NayakMessage(session_id=session_id, role="assistant", content=model_reply)
+            db.add(bot_reply)
+            db.commit()
+            return {
+                "session_id": session_id,
+                "message": {"role": "assistant", "content": model_reply},
+                "proposal": proposal
+            }
     except Exception as e:
-        print(f"[NAYAK] Gemini agent loop error: {e}")
+        print(f"[NAYAK] Gemini agent loop error: {type(e).__name__}: {e}", flush=True)
         
     # If anything breaks, return fallback
     reply_txt = generate_fallback_chat_reply(req.message, db, session_id)
@@ -748,14 +785,40 @@ def _classify_media_for_real(media_url: str, media_type: str) -> dict:
             )
             r.raise_for_status()
             data = r.json()
-            findings = "; ".join(c["finding"] for c in data.get("security_checks", [])[:2])
+            verdict = data.get("verdict")
+            # v2 pipeline verdicts (see plan/currency_pipeline_v2_plan.md):
+            # only real/fake verdicts map to a boolean — gate exits
+            # (NOT_A_CURRENCY_NOTE / INSUFFICIENT_QUALITY) and INCONCLUSIVE
+            # stay None so the chat never renders them as "flagged suspicious".
+            if verdict in ("LIKELY_GENUINE", "GENUINE_FEATURES"):
+                is_auth = True
+            elif verdict in ("LIKELY_COUNTERFEIT", "SUSPECT_FEATURES"):
+                is_auth = False
+            else:
+                is_auth = None
+            fake_prob = data.get("fake_probability")
+            # Prefer the verdict-coherent authenticity_score (v2.2) over the
+            # raw advisory CNN probability — the raw number routinely
+            # contradicted the rule-based verdict and confused users.
+            auth_score = data.get("authenticity_score")
+            if auth_score is None and fake_prob is not None:
+                auth_score = round((1.0 - fake_prob) * 100, 1)
+            # For structural red flags the number isn't what decided — surface
+            # the flag reason directly; the score becomes supporting context.
+            findings = "; ".join(
+                c["finding"] for c in data.get("security_checks", [])[:2] if c.get("score") is not None
+            )
+            details = f"Currency screening ({data.get('model_mode')}): {verdict}. {findings}".strip()
+            if data.get("guidance"):
+                details += f" {data['guidance']}"
             return {
-                "is_authenticated": data.get("verdict") in ("LIKELY_GENUINE", "GENUINE_FEATURES"),
-                "score": round((1.0 - data.get("fake_probability", 0.5)) * 100, 1),
-                "verdict": data.get("verdict"),
+                "is_authenticated": is_auth,
+                "score": auth_score,
+                "verdict_basis": data.get("verdict_basis"),
+                "verdict": verdict,
                 "confidence": data.get("confidence"),
                 "model_mode": data.get("model_mode"),
-                "details": f"Currency screening ({data.get('model_mode')}): {data.get('verdict')}. {findings}",
+                "details": details,
                 "source": "classifier:/classify-currency",
             }
 
@@ -764,7 +827,7 @@ def _classify_media_for_real(media_url: str, media_type: str) -> dict:
                 "source": "none"}
 
     except Exception as e:
-        print(f"[NAYAK] Real classification failed ({media_type}): {e}")
+        print(f"[NAYAK] Real classification failed ({media_type}): {e}", flush=True)
         return {
             "is_authenticated": None,
             "score": None,

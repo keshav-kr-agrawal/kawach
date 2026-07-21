@@ -2,18 +2,22 @@ import os
 import requests
 import numpy as np
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, text
 from app.models import NayakLawChunk
+
+# "text-embedding-004" 404s ("is not found ... or is not supported") on keys
+# tied to newer accounts — confirmed 2026-07-19, same restriction pattern as
+# gemini-2.5-flash. gemini-embedding-001 is the current supported model.
+EMBEDDING_MODEL = os.environ.get("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
 
 # Call Gemini Embedding Endpoint
 def get_embedding(text_content: str, api_key: str) -> list:
     if not api_key:
         return None
-        
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={api_key}"
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{EMBEDDING_MODEL}:embedContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     payload = {
-        "model": "models/text-embedding-004",
+        "model": f"models/{EMBEDDING_MODEL}",
         "content": {"parts": [{"text": text_content}]}
     }
     
@@ -24,7 +28,7 @@ def get_embedding(text_content: str, api_key: str) -> list:
             if embedding:
                 return embedding
     except Exception as e:
-        print(f"[RAG] Embedding fetch error: {e}")
+        print(f"[RAG] Embedding fetch error: {type(e).__name__}: {e}", flush=True)
         
     return None
 

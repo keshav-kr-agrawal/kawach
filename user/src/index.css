@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 :root {
-  font-family: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light;
-  color: #333333;
-  background-color: #f2f2f2;
+  color: #171307;
+  background-color: #F6F1E8;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -22,8 +22,8 @@ body {
   padding: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #f8fafc; /* bg-slate-50 slate base */
-  color: #333333;
+  background-color: #ffffff; /* White base */
+  color: #171307;
 }
 
 #root {
@@ -41,25 +41,31 @@ body.in-app {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f2f2f2;
+  background: #ffffff;
   overflow: hidden;
-  user-select: none;
   height: 100%;
   height: 100dvh;
   width: 100%;
   width: 100vw;
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 body.in-app #root {
   width: 100%;
-  max-width: 480px; /* Force mobile phone frame on desktop */
-  height: 100vh;
+  height: 100%;
   height: 100dvh;
-  min-height: 100vh;
   min-height: 100dvh;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  border-left: 1px solid #e5e5e5;
-  border-right: 1px solid #e5e5e5;
+  max-height: 100dvh;
+}
+
+@media (max-width: 768px) {
+  body.in-app #root {
+    max-width: 480px; /* Force mobile phone frame on desktop screen width < 768px */
+    margin: 0 auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border-left: 1px solid #ECE6D7;
+    border-right: 1px solid #ECE6D7;
+  }
 }
 
 @media (max-width: 480px) {
@@ -79,7 +85,7 @@ body.in-app #root {
   flex-direction: column;
   height: 100%;
   max-height: 100%;
-  background-color: #f8fafc; /* bg-slate-50 */
+  background-color: #ffffff; /* pure white background */
   scrollbar-width: none;
 }
 
@@ -97,7 +103,7 @@ body.in-app #root {
 
 .glass-card {
   background: #ffffff;
-  border: 1px solid #f2f2f2;
+  border: 1px solid #F6F1E8;
   border-radius: 20px;
   padding: 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
@@ -106,7 +112,7 @@ body.in-app #root {
 
 .glass-card:active {
   transform: scale(0.98);
-  background: #fafafa;
+  background: #FEFCF5;
 }
 
 /* 3D card flip animation utilities */
@@ -131,7 +137,7 @@ body.in-app #root {
 .leaflet-container {
   width: 100%;
   height: 100%;
-  background: #f2f2f2 !important;
+  background: #F6F1E8 !important;
 }
 
 .leaflet-control-zoom {
@@ -141,8 +147,8 @@ body.in-app #root {
 
 .leaflet-control-zoom-in, .leaflet-control-zoom-out {
   background: #ffffff !important;
-  color: #333333 !important;
-  border: 1px solid #e5e5e5 !important;
+  color: #171307 !important;
+  border: 1px solid #ECE6D7 !important;
 }
 
 /* Snapchat-style Heatmap Blurs */

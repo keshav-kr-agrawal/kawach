@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
     global models, face_extractor, scene_analyzer, priority_validator, currency_detector
 
     print(f"\n{'='*60}")
-    print(f"  KAWACH AI Classifier v2.1 — Startup (device: {device})")
+    print(f"  KAWACH AI Classifier v2.2 — Startup (device: {device})")
     print(f"{'='*60}")
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -85,8 +85,24 @@ async def lifespan(app: FastAPI):
     currency_detector = CurrencyDetector(weights_dir=weights_dir, device=device)
     print(f"  [OK] Currency detector ready (mode: {currency_detector.mode})")
 
+    # Warm EasyOCR in the background: its lazy first-call init takes long
+    # enough on the free-tier 2vCPU host that the first currency request
+    # after every container (re)start blew past the HF proxy timeout and
+    # 500'd (observed 2026-07-19 — failures rotated across images, warm
+    # container always fine). Boot stays fast; only OCR-dependent checks
+    # degrade gracefully until the thread finishes.
+    import threading
+    from app.currency_detector import _get_ocr_reader
+
+    def _warm_ocr():
+        print("  [P7] Warming EasyOCR reader (background)...")
+        _get_ocr_reader()
+        print("  [P7] EasyOCR reader warm")
+
+    threading.Thread(target=_warm_ocr, daemon=True).start()
+
     print(f"\n{'='*60}")
-    print("  KAWACH startup complete — 6 endpoints live")
+    print("  KAWACH startup complete — 8 endpoints live")
     print(f"{'='*60}\n")
 
     yield
@@ -97,16 +113,17 @@ app = FastAPI(
     title="KAWACH AI Classifier",
     description=(
         "Community Hero — Hyperlocal Problem Solver\n\n"
-        "AI microservice powering KAWACH with 6 endpoints across 5 pipelines:\n"
+        "AI microservice powering KAWACH with 8 endpoints across 7 pipelines:\n"
         "• Pipeline 1: Deepfake / AI-video forensics (EfficientNet-B7 ensemble)\n"
         "• Pipeline 2: Civic department routing (Gemini LLM + DistilBERT dual-model consensus)\n"
         "• Pipeline 3: Scene issue detection (YOLO12s road damage + TrashNet waste)\n"
         "• Pipeline 4: Unified full analysis (all 3 pipelines in one call)\n"
         "• Pipeline 5: Predictive hotspot analysis (Gemini + statistical fusion)\n"
-        "• Pipeline 6: Quick image validate (single frame, lightweight)\n\n"
+        "• Pipeline 6: Quick image validate (single frame, lightweight)\n"
+        "• Pipeline 7: Counterfeit currency detection (EfficientNet-B0 + 4 classical security checks)\n\n"
         "Every response includes trust_score (0-100) and civic_urgency_score (0-100)."
     ),
-    version="2.1.0",
+    version="2.2.0",
     lifespan=lifespan,
 )
 
@@ -118,7 +135,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-_ACTIVE_PIPELINES = 6
+_ACTIVE_PIPELINES = 7
 
 
 # ─── Health ───────────────────────────────────────────────────────────────────
@@ -137,7 +154,7 @@ async def health():
         priority_validator_loaded=pv_loaded,
         device=device,
         pipelines_active=_ACTIVE_PIPELINES,
-        version="2.1.0",
+        version="2.2.0",
         deepfake_mode="real" if len(models) > 0 else "mock_fallback",
         routing_mode="gemini" if os.environ.get("GEMINI_API_KEY") else "keyword_fallback",
         gemini_model=GEMINI_MODEL,
@@ -248,7 +265,7 @@ async def classify(file: UploadFile = File(...)):
 async def route(request: RouteRequest):
     """
     Routes a civic report to the correct government department.
-    Uses Gemini 1.5-flash (zero-shot) + DistilBERT dual-model priority consensus.
+    Uses Gemini 2.5-flash (zero-shot) + DistilBERT dual-model priority consensus.
     Falls back to multi-keyword scored matching if Gemini API key is unavailable.
     Returns sub_category, estimated_resolution_days, trust_score, and civic_urgency_score.
     """
@@ -752,10 +769,16 @@ async def classify_currency(
     checking — the last one honestly gated behind `capture_mode="uv"` since a
     normal-light photo cannot simulate a UV response.
 
-    Fuses a fine-tuned CNN (when weights/currency/currency_cnn.pt exists) with
-    the classical security-feature checks above. When sources disagree the
-    verdict is INCONCLUSIVE — a citizen-facing tool must under-claim.
-    `model_mode` in the response states exactly which sources produced it.
+    v2 pipeline (plan/currency_pipeline_v2_plan.md): image-quality gate
+    (INSUFFICIENT_QUALITY + retake tip — bad lighting never reads as fake),
+    note-presence gate (NOT_A_CURRENCY_NOTE — a white sheet/random object is
+    never forced into a real-vs-fake score), one shared OCR pass feeding a
+    text-integrity check (catches substituted wording like 'CHILDREN BANK'),
+    then tiered fusion: structural checks (serial, text) can veto, weak
+    proxies (thread band, sharpness, noise) only corroborate, and the CNN is
+    advisory (its 0.30-0.70 range is treated as no-read). A single visible-
+    light photo never yields HIGH-confidence GENUINE — that requires a
+    passing UV capture. `model_mode` states exactly which sources ran.
     """
     ext = file.filename.lower().rsplit(".", 1)[-1]
     if ext not in {"jpg", "jpeg", "png", "webp", "bmp"}:

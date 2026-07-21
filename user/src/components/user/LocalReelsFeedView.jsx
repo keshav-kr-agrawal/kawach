@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowUp, Share2, AlertOctagon, Radio, ChevronUp, ChevronDown, ShieldAlert, BookOpen, User, Volume2, VolumeX } from 'lucide-react';
 import { getStatusLabel } from '../../api/videoService';
 
 const getDepartmentEmoji = (dept) => {
@@ -18,22 +17,10 @@ const getDepartmentEmoji = (dept) => {
   }
 };
 
-const getPriorityColor = (prio) => {
-  switch (prio) {
-    case 'CRITICAL': return '#ef4444';
-    case 'HIGH': return '#f97316';
-    case 'NORMAL': return '#3b82f6';
-    case 'LOW': return '#10b981';
-    default: return '#6b7280';
-  }
-};
-
-// Sub-component for individual video reel cards
 function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvotedList, toggleUpvote, triggerReportModal }) {
   const videoRef = useRef(null);
   const cardRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [reelsPlayProgress, setReelsPlayProgress] = useState(0);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -48,546 +35,245 @@ function ReelCard({ reel, userReports, onReportVideo, isMuted, toggleMute, upvot
             setIsPlaying(false);
             if (videoRef.current) {
               videoRef.current.pause();
-              videoRef.current.currentTime = 0;
             }
           }
         });
       },
-      { threshold: 0.7 }
+      { threshold: 0.6 }
     );
 
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-    return () => {
-      if (cardRef.current) {
-        observer.unobserve(cardRef.current);
-      }
-    };
+    if (cardRef.current) observer.observe(cardRef.current);
+    return () => observer.disconnect();
   }, []);
 
-  const isReelChecking = reel.status === 'AI_CHECK_1' || reel.status === 'AI_CHECK_2';
+  const isUpvoted = upvotedList.includes(reel.id);
+  const liveReport = userReports.find(r => r.id === reel.id);
+  const currentStatus = liveReport ? liveReport.status : reel.status;
+  const currentUpvotes = (reel.upvotes || 0) + (isUpvoted ? 1 : 0);
 
   return (
     <div 
-      ref={cardRef} 
-      className="relative w-full h-[100dvh] snap-center bg-black flex items-center justify-center flex-shrink-0"
+      ref={cardRef}
+      className="w-full h-full snap-start relative flex flex-col justify-between p-5 bg-white text-ink overflow-hidden select-text border-b border-amber-400/20"
     >
-      {/* Real captured video player OR mock animation */}
-      {reel.videoUrl ? (
-        <>
+      {/* Video or Image Canvas */}
+      <div className="absolute inset-0 bg-amber-950 z-0">
+        {reel.videoUrl ? (
           <video
             ref={videoRef}
-            src={reel.trimStart !== undefined && reel.trimEnd !== undefined && reel.trimEnd > reel.trimStart
-              ? `${reel.videoUrl}#t=${reel.trimStart},${reel.trimEnd}` 
-              : reel.videoUrl}
+            src={reel.videoUrl}
             loop
             muted={isMuted}
             playsInline
-            onTimeUpdate={(e) => {
-              const video = e.target;
-              const start = reel.trimStart !== undefined ? reel.trimStart : 0;
-              const end = reel.trimEnd !== undefined && reel.trimEnd > start ? reel.trimEnd : video.duration || 999;
-              
-              // Handle manual loop fallback for media fragments
-              if (video.currentTime >= end - 0.2) {
-                video.currentTime = start;
-                video.play().catch(() => {});
-              }
-
-              const duration = end - start;
-              if (duration > 0) {
-                const progress = ((video.currentTime - start) / duration) * 100;
-                setReelsPlayProgress(Math.min(100, Math.max(0, progress)));
-              }
-            }}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="w-full h-full object-cover"
           />
-          {/* Snapchat-style Story Progress Bar */}
-          <div style={{
-            position: 'absolute',
-            top: '12px',
-            left: '20px',
-            right: '20px',
-            height: '4px',
-            backgroundColor: 'rgba(255, 255, 255, 0.3)',
-            borderRadius: '2px',
-            zIndex: 10,
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: `${reelsPlayProgress}%`,
-              height: '100%',
-              backgroundColor: '#ffd900',
-              borderRadius: '2px',
-              transition: 'width 0.1s linear'
-            }} />
+        ) : (
+          <div className="w-full h-full bg-amber-950 flex items-center justify-center text-ink-faint font-bold text-xs">
+            [Visual Stream Feed]
           </div>
-        </>
-      ) : (
-        <>
-          <div style={{
-            width: '100%',
-            height: '100%',
-            background: reel.avatarGradient || 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-            opacity: 0.15,
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            zIndex: 1
-          }} />
-
-          <div style={{
-            zIndex: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '16px'
-          }}>
-            <div className="pulse-red" style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 217, 0, 0.1)',
-              border: '2px solid #ffd900',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffd900'
-            }}>
-              <ShieldAlert size={40} />
-            </div>
-            <span style={{ fontSize: '13px', fontWeight: '750', color: '#ffffff', letterSpacing: '0.05em' }}>
-              STREAMING LOCAL ALERTS
-            </span>
-            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>
-              Distance: {reel.distanceValue === 0.05 ? 'Under 50m' : `${reel.distanceValue} km away`}
-            </span>
-            <span style={{
-              fontSize: '9px',
-              fontWeight: '800',
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              padding: '4px 10px',
-              borderRadius: '12px',
-              color: isReelChecking ? '#ffd900' : (reel.status === 'REPORTED_SUSPICIOUS' ? '#ff3b30' : '#007aff')
-            }}>
-              {isReelChecking ? '🤖 AI Safety Check Active' : getStatusLabel(reel.status)}
-            </span>
-          </div>
-        </>
-      )}
-
-      {/* UI Overlay (Bottom Right - Actions) */}
-      <div className="absolute bottom-24 right-4 flex flex-col items-center gap-6 z-10">
-        {/* Upvote button */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <button 
-            onClick={(e) => { e.stopPropagation(); toggleUpvote(reel.id); }}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              width: '44px',
-              height: '44px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: upvotedList[reel.id] ? '#ffd900' : '#ffffff',
-              cursor: 'pointer'
-            }}
-          >
-            <ArrowUp size={18} strokeWidth={2.5} />
-          </button>
-          <span style={{ fontSize: '10px', color: '#ffffff', marginTop: '4px', fontWeight: '700', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
-            {reel.upvotes}
-          </span>
-        </div>
-
-        {/* Share */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <button 
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              width: '44px',
-              height: '44px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              cursor: 'pointer'
-            }}
-          >
-            <Share2 size={18} />
-          </button>
-          <span style={{ fontSize: '10px', color: '#ffffff', marginTop: '4px', fontWeight: '600', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{reel.shares}</span>
-        </div>
-
-        {/* Mute Button */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <button 
-            onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              width: '44px',
-              height: '44px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: isMuted ? '#ff3b30' : '#ffffff',
-              cursor: 'pointer'
-            }}
-          >
-            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-          </button>
-          <span style={{ fontSize: '8px', color: isMuted ? '#ff3b30' : '#ffffff', marginTop: '4px', fontWeight: '750', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
-            {isMuted ? "Muted" : "Sound"}
-          </span>
-        </div>
-
-        {/* Flag Incident */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <button 
-            onClick={(e) => { e.stopPropagation(); triggerReportModal(reel); }}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              width: '44px',
-              height: '44px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ff3b30',
-              cursor: 'pointer'
-            }}
-          >
-            <AlertOctagon size={18} />
-          </button>
-          <span style={{ fontSize: '8px', color: '#ff6b6b', marginTop: '4px', fontWeight: '700', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>Flag Fake</span>
-        </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-amber-950 via-amber-950/20 to-transparent pointer-events-none" />
       </div>
 
-      {/* UI Overlay (Bottom Left - Text/AI Tags) */}
-      <div className="absolute bottom-20 left-4 right-16 flex flex-col gap-2 z-10 text-white pointer-events-none">
-        {/* AI checking compact pill */}
-        {isReelChecking && (
-          <div className="bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-full w-max flex items-center gap-1">
-            🤖 AI Scanning
-          </div>
-        )}
+      {/* Top Header Overlay */}
+      <div className="relative z-10 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 bg-[#E9BA26] text-ink text-[10px] font-black rounded-full font-sora border border-amber-950/10">
+            {getDepartmentEmoji(reel.department)} {reel.department || 'GENERAL'}
+          </span>
+          <span className="px-2.5 py-1 bg-white/90 text-ink text-[10px] font-bold rounded-full backdrop-blur-xs font-mono">
+            {reel.timestamp || 'Just now'}
+          </span>
+        </div>
 
-        {/* Temp-removed pending human moderation — visible only to the uploader */}
-        {reel.status === 'REPORTED_SUSPICIOUS' && (
-          <div className="bg-amber-500/90 backdrop-blur-md text-black text-xs px-3 py-1.5 rounded-full w-max font-black">
-            ⏳ UNDER REVIEW — hidden from the public feed pending moderation
-          </div>
-        )}
+        <button
+          onClick={toggleMute}
+          className="p-2.5 bg-white/90 text-ink rounded-full backdrop-blur-xs shadow-xs hover:bg-white transition-all"
+        >
+          {isMuted ? (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          )}
+        </button>
+      </div>
 
-        {/* Community-escalated to department */}
-        {reel.escalationRequired && (
-          <div className="bg-orange-500/90 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full w-max font-black">
-            ⬆ ESCALATED TO {reel.routedDepartment || 'DEPARTMENT'}
-          </div>
-        )}
+      {/* Right Action Stack */}
+      <div className="absolute right-4 bottom-24 z-10 flex flex-col gap-4 items-center">
+        <button
+          onClick={() => toggleUpvote(reel.id)}
+          className={`p-3.5 rounded-full backdrop-blur-md transition-all shadow-md ${
+            isUpvoted ? 'bg-[#E9BA26] text-ink scale-110' : 'bg-white/80 text-ink hover:bg-white'
+          }`}
+        >
+          <svg viewBox="0 0 24 24" fill={isUpvoted ? '#09090b' : 'none'} stroke="currentColor" strokeWidth="2.5" className="w-5 h-5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+        <span className="text-[10px] font-black text-white font-mono drop-shadow">{currentUpvotes}</span>
 
-        {/* Compact dept + priority pills row */}
-        {reel.routedDepartment && (
-          <div className="flex flex-wrap items-center gap-1.5 pointer-events-auto">
-            <span className="bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-full w-max font-bold">
-              {getDepartmentEmoji(reel.routedDepartment)} {reel.routedDepartment}
-            </span>
-            {reel.subCategory && (
-              <span className="bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-full w-max">
-                {reel.subCategory.replace(/_/g, ' ')}
-              </span>
-            )}
-            <span className="text-white text-xs px-2 py-1 rounded-full w-max font-black" style={{ backgroundColor: getPriorityColor(reel.routingPriority) }}>
-              {reel.routingPriority}
-            </span>
-            {typeof reel.trustScore === 'number' && reel.trustScore > 0 && (
-              <span className="bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-full w-max">
-                Trust {reel.trustScore.toFixed(0)}
-              </span>
-            )}
-          </div>
-        )}
-        {/* AI Forensic Insights Overlay Panel */}
-        {(reel.trustScore !== undefined || reel.aiVerdict) && (
-          <div className="flex flex-col gap-1.5 pointer-events-auto bg-slate-900/80 backdrop-blur-md border border-white/10 p-3 rounded-2xl max-w-[280px] shadow-lg">
-            <div className="flex items-center justify-between gap-2">
-              <span className={`text-[9px] font-black px-2 py-0.5 rounded-md tracking-wider font-outfit ${
-                reel.aiVerdict === 'AI_GENERATED' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'
-              }`}>
-                {reel.aiVerdict === 'AI_GENERATED' ? '⚠️ DEEPFAKE SIGNALS' : '✓ FORENSIC PASS'}
-              </span>
-              <span className={`text-[9px] font-black font-outfit ${
-                reel.trustScore >= 75 ? 'text-emerald-400' : reel.trustScore >= 45 ? 'text-amber-400' : 'text-red-400'
-              }`}>
-                🛡️ TRUST: {reel.trustScore}%
-              </span>
-            </div>
+        <button
+          onClick={() => triggerReportModal(reel)}
+          className="p-3.5 bg-red-600/90 hover:bg-red-600 text-white rounded-full backdrop-blur-md shadow-md transition-all"
+          title="Flag Suspicious"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </button>
+      </div>
 
-            {/* Micro progress bar for trust score */}
-            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-              <div 
-                className={`h-full rounded-full transition-all duration-300 ${
-                  reel.trustScore >= 75 ? 'bg-emerald-500' : reel.trustScore >= 45 ? 'bg-amber-500' : 'bg-red-500'
-                }`}
-                style={{ width: `${reel.trustScore}%` }}
-              />
-            </div>
-
-            {/* Scene analysis detected issues tags */}
-            {reel.detectedIssues && reel.detectedIssues.length > 0 && (
-              <div className="flex gap-1 flex-wrap mt-0.5">
-                {reel.detectedIssues.map((issue, idx) => (
-                  <span key={idx} className="text-[8px] font-black bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-md font-outfit">
-                    🏷️ {issue.split(' ')[0].replace(/_/g, ' ')}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        <h2 className="text-sm font-bold text-shadow" style={{ margin: 0, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+      {/* Bottom Information Details */}
+      <div className="relative z-10 space-y-2 text-white max-w-[80%] pr-4 pb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-amber-300 font-mono">📍 {reel.location || 'Bengaluru Ward'}</span>
+        </div>
+        
+        <h3 className="text-lg font-black font-sora text-white leading-snug drop-shadow-sm">
           {reel.title}
-        </h2>
-        <p className="text-xs text-white/90 text-shadow" style={{ margin: 0, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+        </h3>
+        
+        <p className="text-amber-100 text-xs font-medium leading-relaxed line-clamp-2 drop-shadow-xs">
           {reel.description}
         </p>
-        <div className="flex gap-2 text-[10px] text-white/60 font-semibold">
-          <span>👤 {reel.uploaderUuid.substring(0, 8)}...</span>
-          <span>•</span>
-          <span>⏱️ {reel.timestamp}</span>
+
+        <div className="pt-2 flex items-center gap-2">
+          <span className="px-2.5 py-0.5 bg-white/20 backdrop-blur-xs text-white text-[9px] font-bold rounded-md font-mono">
+            Status: {getStatusLabel(currentStatus)}
+          </span>
         </div>
       </div>
+
     </div>
   );
 }
 
-export default function LocalReelsFeedView({ gpsCoords, userReports, onReportVideo, onUpvoteReport, onOpenProfile, onOpenLibrary }) {
-  const [upvotedList, setUpvotedList] = useState(() => {
-    try {
-      const saved = localStorage.getItem('kawach_liked_reports');
-      const parsed = saved ? JSON.parse(saved) : [];
-      const listObj = {};
-      parsed.forEach(id => { listObj[id] = true; });
-      return listObj;
-    } catch (e) {
-      return {};
-    }
-  });
-  const [reportModal, setReportModal] = useState(null);
-  const [reportStatusMessage, setReportStatusMessage] = useState('');
-  const [isMuted, setIsMuted] = useState(true);
+export default function LocalReelsFeedView({ userReports = [], onReportVideo }) {
+  const [isMuted, setIsMuted] = useState(false);
+  const [upvotedList, setUpvotedList] = useState([]);
+  const [flagModalReel, setFlagModalReel] = useState(null);
 
-  // Merge approved user uploads and sort strictly by distance.
-  // REPORTED_SUSPICIOUS = temp-removed pending human moderation: hidden from
-  // everyone except its own uploader, who sees an "under review" state
-  // (map hides it too — SnapMapView filter).
-  const myUuid = localStorage.getItem('kawach_uploader_uuid');
-  const allReels = userReports
-    .filter(r =>
-      r.status === 'PUBLIC_APPROVED' || r.status === 'COHORT_TEST' || r.status === 'DEPT_ROUTING' ||
-      r.status === 'AI_CHECK_1' || r.status === 'AI_CHECK_2' ||
-      (r.status === 'REPORTED_SUSPICIOUS' && r.uploaderUuid === myUuid))
-    .map(r => ({
+  // Pre-seed mock incident feeds
+  const mockFeeds = [
+    {
+      id: 'feed-1',
+      title: 'Water Main Pipeline Burst',
+      description: 'Massive water gush flooding 100ft road Indiranagar. BWSSB repair crew dispatched.',
+      department: 'WATER',
+      location: '100ft Road, Indiranagar',
+      timestamp: '10 mins ago',
+      upvotes: 42,
+      status: 'PUBLIC_APPROVED'
+    },
+    {
+      id: 'feed-2',
+      title: 'Power Outage & Transformer Spark',
+      description: 'Sparks spotted on pole #B-42. BESCOM team informed for emergency shutdown.',
+      department: 'ELECTRICITY',
+      location: '5th Block, Koramangala',
+      timestamp: '25 mins ago',
+      upvotes: 89,
+      status: 'PUBLIC_APPROVED'
+    },
+    {
+      id: 'feed-3',
+      title: 'Road Hole Hazard Near Junction',
+      description: 'Caved asphalt creating severe traffic jam. Traffic police placing safety cones.',
+      department: 'TRAFFIC',
+      location: 'Silk Board Junction',
+      timestamp: '1 hour ago',
+      upvotes: 120,
+      status: 'PUBLIC_APPROVED'
+    }
+  ];
+
+  // Merge user reports
+  const allReels = [
+    ...userReports.map(r => ({
       id: r.id,
-      title: r.title,
-      description: r.description || 'Recorded safety alert.',
-      distanceValue: 0.05,
-      uploaderUuid: r.uploaderUuid,
+      title: r.title || 'User Safety Incident',
+      description: r.description || 'Public incident upload.',
+      department: (r.category || 'POLICE').toUpperCase(),
+      location: 'Near Current GPS',
       timestamp: r.timestamp || 'Just now',
-      upvotes: r.upvotes || 0,
-      shares: 0,
+      upvotes: r.views || 5,
       status: r.status,
-      avatarGradient: 'linear-gradient(135deg, #ffd900 0%, #ff9500 100%)',
-      videoUrl: r.videoUrl,
-      trimStart: r.trimStart,
-      trimEnd: r.trimEnd,
-      routedDepartment: r.routedDepartment,
-      routingPriority: r.routingPriority,
-      routingReason: r.routingReason,
-      escalationRequired: r.escalationRequired,
-      subCategory: r.subCategory,
-      estimatedResolutionDays: r.estimatedResolutionDays,
-      trustScore: r.trustScore,
-      aiVerdict: r.aiVerdict,
-      civicUrgencyScore: r.civicUrgencyScore,
-      sceneDetected: r.sceneDetected,
-      detectedIssues: r.detectedIssues,
-      temporalConsistency: r.temporalConsistency,
-      dominantClass: r.dominantClass
-    }));
+      videoUrl: r.videoUrl
+    })),
+    ...mockFeeds
+  ];
+
+  const toggleMute = () => setIsMuted(!isMuted);
 
   const toggleUpvote = (id) => {
-    setUpvotedList(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-    if (onUpvoteReport) {
-      onUpvoteReport(id);
-    }
-  };
-
-  const toggleMute = () => {
-    setIsMuted(prev => !prev);
-  };
-
-  const triggerReportModal = (reel) => {
-    setReportModal(reel);
-    setReportStatusMessage('');
-  };
-
-  const submitReport = () => {
-    if (!reportModal) return;
-    onReportVideo(reportModal.id);
-    setReportStatusMessage('FORENSIC COMPLIANCE TRACE LAUNCHED ✅');
-    setTimeout(() => {
-      setReportModal(null);
-    }, 1500);
-  };
-
-  if (allReels.length === 0) {
-    return (
-      <div className="view-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff' }}>
-        <p style={{ color: '#999999', fontSize: '13px', fontWeight: '500' }}>No proximity reels available.</p>
-      </div>
+    setUpvotedList(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
-  }
+  };
 
   return (
-    <div className="w-full h-full snap-y snap-mandatory overflow-y-scroll scrollbar-hide bg-black">
-
+    <div className="flex-1 flex flex-col h-full bg-white font-sans overflow-hidden select-text relative">
       
-      {allReels.map((reel) => (
-        <ReelCard 
-          key={reel.id}
-          reel={reel}
-          userReports={userReports}
-          onReportVideo={onReportVideo}
-          isMuted={isMuted}
-          toggleMute={toggleMute}
-          upvotedList={upvotedList}
-          toggleUpvote={toggleUpvote}
-          triggerReportModal={triggerReportModal}
-        />
-      ))}
+      {/* Editorial Header — Restored with top notch safety padding */}
+      <div className="px-4 pt-6 pb-3 bg-white border-b border-amber-400/20 flex-none flex items-center justify-between z-20 md:px-6 md:pt-8 md:pb-4">
+        <div>
+          <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
+            COMMUNITY SAFETY BROADCASTS
+          </span>
+          <h2 className="text-xl font-black text-ink font-sora">
+            Incident <span className="font-serif italic font-normal text-[#b08850] pr-1">Feed</span>
+          </h2>
+        </div>
+        <span className="text-[10px] font-bold text-ink bg-amber-400/20 border border-amber-400/30 px-2.5 py-1 rounded-full font-mono">
+          {allReels.length} Active Feeds
+        </span>
+      </div>
 
-      {/* Flag Report — Bottom Sheet (not full-screen takeover) */}
-      {reportModal && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 9999,
-          }}
-          onClick={() => setReportModal(null)}
-        >
-          {/* Dim overlay */}
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(2px)',
-          }} />
-          {/* Sheet */}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              borderRadius: '24px 24px 0 0',
-              backgroundColor: '#ffffff',
-              padding: `24px 24px calc(24px + env(safe-area-inset-bottom))`,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '16px',
-              animation: 'slideUp 0.25s ease-out',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Drag handle */}
-            <div style={{ width: '36px', height: '4px', borderRadius: '2px', backgroundColor: '#e2e8f0', marginBottom: '4px' }} />
+      {/* Vertical Snap Scroll Reels Container */}
+      <div className="flex-1 overflow-y-scroll snap-y snap-mandatory h-full w-full bg-amber-950">
+        {allReels.map((reel) => (
+          <ReelCard
+            key={reel.id}
+            reel={reel}
+            userReports={userReports}
+            onReportVideo={onReportVideo}
+            isMuted={isMuted}
+            toggleMute={toggleMute}
+            upvotedList={upvotedList}
+            toggleUpvote={toggleUpvote}
+            triggerReportModal={(r) => setFlagModalReel(r)}
+          />
+        ))}
+      </div>
 
-            <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 59, 48, 0.08)',
-              border: '2px solid rgba(255,59,48,0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ff3b30',
-            }}>
-              <AlertOctagon size={28} />
-            </div>
-
-            <h3 style={{ fontSize: '17px', margin: 0, fontFamily: 'Outfit', fontWeight: '850', color: '#000' }}>
-              Flag Safety Video
+      {/* Flag Incident Modal */}
+      {flagModalReel && (
+        <div className="fixed inset-0 z-50 bg-amber-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-red-500 rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+            <h3 className="font-black text-red-600 text-base font-sora">
+              Flag Suspicious Feed?
             </h3>
-            <p style={{
-              fontSize: '12px',
-              color: '#64748b',
-              textAlign: 'center',
-              maxWidth: '280px',
-              lineHeight: 1.5,
-              margin: 0,
-              fontWeight: '500'
-            }}>
-              Flagging initiates an automated forensic verification trace. The upload status will transition into secondary rigorous verification models.
+            <p className="text-ink-soft text-xs font-semibold leading-relaxed">
+              Are you sure you want to flag "{flagModalReel.title}"? This alert will be forwarded to district moderators for inspection.
             </p>
-
-            {reportStatusMessage ? (
-              <span style={{ fontSize: '12px', color: '#ff3b30', fontWeight: '700', textAlign: 'center' }}>
-                {reportStatusMessage}
-              </span>
-            ) : (
-              <div style={{ display: 'flex', gap: '10px', width: '100%', maxWidth: '320px' }}>
-                <button
-                  onClick={() => setReportModal(null)}
-                  style={{
-                    flex: 1,
-                    padding: '13px',
-                    borderRadius: '16px',
-                    border: '1px solid #e2e8f0',
-                    backgroundColor: '#f8fafc',
-                    color: '#374151',
-                    cursor: 'pointer',
-                    fontWeight: '700',
-                    fontSize: '13px',
-                    fontFamily: 'Outfit'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={submitReport}
-                  style={{
-                    flex: 1,
-                    padding: '13px',
-                    borderRadius: '16px',
-                    border: 'none',
-                    backgroundColor: '#ff3b30',
-                    color: '#ffffff',
-                    cursor: 'pointer',
-                    fontWeight: '800',
-                    fontSize: '13px',
-                    fontFamily: 'Outfit',
-                    boxShadow: '0 4px 12px rgba(255, 59, 48, 0.25)'
-                  }}
-                >
-                  Flag Video
-                </button>
-              </div>
-            )}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setFlagModalReel(null)}
+                className="px-4 py-2 bg-amber-50 text-ink-soft font-bold rounded-xl text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onReportVideo(flagModalReel.id);
+                  setFlagModalReel(null);
+                  alert('Incident flagged to precinct control.');
+                }}
+                className="px-4 py-2 bg-red-600 text-white font-black rounded-xl text-xs uppercase font-sora"
+              >
+                Flag Alert
+              </button>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

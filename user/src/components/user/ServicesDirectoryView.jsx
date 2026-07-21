@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Phone, Shield, HeartPulse, Flame, Zap, Droplet, Truck, AlertTriangle, Star, CheckCircle } from 'lucide-react';
 
 export default function ServicesDirectoryView({ gpsCoords }) {
   const [activeSector, setActiveSector] = useState('government'); // government or private
@@ -9,9 +8,27 @@ export default function ServicesDirectoryView({ gpsCoords }) {
 
   // Hand-Verified Core Emergency Lifelines (Direct Top Section)
   const emergencyLifelines = [
-    { name: 'Police Control Room', phone: '112', icon: Shield, color: '#3B82F6', details: 'Direct emergency police assistance', verified: true },
-    { name: 'Ambulance Helpline', phone: '108', icon: HeartPulse, color: '#E11D48', details: 'Immediate medical dispatch', verified: true },
-    { name: 'Fire & Rescue Command', phone: '101', icon: Flame, color: '#F59E0B', details: 'Hazard containment & emergency safety', verified: true }
+    { 
+      name: 'Police Control Room', 
+      phone: '112', 
+      details: 'Direct emergency police assistance', 
+      verified: true,
+      renderIcon: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-6 h-6"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    },
+    { 
+      name: 'Ambulance Helpline', 
+      phone: '108', 
+      details: 'Immediate medical dispatch', 
+      verified: true,
+      renderIcon: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-6 h-6"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    },
+    { 
+      name: 'Fire & Rescue Command', 
+      phone: '101', 
+      details: 'Hazard containment & emergency safety', 
+      verified: true,
+      renderIcon: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-6 h-6"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+    }
   ];
 
   // Hand-verified mock database
@@ -26,8 +43,6 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       priceScore: 1,
       phone: '112',
       address: '8th Block, Koramangala, Bengaluru',
-      icon: Shield,
-      color: '#3B82F6',
       verified: true
     },
     {
@@ -40,8 +55,6 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       priceScore: 1,
       phone: '108',
       address: 'Sarjapur Road, John Nagar, Bengaluru',
-      icon: HeartPulse,
-      color: '#E11D48',
       verified: true
     },
     {
@@ -54,8 +67,6 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       priceScore: 1,
       phone: '101',
       address: 'Sector 4, HSR Layout, Bengaluru',
-      icon: Flame,
-      color: '#F59E0B',
       verified: true
     },
     {
@@ -68,8 +79,6 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       priceScore: 1,
       phone: '1912',
       address: '5th Block, Koramangala, Bengaluru',
-      icon: Zap,
-      color: '#F59E0B',
       verified: true
     },
     {
@@ -78,561 +87,221 @@ export default function ServicesDirectoryView({ gpsCoords }) {
       category: 'Disaster',
       sector: 'government',
       distance: 5.2,
-      rating: 4.9,
+      rating: 4.8,
       priceScore: 1,
-      phone: '1078',
-      address: 'Yelahanka, Bengaluru Outskirts',
-      icon: AlertTriangle,
-      color: '#818cf8',
-      verified: true
-    },
-    {
-      id: 'gov-6',
-      name: 'BWSSB Water Emergency Board',
-      category: 'Water',
-      sector: 'government',
-      distance: 2.2,
-      rating: 3.7,
-      priceScore: 1,
-      phone: '1916',
-      address: '2nd Stage, Indiranagar, Bengaluru',
-      icon: Droplet,
-      color: '#3B82F6',
+      phone: '1070',
+      address: 'Infantry Road, Central Command, Bengaluru',
       verified: true
     },
     {
       id: 'pvt-1',
-      name: 'Apollo Hospital ICU Ambulance',
-      category: 'Ambulance',
+      name: 'RapidTow 24/7 Crane Dispatch',
+      category: 'Towing',
       sector: 'private',
       distance: 0.8,
-      rating: 4.8,
-      priceScore: 3,
-      phone: '+919900019100',
-      address: 'Bannerghatta Road, Bengaluru',
-      icon: HeartPulse,
-      color: '#E11D48',
+      rating: 4.7,
+      priceScore: 2,
+      phone: '+91 98765 43210',
+      address: '100 Feet Road, Indiranagar, Bengaluru',
       verified: true
     },
     {
       id: 'pvt-2',
-      name: 'SecureShield Patrols Ltd',
-      category: 'Police',
+      name: 'Apollo Quick Ambulance Unit',
+      category: 'Ambulance',
       sector: 'private',
-      distance: 1.5,
-      rating: 4.5,
+      distance: 1.4,
+      rating: 4.9,
       priceScore: 3,
-      phone: '+918045612340',
-      address: '100ft Road, Indiranagar, Bengaluru',
-      icon: Shield,
-      color: '#3B82F6',
+      phone: '+91 99887 76655',
+      address: 'Bannerghatta Road, Bengaluru',
       verified: true
     },
     {
       id: 'pvt-3',
-      name: 'Koramangala Towing & Recovery',
-      category: 'Towing',
+      name: 'CityLocksmith Auto & Home Express',
+      category: 'Locksmith',
       sector: 'private',
-      distance: 0.6,
-      rating: 4.1,
+      distance: 1.2,
+      rating: 4.4,
       priceScore: 2,
-      phone: '+919888800221',
-      address: '4th Block, Koramangala, Bengaluru',
-      icon: Truck,
-      color: '#64748B',
-      verified: true
-    },
-    {
-      id: 'pvt-4',
-      name: 'Cauvery Water Tanker Supplies',
-      category: 'Water',
-      sector: 'private',
-      distance: 1.9,
-      rating: 3.9,
-      priceScore: 1,
-      phone: '+919777123456',
-      address: 'Ejipura Main Road, Bengaluru',
-      icon: Droplet,
-      color: '#3B82F6',
-      verified: true
-    },
-    {
-      id: 'pvt-5',
-      name: 'Speedy Towing Services',
-      category: 'Towing',
-      sector: 'private',
-      distance: 2.8,
-      rating: 4.7,
-      priceScore: 3,
-      phone: '+919666677777',
-      address: 'Outer Ring Road, Bellandur',
-      icon: Truck,
-      color: '#64748B',
+      phone: '+91 91234 56789',
+      address: 'BTM 2nd Stage, Bengaluru',
       verified: true
     }
   ];
 
-  const categories = ['All', 'Police', 'Ambulance', 'Fire', 'Water', 'Electricity', 'Towing', 'Disaster'];
+  const categories = ['All', 'Police', 'Ambulance', 'Fire', 'Electricity', 'Disaster', 'Towing', 'Locksmith'];
 
-  // Filtering Logic
-  const filteredServices = servicesData.filter((service) => {
-    const matchesSector = service.sector === activeSector;
-    const matchesCategory = selectedCategory === 'All' || service.category === selectedCategory;
-    return matchesSector && matchesCategory;
-  });
-
-  // Sorting Logic
-  const sortedServices = [...filteredServices].sort((a, b) => {
-    if (sortBy === 'proximity') {
-      return a.distance - b.distance;
-    }
-    if (sortBy === 'quality') {
-      return b.rating - a.rating;
-    }
-    if (sortBy === 'price') {
-      return a.priceScore - b.priceScore;
-    }
-    return 0;
-  });
-
-  const getPriceIndicator = (score) => {
-    if (score === 1) return 'Free';
-    return '₹'.repeat(score);
-  };
-
-  const handleCallSimulation = (service) => {
-    setCallModal(service);
-  };
+  const filteredServices = servicesData
+    .filter(s => s.sector === activeSector)
+    .filter(s => selectedCategory === 'All' || s.category === selectedCategory)
+    .sort((a, b) => {
+      if (sortBy === 'proximity') return a.distance - b.distance;
+      if (sortBy === 'quality') return b.rating - a.rating;
+      if (sortBy === 'price') return a.priceScore - b.priceScore;
+      return 0;
+    });
 
   return (
-    <div className="view-container" style={{ 
-      padding: '20px 16px 100px', 
-      backgroundColor: '#fafafa', // Soft Off-White
-      boxSizing: 'border-box',
-      height: '100%',
-      overflowY: 'auto'
-    }}>
+    <div className="flex-1 flex flex-col h-full bg-white font-sans text-ink overflow-y-auto pb-24 select-text">
       
-      {/* View Header (Hidden because of layout level TopBar) */}
-      <div style={{ display: 'none' }}>
-        <h1 style={{ margin: 0, fontSize: '20px', fontFamily: 'Outfit', fontWeight: '850', color: '#09090B' }}>
-          Community & Helplines
-        </h1>
-        <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#64748B', fontWeight: '500' }}>
-          Hand-verified support stations and utility lines to assist you instantly.
+      {/* Editorial Header — Restored with top notch safety padding */}
+      <div className="px-4 pt-6 pb-3 bg-white border-b border-amber-400/20 md:px-6 md:pt-8 md:pb-4">
+        <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block mb-0.5 font-mono">
+          DIRECT EMERGENCY LINES &amp; VERIFIED DIRECTORY
+        </span>
+        <h2 className="text-xl font-black text-ink font-sora md:text-2xl">
+          Civic <span className="font-serif italic font-normal text-[#b08850] pr-1">Directory</span>
+        </h2>
+        <p className="text-ink-soft text-xs font-semibold mt-1 leading-relaxed hidden sm:block">
+          Instant access to official state response stations and vetted private utility dispatches in your ward.
         </p>
       </div>
 
-      {/* 🚨 CORE EMERGENCY LIFELINES SECTION (FIRST AND PROMINENT) */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '20px',
-        padding: '14px',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.02)',
-        marginBottom: '20px',
-        border: '1px solid #e5e5e5'
-      }}>
-        <h2 style={{ margin: '0 0 10px 0', fontSize: '11px', color: '#E11D48', fontWeight: '800', letterSpacing: '0.05em' }}>
-          🚨 EMERGENCY HELPLINES
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {emergencyLifelines.map((lifeline, idx) => {
-            const LifeIcon = lifeline.icon;
-            return (
+      <div className="p-5 space-y-6">
+
+        {/* 1. Core Emergency Lifelines Section */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-black text-ink font-sora uppercase tracking-wider flex items-center gap-1.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#b08850" strokeWidth="2.5" className="w-4 h-4"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              Emergency Lifelines
+            </h3>
+            <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
+              24/7 Priority Grid
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {emergencyLifelines.map((line) => (
               <div 
-                key={idx}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '10px 12px',
-                  backgroundColor: '#fdfdfd',
-                  border: '1px solid #f0f0f0',
-                  borderRadius: '14px'
-                }}
+                key={line.phone}
+                className="bg-white border-2 border-[#E9BA26] rounded-2xl p-4 flex flex-col justify-between shadow-xs hover:border-amber-500 transition-all"
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    backgroundColor: `${lifeline.color}15`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: lifeline.color,
-                    border: `1px solid ${lifeline.color}25`
-                  }}>
-                    <LifeIcon size={18} strokeWidth={2.5} />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '750', color: '#09090B' }}>
-                        {lifeline.name} ({lifeline.phone})
-                      </h3>
-                      <CheckCircle size={12} fill="#3B82F6" stroke="#ffffff" />
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 bg-amber-400/15 rounded-xl flex items-center justify-center text-[#b08850] border border-amber-400/30">
+                      {line.renderIcon()}
                     </div>
-                    <p style={{ margin: 0, fontSize: '10px', color: '#64748B', fontWeight: '500' }}>
-                      {lifeline.details}
-                    </p>
+                    <span className="text-[10px] font-black font-mono bg-amber-950 text-[#E9BA26] px-2.5 py-1 rounded-lg">
+                      Dial {line.phone}
+                    </span>
                   </div>
+                  <h4 className="font-black text-ink text-sm font-sora">{line.name}</h4>
+                  <p className="text-ink-soft text-[10px] font-semibold mt-1 leading-relaxed">{line.details}</p>
                 </div>
 
-                <button
-                  onClick={() => handleCallSimulation(lifeline)}
-                  style={{
-                    background: '#ffd900', // Safety Yellow
-                    border: '1px solid #ffd900',
-                    borderRadius: '10px',
-                    width: '36px',
-                    height: '36px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#09090B',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 6px rgba(255, 217, 0, 0.15)'
-                  }}
+                <a 
+                  href={`tel:${line.phone}`}
+                  className="mt-4 w-full py-2.5 bg-[#E9BA26] hover:bg-amber-400 text-ink font-black rounded-xl text-xs flex items-center justify-center gap-2 border border-amber-950/10 uppercase tracking-wider font-sora transition-all"
                 >
-                  <Phone size={14} strokeWidth={2.5} />
-                </button>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  Call Now
+                </a>
               </div>
-            );
-          })}
-        </div>
-      </div>
+            ))}
+          </div>
+        </section>
 
-      {/* Sector Tab Selector (Govt vs Private) */}
-      <div style={{
-        display: 'flex',
-        padding: '4px',
-        borderRadius: '16px',
-        marginBottom: '16px',
-        backgroundColor: '#e5e5e5'
-      }}>
-        <button
-          onClick={() => setActiveSector('government')}
-          style={{
-            flex: 1,
-            padding: '12px 10px',
-            borderRadius: '12px',
-            border: 'none',
-            fontSize: '12px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            backgroundColor: activeSector === 'government' ? '#ffd900' : 'transparent',
-            color: '#09090B',
-            transition: 'all 0.2s ease',
-            boxShadow: activeSector === 'government' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-            minHeight: '44px'
-          }}
-        >
-          Government Services
-        </button>
-        <button
-          onClick={() => setActiveSector('private')}
-          style={{
-            flex: 1,
-            padding: '12px 10px',
-            borderRadius: '12px',
-            border: 'none',
-            fontSize: '12px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            backgroundColor: activeSector === 'private' ? '#ffd900' : 'transparent',
-            color: '#09090B',
-            transition: 'all 0.2s ease',
-            boxShadow: activeSector === 'private' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-            minHeight: '44px'
-          }}
-        >
-          Private Assistance
-        </button>
-      </div>
+        {/* 2. Sector Selector Tabs (Government vs Private) */}
+        <section className="space-y-4">
+          <div className="bg-amber-50 p-1 rounded-2xl flex gap-1 border border-amber-200">
+            <button
+              onClick={() => setActiveSector('government')}
+              className={`flex-1 py-2.5 text-xs font-extrabold rounded-xl transition-all font-sora ${
+                activeSector === 'government'
+                  ? 'bg-white text-ink shadow-xs border border-amber-400/40'
+                  : 'text-ink-soft hover:text-ink'
+              }`}
+            >
+              🏛️ Government & Public Units
+            </button>
+            <button
+              onClick={() => setActiveSector('private')}
+              className={`flex-1 py-2.5 text-xs font-extrabold rounded-xl transition-all font-sora ${
+                activeSector === 'private'
+                  ? 'bg-white text-ink shadow-xs border border-amber-400/40'
+                  : 'text-ink-soft hover:text-ink'
+              }`}
+            >
+              🛠️ Private Vetted Operators
+            </button>
+          </div>
 
-      {/* Category Slider */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '8px', 
-        overflowX: 'auto', 
-        paddingBottom: '16px',
-        marginBottom: '8px',
-        scrollbarWidth: 'none',
-        WebkitOverflowScrolling: 'touch',
-        minHeight: '48px'
-      }}>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '20px',
-              border: '1px solid #e5e5e5',
-              fontSize: '12px',
-              fontWeight: '700',
-              whiteSpace: 'nowrap',
-              cursor: 'pointer',
-              backgroundColor: selectedCategory === cat ? '#ffffff' : '#f8f8f8',
-              borderColor: selectedCategory === cat ? '#ffd900' : '#e5e5e5',
-              color: '#09090B',
-              boxShadow: selectedCategory === cat ? '0 2px 6px rgba(0,0,0,0.04)' : 'none',
-              flexShrink: 0,
-              height: '38px',
-              minHeight: '38px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {/* Sorting Selector */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '12px',
-        fontSize: '11px'
-      }}>
-        <span style={{ color: '#64748B', fontWeight: '500' }}>
-          {sortedServices.length} verified listings
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: '#64748B', fontWeight: '500' }}>Sort by:</span>
-          <select 
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            style={{
-              background: '#ffffff',
-              color: '#09090B',
-              border: '1px solid #e5e5e5',
-              padding: '6px 8px',
-              borderRadius: '8px',
-              outline: 'none',
-              fontFamily: 'Outfit, sans-serif',
-              fontWeight: '600',
-              fontSize: '11px',
-              minHeight: '32px'
-            }}
-          >
-            <option value="proximity">Proximity</option>
-            <option value="quality">Quality Rating</option>
-            <option value="price">Price Rank</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Services List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {sortedServices.length > 0 ? (
-          sortedServices.map((service) => {
-            const ServiceIcon = service.icon;
-
-            return (
-              <div 
-                key={service.id} 
-                className="glass-card"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  position: 'relative',
-                  backgroundColor: '#ffffff',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.01)',
-                  padding: '12px'
-                }}
+          {/* Categories Horizontal Scroll */}
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  selectedCategory === cat
+                    ? 'bg-[#E9BA26] text-ink border border-amber-950/10 shadow-xs'
+                    : 'bg-white border border-amber-400/20 text-ink-soft hover:border-[#b08850]'
+                }`}
               >
-                {/* Custom Icon Container */}
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '12px',
-                  backgroundColor: '#f8f8f8',
-                  border: '1px solid #e5e5e5',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: service.color
-                }}>
-                  <ServiceIcon size={18} />
-                </div>
+                {cat}
+              </button>
+            ))}
+          </div>
 
-                {/* Service Details */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <h3 style={{
-                      margin: 0,
-                      fontSize: '13px',
-                      fontWeight: '750',
-                      color: '#09090B',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}>
-                      {service.name}
-                    </h3>
-                    {service.verified && (
-                      <span style={{
-                        fontSize: '9px',
-                        color: '#3B82F6',
-                        backgroundColor: '#e3f2fd',
-                        padding: '1px 6px',
-                        borderRadius: '6px',
-                        fontWeight: '700',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        flexShrink: 0
-                      }}>
-                        Verified
-                      </span>
-                    )}
-                  </div>
-                  <p style={{
-                    margin: '2px 0 4px 0',
-                    fontSize: '10px',
-                    color: '#64748B',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    fontWeight: '500'
-                  }}>
-                    {service.address}
-                  </p>
-                  
-                  {/* Metadata tags */}
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '9px', fontWeight: '600' }}>
-                    <span style={{ color: '#3B82F6' }}>
-                      📍 {service.distance} km
-                    </span>
-                    <span style={{ color: '#e5e5e5' }}>|</span>
-                    <span style={{ color: '#F59E0B', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Star size={9} fill="#F59E0B" stroke="none" /> {service.rating}
-                    </span>
-                    <span style={{ color: '#e5e5e5' }}>|</span>
-                    <span style={{ color: '#22c55e' }}>
-                      {getPriceIndicator(service.priceScore)}
-                    </span>
-                  </div>
-                </div>
+          {/* Sort Controls */}
+          <div className="flex items-center justify-between text-xs font-semibold text-ink-soft px-1 pt-1">
+            <span>Showing {filteredServices.length} verified stations</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSortBy('proximity')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold ${sortBy === 'proximity' ? 'bg-amber-400/20 text-[#b08850]' : 'text-ink-faint'}`}
+              >
+                Nearest First
+              </button>
+              <button
+                onClick={() => setSortBy('quality')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold ${sortBy === 'quality' ? 'bg-amber-400/20 text-[#b08850]' : 'text-ink-faint'}`}
+              >
+                Highest Rated
+              </button>
+            </div>
+          </div>
+        </section>
 
-                {/* Call Action Button */}
-                <button
-                  onClick={() => handleCallSimulation(service)}
-                  style={{
-                    background: '#ffd900', // Safety Yellow
-                    border: 'none',
-                    borderRadius: '10px',
-                    width: '36px',
-                    height: '36px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#09090B',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 6px rgba(255, 217, 0, 0.15)',
-                    minHeight: '36px',
-                    minWidth: '36px'
-                  }}
-                >
-                  <Phone size={14} strokeWidth={2.5} />
-                </button>
+        {/* 3. Services List Cards */}
+        <section className="space-y-3">
+          {filteredServices.map((service) => (
+            <div
+              key={service.id}
+              className="bg-white border border-amber-400/20 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs hover:border-[#b08850]/40 transition-all"
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-black text-ink text-sm font-sora">{service.name}</h4>
+                  {service.verified && (
+                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md uppercase">
+                      Verified
+                    </span>
+                  )}
+                </div>
+                <p className="text-ink-soft text-xs font-semibold">{service.address}</p>
+                <div className="flex items-center gap-4 text-[10px] font-bold text-ink-faint pt-1">
+                  <span>📍 {service.distance} km away</span>
+                  <span>⭐ {service.rating} / 5.0</span>
+                  <span>{service.sector === 'government' ? 'FREE Public Service' : 'Standard Rate'}</span>
+                </div>
               </div>
-            );
-          })
-        ) : (
-          <div style={{
-            padding: '40px 20px',
-            textAlign: 'center',
-            color: '#64748B',
-            fontSize: '13px'
-          }}>
-            No emergency services match the chosen filter.
-          </div>
-        )}
+
+              <a
+                href={`tel:${service.phone}`}
+                className="w-full sm:w-auto px-4 py-2.5 bg-amber-50 hover:bg-[#E9BA26] border border-amber-400/40 text-ink font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all font-sora shrink-0"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                Call {service.phone}
+              </a>
+            </div>
+          ))}
+        </section>
+
       </div>
-
-      {/* Call Simulator Overlay */}
-      {callModal && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: '#ffffff',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '24px',
-          color: '#09090B'
-        }}>
-          {/* Dialing Circle */}
-          <div style={{
-            width: '90px',
-            height: '90px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255, 217, 0, 0.25)',
-            border: '3px solid #ffd900',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#09090B',
-            marginBottom: '20px',
-            boxShadow: '0 0 20px rgba(255, 217, 0, 0.3)'
-          }} className="pulse-red">
-            <Phone size={36} strokeWidth={2.5} />
-          </div>
-
-          <h2 style={{ fontSize: '18px', margin: '0 0 6px 0', fontFamily: 'Outfit', fontWeight: '850', textAlign: 'center' }}>
-            {callModal.name}
-          </h2>
-          <span style={{ fontSize: '12px', color: '#3B82F6', fontWeight: '700', letterSpacing: '0.05em' }}>
-            CONNECTING: {callModal.phone}
-          </span>
-          
-          {/* Comforting Human privacy assurance */}
-          <p style={{
-            fontSize: '11px',
-            color: '#64748B',
-            margin: '12px 0 0 0',
-            textAlign: 'center',
-            maxWidth: '240px',
-            lineHeight: 1.4,
-            fontWeight: '600',
-            backgroundColor: '#f8fafc',
-            padding: '10px 14px',
-            borderRadius: '12px',
-            border: '1px solid #e5e5e5'
-          }}>
-            🔐 Secure Line: Confidential voice connection is active to keep your personal details private.
-          </p>
-
-          <button
-            onClick={() => setCallModal(null)}
-            style={{
-              marginTop: '40px',
-              padding: '12px 32px',
-              borderRadius: '24px',
-              border: 'none',
-              backgroundColor: '#E11D48', // Soft Crimson
-              color: '#ffffff',
-              fontWeight: '700',
-              cursor: 'pointer',
-              fontSize: '13px',
-              boxShadow: '0 4px 15px rgba(225, 29, 72, 0.2)',
-              minHeight: '44px'
-            }}
-          >
-            End Call
-          </button>
-        </div>
-      )}
     </div>
   );
 }

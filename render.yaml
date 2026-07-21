@@ -14,6 +14,18 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: PYTHONUNBUFFERED
+        value: "1"   # force stdout to flush immediately — without this, print()
+                      # logs can vanish or appear wildly out of order in Render's
+                      # log viewer (bit us diagnosing the Gemini key issue)
+      - key: PYTHONUTF8
+        value: "1"   # CRITICAL: without this, Render's default locale isn't
+                      # UTF-8, and any print() of Gemini's emoji-laden response
+                      # text throws UnicodeEncodeError — silently caught by
+                      # nayak.py's broad except and disguised as a "Gemini
+                      # error", making every chat fall back to the canned
+                      # template even with a perfectly valid API key.
+                      # Reproduced and confirmed as the root cause 2026-07-19.
       - key: DATABASE_URL
         sync: false   # Supabase → Settings → Database → Connection string (URI)
       - key: GEMINI_API_KEY
@@ -22,5 +34,9 @@ services:
         sync: false   # any long random string
       - key: CLASSIFIER_URL
         value: https://hikity-kawach-classifier.hf.space
-      - key: SEED_ON_START
-        value: "1"    # first boot: creates tables + demo data on empty DB; set to 0 afterwards
+      # SEED_ON_START removed 2026-07-19 — auto-seeding on boot ran
+      # Base.metadata.drop_all() against the real production database on
+      # every cold start. Table creation is safe/automatic (main.py
+      # create_all, additive-only); if you want demo FIR/offender data, run
+      # `DATABASE_URL=<target> python -m app.scripts.generate_data` manually,
+      # once, deliberately — never as part of the boot sequence.

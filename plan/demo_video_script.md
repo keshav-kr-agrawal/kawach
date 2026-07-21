@@ -69,7 +69,7 @@
 > "This is Nayak — our agentic safety assistant. Watch what happens when I show it a suspicious ₹500 note."
 
 - Attach a currency photo in chat
-- Show the real verdict rendering: security-thread check, microprint sharpness, serial-number pattern — **and the model itself, trained on 6,300+ real images, 98.67% accuracy**
+- Show the real verdict rendering: security-thread check, microprint sharpness, serial-number pattern — **and the model itself, trained on 6,300+ real images, 91.9% held-out accuracy**
 - Then paste/say a digital-arrest scam script line ("You are under digital arrest, do not disconnect...")
 
 > **VO:**
@@ -111,7 +111,7 @@
 **[Screen: split-panel text callouts over B-roll of the app]**
 
 > **VO (measured, credible — this is the trust-building beat):**
-> "Everything you just saw is real. Not a mockup. Our deepfake detector runs a genuine dual-model ensemble. Our currency classifier was trained from scratch — because no usable pretrained model for Indian currency exists anywhere, so we built one, and measured it honestly: **98.67% accuracy, denomination by denomination** — including the hard cases. Our fraud-network detection uses real community-detection graph algorithms, not a hardcoded demo."
+> "Everything you just saw is real. Not a mockup. Our deepfake detector runs a genuine dual-model ensemble. Our currency classifier was trained from scratch — because no usable pretrained model for Indian currency exists anywhere, so we built one, and measured it honestly: **91.9% held-out accuracy, denomination by denomination** — including the hard cases. Our fraud-network detection uses real community-detection graph algorithms, not a hardcoded demo."
 
 > **VO:**
 > "And every citizen report is de-identified before it ever reaches a department. Anonymity isn't a setting here — it's structural."
@@ -134,4 +134,4 @@
 - **Pacing**: Act 1 and Act 5 should feel cinematic (music, slow cuts). Act 3 should feel fast and real — actual screen recording, not slides, minimal editing tricks, so it visibly looks like a working product.
 - **Music**: tense/minor-key under Act 1, swells into confident/major-key at the "Meet KAWACH" reveal, stays energetic through the demo, softens for Act 4's credibility beat.
 - **If you're short on time**: Act 3b (Nayak) is the single most important 50 seconds — it's the one flow that hits digital-arrest detection, counterfeit detection, community corroboration, human-confirmed reporting, and the emergency path all at once. If you have to cut anything, cut from Act 3d (police side) before touching 3b.
-- **Don't claim** anything not in this script — every number here (₹1,776 crore, 1.14M complaints, 98.67% accuracy, denomination breakdown) is sourced from `ps.txt` or `Classifier/weights/currency/eval_report.json` and is defensible if a judge asks where it came from.
+- **Don't claim** anything not in this script — every number here (₹1,776 crore, 1.14M complaints, 91.9% accuracy, denomination breakdown) is sourced from `ps.txt` or `Classifier/weights/currency/eval_report.json` and is defensible if a judge asks where it came from.

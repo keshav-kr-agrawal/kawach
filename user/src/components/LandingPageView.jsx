@@ -1,453 +1,293 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Shield, Users, Radio, MessageSquare, BookOpen, Fingerprint, Lock, ArrowRight, Activity, MapPin, Building2, ExternalLink, Navigation, ShieldAlert, EyeOff } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
-const PILLARS = [
-  { num: '01', title: 'Data Ingestion', desc: 'Multi-modal ingestion of complaint diaries, beat patrols, FIR databases, and public feeds.' },
-  { num: '02', title: 'Entity Resolution', desc: 'High-speed deduplication matching phone numbers, suspect aliases, and multiple identities.' },
-  { num: '03', title: 'Criminal Intelligence Graph', desc: 'Force-directed network analysis linking suspects to bank accounts, IMEIs, and locations.' },
-  { num: '04', title: 'Repeat Offender Rank', desc: 'Calculates dynamic recidivism risks for active gang clusters and parolees.' },
-  { num: '05', title: 'Hotspot Analytics', desc: 'Spatial DBSCAN clustering overlays mapping high-density crime sectors.' },
-  { num: '06', title: 'Predictive Policing', desc: 'Proximity-based risk forecasting without community profiling or demographic bias.' },
-  { num: '07', title: 'AI Anomaly Detection', desc: 'Unsupervised neural networks spotting localized burglary and theft spikes.' },
-  { num: '08', title: 'Socio-Economic Correlation', desc: 'Overlays streetlight outages, employment rates, and ward income data with incidents.' },
-  { num: '09', title: 'GEOINT GIS Layers', desc: 'Dynamic spatial layers showing police station boundaries, patrol zones, and hospitals.' },
-  { num: '10', title: 'Real-Time Control Room', desc: 'Centralized dispatches and live emergency interlocks for command operators.' },
-  { num: '11', title: 'Emergency Interlock Dispatch', desc: 'Automated routing of critical citizen alerts directly to precinct patrol cars.' },
-  { num: '12', title: 'AI Investigation Copilot', desc: 'High-speed Graph-RAG timeline summaries and court-ready Section 65B dossiers.' },
-  { num: '13', title: 'Computer Vision Analytics', desc: 'Live 4-grid street video analysis checking for weapons, crowd sizes, and counter-trespass.' },
-  { num: '14', title: 'Face Analytics Watchlist', desc: 'Real-time facial recognition comparing camera feeds against missing persons files.' },
-  { num: '15', title: 'District Performance Analytics', desc: 'SP-level clearance speed charts, conviction ratios, and patrol response times.' },
-  { num: '16', title: 'Mobile Field Patrolling', desc: 'Offline-first SQLite patrolling grids with automatic background cloud synchronization.' },
-  { num: '17', title: 'DGP/SP Executive Console', desc: 'Command dashboard for top-level officers tracking statewide metrics.' },
-  { num: '18', title: 'Immutable Audit Trails', desc: 'Section 65B SHA-256 compliance hashing securing legal chain of custody.' },
-  { num: '19', title: 'Secure Compliance Vault', desc: 'Access control logging that logs all suspect profile updates.' },
-  { num: '20', title: 'Ethics & Fairness Guardrails', desc: 'Strict algorithmic boundaries blocking caste, religion, or community profiling.' },
-  { num: '21', title: 'Multi-Factor Passcode Gateway', desc: 'Cryptographic MFA protecting command console intranet sessions.' },
-  { num: '22', title: 'Station Clearance Metrics', desc: 'Station-by-station response speeds and case resolution statistics.' },
-  { num: '23', title: 'WhatsApp Webhook Scanners', desc: 'Automates public scanning of suspect messages and links using text classifiers.' },
-  { num: '24', title: 'ANPR Vehicle Spotting', desc: 'Automatic license plate recognition spotting watchlist cars at toll gates.' },
-  { num: '25', title: 'Database Case Extender', desc: 'Seamlessly scales databases with missing persons, unidentified bodies, and CDRs.' },
-  { num: '26', title: 'Sentinel Ghost Grid', desc: 'Encrypted citizen PWA with on-device EXIF scrubbing for anonymous reporting.' },
-  { num: '27', title: 'Multilingual Copilot', desc: 'Speech-to-text voice command inputs supporting English and Kannada.' },
-  { num: '28', title: 'Socio-Economic Choropleth', desc: 'Visual choropleth map overlays identifying poverty-crime causal links.' },
-  { num: '29', title: 'Deepfake & Spoof Defense', desc: 'Identifies synthesized voice clones and checks CBI video call authenticity.' }
-];
+/**
+ * KAWACH gateway landing — uimax dual-hue system (white base + one amber
+ * hue; severity/emphasis = darkness, never a new color). Wires all three
+ * surfaces: the citizen app (in-app), the police command console and the
+ * eleven-desk department grid (both shipped statically under /public).
+ */
 
-export default function LandingPageView({ onEnterCitizen, onOfficialLogin }) {
-  const navigate = useNavigate();
-  const [dept, setDept] = useState('POLICE');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+const POLICE_URL = '/police/index.html';
 
-  const handleOfficialSubmit = (e) => {
-    e.preventDefault();
-    if (!username || !password) return;
-    setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
-      const mockUser = {
-        username: username,
-        role: dept === 'ADMIN' ? 'DGP' : 'SP',
-        department: dept
-      };
-      localStorage.setItem('token', 'mock_jwt_token_official');
-      localStorage.setItem('user', JSON.stringify(mockUser));
-
-      if (onOfficialLogin) {
-        onOfficialLogin('mock_jwt_token_official', mockUser);
-      }
-
-      // Latency-free SPA dynamic redirection
-      if (dept === 'POLICE') {
-        navigate('/department/police');
-      } else if (dept === 'FIRE') {
-        navigate('/department/fire');
-      } else if (dept === 'HEALTH') {
-        navigate('/department/health');
-      } else if (dept === 'DISASTER') {
-        navigate('/department/disaster');
-      } else if (dept === 'ADMIN') {
-        navigate('/admin');
-      }
-    }, 600);
-  };
-
-  const scrollToSection = (id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
+function ShieldMark({ className }) {
   return (
-    <div className="min-h-screen bg-slate-50 font-sans flex flex-col justify-between overflow-x-hidden relative select-text">
-      {/* Dynamic Background Grid */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/30 via-slate-50 to-slate-100 pointer-events-none opacity-60 z-0" />
-      
-      {/* Navigation Header */}
-      <header className="relative z-10 w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-slate-200/50 bg-white/70 backdrop-blur-md sticky top-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10">
-            <img src="/kawach.png" alt="KAWACH Logo" className="w-full h-full object-contain" />
-          </div>
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-slate-900 font-outfit">KAWACH</h1>
-            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block -mt-1">Unified Threat Intelligence</span>
-          </div>
-        </div>
+    <svg viewBox="0 0 24 28" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" className={className} aria-hidden="true">
+      <path d="M12 2 L22 6 V14 C22 21 17.5 25 12 27 C6.5 25 2 21 2 14 V6 Z" />
+      <path d="M7 12 L12 17 L17 12" />
+      <path d="M7 8.5 L12 13.5 L17 8.5" opacity="0.45" />
+    </svg>
+  );
+}
 
-        <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-slate-600">
-          <button onClick={() => scrollToSection('about')} className="hover:text-blue-600 transition-colors flex items-center gap-1.5">
-            <InfoIcon className="w-4 h-4" /> About System
-          </button>
-          <button onClick={() => scrollToSection('pillars')} className="hover:text-blue-600 transition-colors flex items-center gap-1.5">
-            <Activity className="w-4 h-4" /> 29 Pillars
-          </button>
-          <button onClick={() => scrollToSection('gate')} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl transition-all flex items-center gap-1.5">
-            <Fingerprint className="w-4 h-4 text-slate-600" /> Access Gate
-          </button>
-        </nav>
-        
-        <div className="flex md:hidden items-center gap-2 px-3.5 py-1.5 bg-yellow-100 border border-yellow-200 rounded-full text-[10px] font-bold text-yellow-800 uppercase tracking-wider">
-          <span className="w-2 h-2 bg-red-500 rounded-full animate-ping mr-1" />
-          Active
-        </div>
-      </header>
+function Kicker({ children }) {
+  return <p className="font-mono text-[0.68rem] uppercase tracking-wide2 text-amber-600">{children}</p>;
+}
 
-      {/* Main Core Showcase */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-6 py-12 space-y-20">
-        
-        {/* Hero Showcase Section */}
-        <section className="text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-blue-50 border border-blue-100 rounded-full text-xs font-bold text-blue-700 uppercase tracking-wider mb-5">
-            <Radio className="w-3.5 h-3.5 animate-pulse" /> Active Deployment: Bengaluru Command
-          </div>
-          <h2 className="text-4xl sm:text-5xl font-black text-slate-900 font-outfit leading-tight tracking-tight">
-            Bridging the Trust Gap Between <br />
-            <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">Citizens & Law Enforcement</span>
-          </h2>
-          <p className="text-slate-500 text-sm mt-4 max-w-xl mx-auto leading-relaxed font-semibold">
-            KAWACH is a unified, state-wide geospatial grid and threat intelligence platform designed for Bengaluru City Police. It resolves physical street alerts and digital public safety threats using real-time crowdsourced feeds.
-          </p>
-
-          <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto mt-10">
-            <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
-              <h4 className="text-2xl font-black text-slate-900 font-outfit">29</h4>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Strategic Pillars</span>
-            </div>
-            <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
-              <h4 className="text-2xl font-black text-slate-900 font-outfit">100%</h4>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PII Encrypted</span>
-            </div>
-            <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
-              <h4 className="text-2xl font-black text-slate-900 font-outfit">30%</h4>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Faster Dispatch</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Dual Split Cards: Citizen vs Department Dropdown Login */}
-        <section id="gate" className="space-y-10 scroll-mt-24">
-          <div className="text-center max-w-lg mx-auto">
-            <h3 className="text-2xl font-black text-slate-900 font-outfit">Secure Entry Gateways</h3>
-            <p className="text-slate-400 text-xs mt-1.5 font-semibold">Select your secure portal below to connect with your state-wide threat intelligence node.</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto w-full items-stretch">
-            
-            {/* Citizen Portal Entrance */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-8 flex flex-col justify-between shadow-xl shadow-slate-100 hover:shadow-2xl hover:border-yellow-300 transition-all duration-300 relative overflow-hidden group">
-              <div className="absolute top-0 left-0 right-0 h-2 bg-yellow-400" />
-              
-              <div>
-                <div className="w-12 h-12 bg-yellow-50 rounded-2xl flex items-center justify-center border border-yellow-100 mb-6 group-hover:scale-105 transition-transform">
-                  <Users className="w-6 h-6 text-yellow-600" />
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 font-outfit mb-3">Citizen Sentinel</h3>
-                <p className="text-slate-600 text-xs sm:text-sm font-semibold leading-relaxed mb-6">
-                  Secure, anonymous safety reporting grid for the public. Report neighborhood incidents in Ghost Mode, watch live proximity feeds, and check local safety indexes with complete metadata scrubbing.
-                </p>
-
-                <ul className="space-y-3.5 mb-8">
-                  <li className="flex items-center gap-3 text-xs font-semibold text-slate-700">
-                    <span className="w-5 h-5 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600 text-[10px]">✔</span>
-                    Snap-Style Proximity Safety Maps
-                  </li>
-                  <li className="flex items-center gap-3 text-xs font-semibold text-slate-700">
-                    <span className="w-5 h-5 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600 text-[10px]">✔</span>
-                    Interactive Situation Legal Guide
-                  </li>
-                  <li className="flex items-center gap-3 text-xs font-semibold text-slate-700">
-                    <span className="w-5 h-5 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600 text-[10px]">✔</span>
-                    Scam Call & Deepfake Audio Shield
-                  </li>
-                </ul>
-              </div>
-
-              <button
-                onClick={onEnterCitizen}
-                className="w-full py-4 px-6 bg-yellow-400 border border-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md shadow-yellow-100 text-xs tracking-wider uppercase font-outfit"
-              >
-                Access Citizen Portal <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Department Authoritative Login (Slate theme) */}
-            <div className="bg-slate-950 border border-slate-900 rounded-3xl p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden group text-white">
-              <div className="absolute top-0 left-0 right-0 h-2 bg-blue-500" />
-              
-              <form onSubmit={handleOfficialSubmit} className="flex flex-col h-full justify-between gap-6">
-                <div>
-                  <div className="w-12 h-12 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center mb-6">
-                    <Lock className="w-6 h-6 text-blue-400" />
-                  </div>
-                  
-                  <h3 className="text-2xl font-black font-outfit mb-1">Government Portal</h3>
-                  <p className="text-slate-400 text-xs font-semibold leading-relaxed mb-6">
-                    Authorized access for state law enforcement, medical dispatchers, and rescue control agencies.
-                  </p>
-
-                  {/* Login Inputs */}
-                  <div className="space-y-4 text-slate-900">
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-                        Select Department Node
-                      </label>
-                      <div className="relative">
-                        <Building2 className="absolute left-3.5 top-3 w-4 h-4 text-slate-400 z-10" />
-                        <select
-                          value={dept}
-                          onChange={(e) => setDept(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-slate-200 focus:outline-none focus:border-blue-500 appearance-none relative"
-                        >
-                          <option value="POLICE">Police Department (Command Center)</option>
-                          <option value="FIRE">Fire & Rescue Department</option>
-                          <option value="HEALTH">Health & Ambulance Services</option>
-                          <option value="DISASTER">Disaster Management Command</option>
-                          <option value="ADMIN">Super Admin (God-Mode Console)</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 font-outfit">
-                          Official ID
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. officer_1"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          required
-                          className="w-full px-3.5 py-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 font-semibold"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 font-outfit">
-                          Access Key
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="password"
-                            placeholder="••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            className="w-full px-3.5 py-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 font-semibold"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl flex items-center justify-center gap-2 transition-all text-xs tracking-wider uppercase font-outfit disabled:opacity-50 mt-4"
-                >
-                  <Fingerprint className="w-4 h-4 text-blue-200" />
-                  <span>{loading ? 'Authenticating Node...' : 'Access Department Console'}</span>
-                </button>
-              </form>
-            </div>
-
-          </div>
-        </section>
-
-        {/* Interactive Law Library / Rule Book Banner */}
-        <section className="max-w-5xl mx-auto w-full">
-          <div className="bg-gradient-to-r from-blue-700 to-indigo-850 p-6 md:p-8 rounded-3xl text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl border border-blue-800">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-blue-200">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-black font-outfit">Citizen Interactive Rule Book & Law Library</h3>
-                <p className="text-blue-100 text-xs mt-0.5 max-w-xl font-medium leading-relaxed">
-                  Know your legal rights in 60 seconds. Review police protocols, arrest guidelines, and digital fraud protections compiled directly from the Bharatiya Nyaya Sanhita (BNS).
-                </p>
-              </div>
-            </div>
-            <button 
-              onClick={() => navigate('/user/library')}
-              className="px-5 py-3 bg-white hover:bg-blue-50 text-blue-800 font-bold rounded-2xl transition-all flex items-center gap-2 text-xs shrink-0 shadow-md font-outfit uppercase tracking-wider"
-            >
-              Explore Rule Book <ExternalLink className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </section>
-
-        {/* Geospatial Deployment Section */}
-        <section id="about" className="max-w-5xl mx-auto w-full scroll-mt-24 space-y-10">
-          <div className="text-center max-w-lg mx-auto">
-            <h3 className="text-2xl font-black text-slate-900 font-outfit flex items-center justify-center gap-2">
-              <MapPin className="w-5 h-5 text-blue-600" /> Geospatial Footprint: Bengaluru Grid
-            </h3>
-            <p className="text-slate-400 text-xs mt-1.5 font-semibold">Decoupled smart GIS and encrypted audit logging across high-density urban wards.</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm space-y-3">
-              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                <Navigation className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-slate-900 text-sm font-outfit">Localized Proximity Spheres</h4>
-              <p className="text-slate-500 text-xs leading-relaxed font-semibold">
-                Fully optimized for high-density hubs including Koramangala, Indiranagar, and HSR Layout. Video pins and incident feeds utilize Leaflet and CartoDB Voyager light tiles to pinpoint emergency hubs within 15 meters.
-              </p>
-            </div>
-
-            <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm space-y-3">
-              <div className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center">
-                <ShieldAlert className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-slate-900 text-sm font-outfit">Emergency Interlock</h4>
-              <p className="text-slate-500 text-xs leading-relaxed font-semibold">
-                Emergency dispatches from the public bypass standard cohort verification pipelines and are auto-routed directly to district SP dashboards with immediate alert rings and localized sound triggers.
-              </p>
-            </div>
-
-            <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm space-y-3">
-              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-                <EyeOff className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-slate-900 text-sm font-outfit">Anonymized Audit Trails</h4>
-              <p className="text-slate-500 text-xs leading-relaxed font-semibold">
-                Every citizen upload is assigned a Section 65B Audit-Hash (e.g. SHA-256 logs) containing proof-of-location metadata, ensuring legal admissibility in courts while securing reporter identities.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* 29 Strategic Pillars Grid */}
-        <section id="pillars" className="max-w-7xl mx-auto w-full scroll-mt-24 space-y-10">
-          <div className="text-center max-w-xl mx-auto">
-            <h3 className="text-2xl font-black text-slate-900 font-outfit">System Architecture: The 29 Strategic Pillars</h3>
-            <p className="text-slate-400 text-xs mt-1.5 font-semibold">A comprehensive system of state safety and intelligence pipelines built for Indian Law Enforcement & Citizens.</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {PILLARS.map((p) => (
-              <div key={p.num} className="bg-white border border-slate-200 p-5 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all duration-200 flex gap-4">
-                <span className="text-xs font-black text-blue-600 font-mono tracking-wider shrink-0 mt-0.5">{p.num}</span>
-                <div className="space-y-1">
-                  <h4 className="font-bold text-slate-900 text-xs font-outfit">{p.title}</h4>
-                  <p className="text-[10px] text-slate-500 leading-relaxed font-semibold">{p.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-      </main>
-
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-slate-900 bg-slate-950 py-16 px-6 text-slate-400 text-xs font-semibold w-full">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10 mb-12 text-left">
-          
-          {/* Logo & Info */}
-          <div className="sm:col-span-2 space-y-4">
-            <div className="flex items-center gap-3">
-              <img src="/kawach.png" alt="KAWACH Logo" className="w-12 h-12 object-contain" />
-              <div>
-                <h3 className="text-lg font-black font-outfit text-white tracking-wide">KAWACH</h3>
-                <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest block -mt-1">Unified Public Safety Grid</span>
-              </div>
-            </div>
-            <p className="text-slate-500 text-xs leading-relaxed max-w-sm font-semibold">
-              An enterprise-grade geospatial intelligence and forensic PWA safeguarding local streets and digital communication channels.
-            </p>
-          </div>
-
-          {/* System Nodes */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">System Nodes</h4>
-            <ul className="space-y-2 text-slate-500 font-semibold">
-              <li><button onClick={() => navigate('/user/login')} className="hover:text-white transition-colors">Citizen Sentinel PWA</button></li>
-              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Police Command Center</button></li>
-              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Civic Departments Panel</button></li>
-              <li><button onClick={() => navigate('/admin')} className="hover:text-white transition-colors">Super Admin Console</button></li>
-            </ul>
-          </div>
-
-          {/* Compliance & Laws */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Compliance & Laws</h4>
-            <ul className="space-y-2 text-slate-500 font-semibold">
-              <li><button onClick={() => navigate('/user/library')} className="hover:text-white transition-colors">BNS Rule Book</button></li>
-              <li><button onClick={() => scrollToSection('about')} className="hover:text-white transition-colors">Section 65B Admissibility</button></li>
-              <li><button onClick={() => scrollToSection('about')} className="hover:text-white transition-colors">SHA-256 Audit Ledger</button></li>
-              <li><button onClick={() => scrollToSection('about')} className="hover:text-white transition-colors">PII Scrubbing Protocols</button></li>
-            </ul>
-          </div>
-
-          {/* System Status */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">System Status</h4>
-            <ul className="space-y-2 text-slate-500 font-semibold">
-              <li>State Hub: <span className="text-emerald-500 font-bold">ACTIVE</span></li>
-              <li>AI Space: <span className="text-emerald-500 font-bold">CONNECTED</span></li>
-              <li>Ingestion Rate: <span className="text-white font-bold">99.8%</span></li>
-              <li>Secure Tunnel: <span className="text-blue-500 font-bold">AES-256</span></li>
-            </ul>
-          </div>
-
-        </div>
-
-        <div className="max-w-7xl mx-auto border-t border-slate-900 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-slate-600 text-xs font-semibold">© 2026 KAWACH Security Grid. All rights reserved.</p>
-          <div className="text-white font-bold text-xs uppercase tracking-wider">
-            Built by <span className="text-yellow-400">CodeKrafters</span> for <span className="text-orange-500">In</span><span>d</span><span className="text-green-500">ia</span> 🇮🇳
-          </div>
-        </div>
-      </footer>
+function BandHead({ num, children }) {
+  return (
+    <div className="mb-8 flex items-baseline gap-5">
+      <span className="whitespace-nowrap font-mono text-[0.7rem] tracking-tag text-amber-500">{num}</span>
+      <h2 className="font-display text-2xl font-medium tracking-tight text-ink md:text-3xl">{children}</h2>
     </div>
   );
 }
 
-// Simple placeholder fallback for the Info icon
-function InfoIcon(props) {
+const CARD =
+  'group flex flex-col gap-4 rounded-sm border border-amber-300 bg-white p-8 text-left transition hover:-translate-y-1 hover:shadow-[0_22px_44px_-20px_rgba(62,47,6,0.45)]';
+const CARD_CTA =
+  'rounded-sm bg-amber-950 px-4 py-3 text-center font-mono text-[0.62rem] uppercase tracking-tag text-amber-50 transition group-hover:bg-amber-700';
+const GATE_BTN =
+  'rounded-sm bg-amber-950 px-6 py-3.5 font-mono text-[0.66rem] uppercase tracking-tag text-amber-50 transition hover:bg-amber-700';
+
+export default function LandingPageView({ onEnterCitizen }) {
+  const [now, setNow] = useState(new Date());
+  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    const raf = requestAnimationFrame(() => setRevealed(true));
+    return () => { clearInterval(t); cancelAnimationFrame(raf); };
+  }, []);
+
+  const line = (i) => ({
+    display: 'block',
+    transform: revealed ? 'translateY(0)' : 'translateY(110%)',
+    transition: `transform .8s cubic-bezier(.22,.61,.36,1) ${0.15 + i * 0.13}s`,
+  });
+
   return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 16v-4" />
-      <path d="M12 8h.01" />
-    </svg>
+    <div className="min-h-screen bg-paper-warm font-ui text-ink">
+      {/* topbar */}
+      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-amber-200 bg-paper-warm/90 px-5 py-4 backdrop-blur md:px-12">
+        <div className="flex items-center gap-3">
+          <ShieldMark className="h-8 w-7 text-amber-700" />
+          <div>
+            <p className="font-display text-lg font-semibold tracking-wide">KAWACH</p>
+            <p className="hidden font-mono text-[0.6rem] uppercase tracking-wide2 text-ink-faint sm:block">Public Safety Grid</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-5">
+          <span className="hidden font-mono text-[0.68rem] tabular-nums tracking-tag text-amber-700 md:block">
+            {now.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).toUpperCase()}
+          </span>
+          <a href="#access" className="rounded-sm border border-amber-500 px-4 py-2 font-mono text-[0.64rem] uppercase tracking-tag text-amber-800 transition hover:bg-amber-950 hover:text-amber-50">
+            Access Gate
+          </a>
+        </div>
+      </header>
+
+      {/* S·01 hero */}
+      <section className="flex min-h-[88vh] flex-col justify-center px-5 py-20 md:px-12">
+        <Kicker>Crime analytics × digital public safety · Bengaluru command</Kicker>
+        <h1 className="mt-4 max-w-4xl font-display text-5xl font-medium leading-[1.02] tracking-tight md:text-7xl">
+          <span className="block overflow-hidden"><span style={line(0)}>One shield.</span></span>
+          <span className="block overflow-hidden">
+            <span style={line(1)}><em className="font-light italic text-amber-700">Two</em> frontlines.</span>
+          </span>
+        </h1>
+        <p className="mt-6 max-w-xl text-sm leading-relaxed text-ink-soft md:text-base">
+          On the street: potholes, fires, broken mains, crime clusters. On the phone:
+          digital-arrest calls, deepfakes, counterfeit notes, mule networks. KAWACH watches
+          both — and keeps the citizen anonymous while the state acts.
+        </p>
+        <div className="mt-12 flex flex-wrap gap-8 border-t border-amber-300 pt-5">
+          {[['7', 'AI pipelines'], ['11', 'Civic departments'], ['3,974', 'Law sections'], ['98.67%', 'Currency CNN accuracy']].map(([n, l]) => (
+            <div key={l}>
+              <p className="font-mono text-2xl font-semibold tabular-nums text-amber-950">{n}</p>
+              <p className="font-mono text-[0.6rem] uppercase tracking-tag text-ink-faint">{l}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* S·02 access gate — the two portal surfaces */}
+      <section id="access" className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·02">Two surfaces. <em className="font-light italic text-amber-700">Pick your side of the shield.</em></BandHead>
+        <div className="grid gap-6 md:grid-cols-2 max-w-5xl">
+          <button onClick={onEnterCitizen} className={CARD}>
+            <ShieldMark className="h-11 w-10 text-amber-700" />
+            <h3 className="font-display text-2xl font-semibold">Citizen App</h3>
+            <p className="flex-1 text-sm text-ink-soft leading-relaxed">
+              Report hazards, verify suspect currency notes &amp; digital-arrest calls with Nayak — the
+              law-backed AI counsel. De-identified before anything leaves your phone.
+            </p>
+            <span className={CARD_CTA}>Enter as citizen →</span>
+          </button>
+
+          <a href={POLICE_URL} className={CARD}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" className="h-11 w-10 text-amber-700" aria-hidden="true">
+              <path d="M12 2 L21 5.5 V12 C21 18 17 21.5 12 23 C7 21.5 3 18 3 12 V5.5 Z" />
+              <path d="M12 8 L13.2 10.6 L16 10.9 L14 12.9 L14.5 15.7 L12 14.3 L9.5 15.7 L10 12.9 L8 10.9 L10.8 10.6 Z" opacity="0.55" />
+            </svg>
+            <h3 className="font-display text-2xl font-semibold">Police Command Console</h3>
+            <p className="flex-1 text-sm text-ink-soft leading-relaxed">
+              Hotspot DBSCAN spatial clustering, Louvain fraud-ring graphs, live digital-arrest interception, and
+              SHA-256 court-admissible evidence dossiers.
+            </p>
+            <span className={CARD_CTA}>Open command console →</span>
+          </a>
+        </div>
+      </section>
+
+      {/* S·03 the dual-frontline paradox */}
+      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·03">The dual-frontline <em className="font-light italic text-amber-700">paradox.</em></BandHead>
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="space-y-4 text-sm leading-relaxed text-ink-soft">
+            <p>Modern cities suffer from two concurrent emergencies: physical infrastructure decay on the streets and high-tech extortion in citizen pockets.</p>
+            <p>A "digital arrest" call holds a victim hostage for hours via fake CBI video calls until life savings disappear. Simultaneously, physical potholes and municipal hazards go unaddressed due to fragmented routing.</p>
+          </div>
+          <div className="space-y-4">
+            <div className="rounded-sm border-l-4 border-amber-950 border-y border-r border-amber-300 bg-white p-6">
+              <span className="font-mono text-[0.62rem] uppercase tracking-tag text-amber-600">FRONTLINE 01 · Physical Safety</span>
+              <h3 className="mt-1 font-display text-lg font-semibold">Street &amp; Civic Hazards</h3>
+              <p className="mt-1 text-xs text-ink-faint">Potholes, structural fires, water main bursts, illegal dumping, and unlit transit corridors.</p>
+            </div>
+            <div className="rounded-sm border-l-4 border-amber-600 border-y border-r border-amber-300 bg-white p-6">
+              <span className="font-mono text-[0.62rem] uppercase tracking-tag text-amber-600">FRONTLINE 02 · Digital Threats</span>
+              <h3 className="mt-1 font-display text-lg font-semibold">Cyber &amp; Financial Extortion</h3>
+              <p className="mt-1 text-xs text-ink-faint">Digital arrest scams, deepfake video impersonation, counterfeit currency notes, and syndicate bank mule networks.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* S·04 7-core AI neural engines */}
+      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·04">7-Core AI <em className="font-light italic text-amber-700">neural engines.</em></BandHead>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            ['🎭 Deepfake Forensics', 'Dual EfficientNet-B7 ensemble sampling 32 frames deep. MTCNN face detection calculates frame-consensus authenticity scores.', 'MTCNN + 2× EfficientNet-B7'],
+            ['💵 Counterfeit Currency CNN', 'Trained on 6,304 note images. Integrates 4 classical checks: security thread, microprint sharpness, and RBI serial OCR.', '98.67% Accuracy · AUC 0.998'],
+            ['🚨 Scene Verification', 'YOLO12s road damage detection fused with SigLIP waste classifier. Persistence ratio gate prevents single-frame synthetic illusions.', 'YOLO12s + SigLIP'],
+            ['🗺️ DBSCAN Hotspotting', 'Haversine spatial clustering groups incidents into real-time patrol zones with centroid threat vectors.', 'DBSCAN Spatial Clustering'],
+            ['🕸️ Fraud Ring Graph AI', 'Louvain community detection & betweenness centrality reveal hidden syndicate mule accounts and phone networks.', 'Louvain Graph AI'],
+            ['⚖️ Nayak BNS Legal RAG', '3,974 indexed sections across BNS, Motor Vehicles Act, CrPC & RBI circulars. Citation-backed legal advice.', '3,974 Sections Indexed']
+          ].map(([title, desc, badge]) => (
+            <div key={title} className="rounded-sm border border-amber-300 bg-white p-6 flex flex-col justify-between">
+              <div>
+                <h4 className="font-display text-base font-semibold text-ink">{title}</h4>
+                <p className="mt-2 text-xs leading-relaxed text-ink-faint">{desc}</p>
+              </div>
+              <span className="mt-4 inline-block font-mono text-[0.6rem] uppercase tracking-tag text-amber-700 bg-amber-100/70 px-2 py-1 rounded-sm w-fit">{badge}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* S·05 live digital-arrest interception */}
+      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·05">Live digital-arrest <em className="font-light italic text-amber-700">interception.</em></BandHead>
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="space-y-4 text-sm leading-relaxed text-ink-soft">
+            <p>A "digital arrest" scam relies on keeping the victim isolated on continuous video calls while impersonating enforcement agencies (CBI, ED, Cyber Crime Police).</p>
+            <p>KAWACH monitors active sessions using a 4-phase weighted fusion engine: script keyphrase match (.30), voice-spoof probability (.20), deepfake video consensus (.20), and transaction anomaly (.30). When the score crosses 70, dispatch fires automatically before money leaves the account.</p>
+          </div>
+          <div className="grid grid-cols-3 gap-4 border border-amber-300 bg-white p-6 rounded-sm text-center">
+            <div>
+              <p className="font-mono text-xl font-bold text-amber-950">.30 / .20</p>
+              <p className="font-mono text-[0.6rem] uppercase tracking-tag text-ink-faint mt-1">Weighted Fusion</p>
+            </div>
+            <div>
+              <p className="font-mono text-xl font-bold text-amber-950">&ge; 70</p>
+              <p className="font-mono text-[0.6rem] uppercase tracking-tag text-ink-faint mt-1">Auto Dispatch</p>
+            </div>
+            <div>
+              <p className="font-mono text-xl font-bold text-amber-950">Pre-Transfer</p>
+              <p className="font-mono text-[0.6rem] uppercase tracking-tag text-ink-faint mt-1">Bank Interception</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* S·06 louvain mule & syndicate graph */}
+      <section className="border-t border-amber-300 bg-amber-950 px-5 py-24 text-amber-50 md:px-12">
+        <p className="font-mono text-[0.68rem] uppercase tracking-wide2 text-amber-300">S·06 · Syndicate Intelligence</p>
+        <h2 className="mt-4 max-w-3xl font-display text-3xl font-medium leading-tight tracking-tight md:text-5xl">
+          Offenders, SIMs, bank accounts, &amp; UPI handles form{' '}
+          <em className="font-light italic text-amber-200">one connected graph.</em>
+        </h2>
+        <div className="mt-8 grid gap-6 md:grid-cols-3 text-xs text-amber-200 border-t border-amber-800 pt-6">
+          <div>
+            <b className="block text-sm text-white mb-1">Louvain Community Detection</b>
+            Discovers hidden criminal clusters across complex inter-bank transfer networks.
+          </div>
+          <div>
+            <b className="block text-sm text-white mb-1">Betweenness Centrality</b>
+            Highlights high-frequency broker nodes connecting disparate fraud rings.
+          </div>
+          <div>
+            <b className="block text-sm text-white mb-1">Explainable Mule Flags</b>
+            Every flag carries step-by-step human-readable audit justification for court.
+          </div>
+        </div>
+      </section>
+
+      {/* S·07 SLA guarantee ladder */}
+      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·07">15-Minute SLA <em className="font-light italic text-amber-700">guarantee ladder.</em></BandHead>
+        <div className="grid gap-4 max-w-3xl">
+          {[
+            ['Critical Emergency', '15 min floor', 'bg-red-600 text-white'],
+            ['High Priority Threat', '4 hrs floor', 'bg-amber-600 text-white'],
+            ['Normal Incident', '24 hrs window', 'bg-amber-800 text-white'],
+            ['Standard Civic Query', '72 hrs window', 'bg-slate-700 text-white']
+          ].map(([label, time, badge]) => (
+            <div key={label} className="flex items-center justify-between border border-amber-300 bg-white p-4 rounded-sm">
+              <span className="font-display text-sm font-semibold">{label}</span>
+              <span className={`font-mono text-[0.62rem] uppercase tracking-tag px-3 py-1 rounded-sm ${badge}`}>{time}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* S·08 BSA §63 court dossiers */}
+      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·08">BSA §63 Court-Admissible <em className="font-light italic text-amber-700">dossiers.</em></BandHead>
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="space-y-4 text-sm leading-relaxed text-ink-soft">
+            <p>Incidents generate SHA-256 hash-sealed PDF dossiers directly from database records. Hashed over final output bytes and registered in an immutable audit ledger, every dossier maintains court-ready chain of custody under Bharatiya Sakshya Adhiniyam 2023 §63.</p>
+          </div>
+          <div className="space-y-3 font-mono text-xs text-ink-faint border-l-2 border-amber-500 pl-4">
+            <p><b className="text-ink">Cryptographic Validation:</b> SHA-256 checksum printed in PDF footer matches court exports.</p>
+            <p><b className="text-ink">Chain-of-Custody Log:</b> Every access, verification, and dispatch action timestamped.</p>
+            <p><b className="text-ink">Instant PDF Export:</b> Single-click dossier compilation for investigating officers.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* S·09 zero-cost production stack */}
+      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·09">Zero-cost <em className="font-light italic text-amber-700">production stack.</em></BandHead>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-5 text-center">
+          {[
+            ['Vercel', 'Citizen PWA Frontend'],
+            ['Render', 'FastAPI Backend'],
+            ['HF Spaces', 'AI Microservice'],
+            ['Supabase', 'Postgres & Legal RAG'],
+            ['Cloudinary', 'Evidence Media CDN']
+          ].map(([tech, role]) => (
+            <div key={tech} className="border border-amber-300 bg-white p-4 rounded-sm">
+              <b className="font-mono text-lg text-amber-950 block">{tech}</b>
+              <span className="font-mono text-[0.6rem] uppercase tracking-tag text-ink-faint mt-1 block">{role}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* S·10 closing gate */}
+      <section className="border-t border-amber-300 px-5 py-20 md:px-12">
+        <BandHead num="S·10">The city is reporting. <em className="font-light italic text-amber-700">Take your seat.</em></BandHead>
+        <div className="flex flex-wrap gap-4">
+          <button onClick={onEnterCitizen} className={GATE_BTN}>Launch Citizen App</button>
+          <a href={POLICE_URL} className={GATE_BTN}>Open Police Console</a>
+        </div>
+      </section>
+
+      <footer className="flex flex-wrap justify-between gap-4 border-t border-amber-800 bg-amber-950 px-5 py-5 font-mono text-[0.6rem] uppercase tracking-tag text-amber-300 md:px-12">
+        <span>KAWACH · One shield, two frontlines</span>
+        <span>Identity-free by construction · CodeKrafters</span>
+      </footer>
+    </div>
   );
 }
