@@ -29,6 +29,7 @@ GEN_DIR = os.path.join(TEST_DIR, "generated")
 REAL = os.path.join(TEST_DIR, "reaal_200rs_1.png")
 FAKE1 = os.path.join(TEST_DIR, "fake1.jpg")
 FAKE2 = os.path.join(TEST_DIR, "fake2.jpg")
+REAL_2000 = os.path.join(TEST_DIR, "Rs2000note.webp")
 
 GENUINE_VERDICTS = {"LIKELY_GENUINE", "GENUINE_FEATURES"}
 FAKE_VERDICTS = {"LIKELY_COUNTERFEIT", "SUSPECT_FEATURES"}
@@ -100,6 +101,10 @@ CASES = [
     ("real_partial", os.path.join(GEN_DIR, "real_partial.png"), None, FAKE_VERDICTS, True),
     # a ₹30 note does not exist — must never clear as genuine
     ("prop_30_note", os.path.join(GEN_DIR, "prop_30_note.png"), None, GENUINE_VERDICTS, False),
+    # genuine ₹2000 (withdrawn denomination) at low resolution — the
+    # denomination is often unreadable via OCR on this exact photo (borderline
+    # confidence), which is fine: it must NEVER read as counterfeit either way
+    ("real_2000", REAL_2000, None, FAKE_VERDICTS, True),
 ]
 
 

@@ -459,8 +459,16 @@ class CurrencyDetector:
         counts, word_hits = {}, set()
         words = cls._ocr_words(ocr_items)
         for tok in words:
-            stripped = tok.lstrip("₹RS").strip() or tok
-            for cand in {tok, stripped}:
+            stripped = tok.lstrip("₹RS8").strip() or tok
+            # EasyOCR frequently misreads the ₹ glyph as a leading "8" digit
+            # (measured on a real ₹2000 note: "₹2000" -> "82000") — a plain
+            # .lstrip("₹RS") can't catch that since "8" is a real digit, so
+            # try stripping one leading "8" specifically when what remains is
+            # itself a valid denomination length.
+            variants = {tok, stripped}
+            if tok.isdigit() and tok.startswith("8") and len(tok) > 1:
+                variants.add(tok[1:])
+            for cand in variants:
                 if cand.isdigit() and int(cand) in candidates:
                     counts[int(cand)] = counts.get(int(cand), 0) + 1
                     break
