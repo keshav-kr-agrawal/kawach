@@ -712,6 +712,53 @@ export default function AlertsChatView() {
                 </div>
               </div>
 
+              {/* Render Interactive Nayak AI Service Refineries */}
+              {index === 0 && (
+                <div className="my-3 p-4 bg-white border-2 border-[#E9BA26] rounded-2xl max-w-md w-full shadow-xs space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-amber-100">
+                    <span className="text-[10px] font-black text-[#b08850] uppercase tracking-wider font-mono flex items-center gap-1.5">
+                      ⚡ Nayak AI Service Refineries
+                    </span>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="bg-amber-50 border border-amber-300 rounded-lg px-2 py-0.5 text-[10px] font-bold text-ink focus:outline-none cursor-pointer"
+                    >
+                      <option value="ALL">All Tools ({NAYAK_SERVICES.length})</option>
+                      <option value="DIGITAL_SAFETY">🛡️ Digital Safety</option>
+                      <option value="GEO_SAFETY">🗺️ Emergency &amp; Geo</option>
+                      <option value="LEGAL">⚖️ BNS Legal</option>
+                      <option value="WORK_SHORTCUTS">🛠️ Work Shortcuts</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-1">
+                    {displayedServices.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => handleServiceClick(s)}
+                        className="w-full flex items-center justify-between p-2.5 bg-amber-50/70 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all text-left group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-lg p-1.5 bg-white rounded-lg shadow-2xs group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
+                          <div className="truncate">
+                            <div className="font-sora text-xs font-bold text-ink truncate">
+                              {s.label}
+                            </div>
+                            <p className="text-[9px] text-ink-soft font-semibold truncate">
+                              {s.type === 'upload' ? '📷 Tap to select file for AI scan' : '⚖️ Tap to launch automated AI query'}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-[8px] font-mono font-extrabold text-[#b08850] bg-white border border-amber-200 px-2 py-0.5 rounded shrink-0 uppercase tracking-wider ml-1">
+                          {s.badge}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </React.Fragment>
           );
         })}
