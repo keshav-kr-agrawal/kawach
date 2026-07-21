@@ -813,7 +813,7 @@ export default function AlertsChatView() {
         <input 
           type="file"
           ref={fileInputRef}
-          onChange={handleFileUpload}
+          onChange={handleFileAttach}
           className="hidden"
           accept="image/*,video/*,audio/*"
         />
