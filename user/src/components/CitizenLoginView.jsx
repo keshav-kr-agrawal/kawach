@@ -218,7 +218,7 @@ export default function CitizenLoginView({ onLoginSuccess, onBackToHome }) {
                 style={{ minHeight: '44px' }}
               >
                 {loading ? 'Processing...' : (isSignUp ? 'Register' : 'Access Portal')} 
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" className="w-3.5 h-3.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </button>
             </div>
           </form>

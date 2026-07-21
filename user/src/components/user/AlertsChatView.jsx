@@ -712,55 +712,6 @@ export default function AlertsChatView() {
                 </div>
               </div>
 
-              {/* Render Interactive Category Dropdown & Filtered Services */}
-              {index === 0 && (
-                <div className="my-4 p-4 bg-amber-50/80 border border-amber-400/35 rounded-2xl max-w-md w-full shadow-2xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2.5 border-b border-amber-400/20">
-                    <span className="text-[10px] font-black text-[#b08850] uppercase tracking-wider font-mono flex items-center gap-1.5">
-                      <span>⚡</span> Select AI Refinery &amp; Tool:
-                    </span>
-                    
-                    {/* Category Dropdown */}
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="bg-white border border-amber-400/40 rounded-xl px-2.5 py-1 text-xs font-bold text-ink focus:outline-none focus:border-[#b08850] shadow-2xs cursor-pointer"
-                    >
-                      <option value="ALL">📁 All Refineries ({NAYAK_SERVICES.length})</option>
-                      <option value="DIGITAL_SAFETY">🛡️ Digital Safety &amp; Forensics</option>
-                      <option value="GEO_SAFETY">🗺️ Emergency &amp; Geo Safety</option>
-                      <option value="LEGAL">⚖️ BNS Legal Rulebooks</option>
-                      <option value="WORK_SHORTCUTS">🛠️ Citizen Work Shortcuts</option>
-                    </select>
-                  </div>
-
-                  {/* Services List inside selected category */}
-                  <div className="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
-                    {displayedServices.map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => handleServiceClick(s)}
-                        className="w-full flex items-center justify-between p-3 bg-white hover:bg-amber-100/60 border border-amber-400/30 rounded-xl shadow-2xs transition-all hover:border-[#b08850] text-left active:scale-[0.99] cursor-pointer group"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className="text-xl p-2 bg-amber-100/70 rounded-xl group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
-                          <div className="truncate">
-                            <div className="font-sora text-xs font-black text-ink truncate">
-                              {s.label}
-                            </div>
-                            <p className="text-[10px] text-slate-500 font-semibold mt-0.5 truncate">
-                              {s.type === 'upload' ? '📷 Tap to select file for AI scan' : '⚖️ Tap to launch automated AI query'}
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-[9px] font-mono font-extrabold text-[#b08850] bg-amber-400/20 px-2 py-1 rounded-lg shrink-0 uppercase tracking-wider ml-2">
-                          {s.badge}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </React.Fragment>
           );
         })}
@@ -769,7 +720,7 @@ export default function AlertsChatView() {
           <div className="flex justify-start">
             <div className="bg-white border border-amber-400/20 rounded-2xl p-3 text-xs text-ink-soft font-bold flex items-center gap-2">
               <span className="w-3.5 h-3.5 border-2 border-[#E9BA26] border-t-transparent rounded-full animate-spin" />
-              Nayak AI is consulting legal rulebooks & incident DB...
+              Nayak AI is consulting legal rulebooks &amp; incident DB...
             </div>
           </div>
         )}
@@ -780,31 +731,33 @@ export default function AlertsChatView() {
       {/* Side-scrollable AI Refinery & Prompt Shortcut small buttons right above the message box */}
       <div 
         style={{ 
-          padding: '8px 16px', 
+          padding: '8px 12px', 
           display: 'flex', 
-          gap: '8px', 
+          gap: '6px', 
           overflowX: 'auto', 
           scrollbarWidth: 'none', 
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch',
           backgroundColor: '#ffffff',
-          borderTop: '1px solid #f1f5f9'
+          borderTop: '1px solid #f1f5f9',
+          whiteSpace: 'nowrap'
         }}
       >
-        <button onClick={() => handleQuickQuestion('Verify kidnap rumor in Koramangala')} style={chipStyle}>🔍 Fake News & Rumor Check</button>
-        <button onClick={() => handleQuickQuestion('Is the route to HSR safe right now?')} style={chipStyle}>🗺️ Safe Route Check</button>
-        <button onClick={() => handleQuickQuestion('I received a phone call claiming to be CBI placing me under digital arrest')} style={chipStyle}>⚠️ Digital Arrest Help</button>
-        <button onClick={() => handleQuickQuestion('How do I verify if a currency note is authentic or fake?')} style={chipStyle}>💵 Currency Note Scan</button>
-        <button onClick={() => handleQuickQuestion('What is the RBI circular on UPI fraud customer liability?')} style={chipStyle}>📚 UPI Fraud Liability</button>
-        <button onClick={() => handleQuickQuestion('Check if this website link or SMS code is a phishing scam')} style={chipStyle}>🛡️ Phishing Link Check</button>
-        <button onClick={() => handleQuickQuestion('How to check traffic violations & dispute an unfair traffic fine?')} style={chipStyle}>🚗 Traffic Fine Dispute</button>
-        <button onClick={() => handleQuickQuestion('Guide me step-by-step on how to file a Zero FIR at any police station')} style={chipStyle}>📑 Zero FIR Guide</button>
-        <button onClick={() => handleQuickQuestion('What are my rights under BNS regarding police questioning and arrest?')} style={chipStyle}>⚖️ BNS Legal Rights</button>
-        <button onClick={() => setEmergencyOpen(true)} style={{ ...chipStyle, backgroundColor: '#fef2f2', borderColor: '#fecaca', color: '#dc2626' }}>🚨 Emergency Dispatch</button>
+        <button type="button" onClick={() => fileInputRef.current?.click()} style={chipStyle}>💵 Currency Note Scan</button>
+        <button type="button" onClick={() => fileInputRef.current?.click()} style={chipStyle}>🎭 Deepfake Scan</button>
+        <button type="button" onClick={() => handleQuickQuestion('Verify rumor or fake news in Bengaluru')} style={chipStyle}>🔍 Fake News Check</button>
+        <button type="button" onClick={() => handleQuickQuestion('Is the route to HSR safe right now?')} style={chipStyle}>🗺️ Safe Route Check</button>
+        <button type="button" onClick={() => handleQuickQuestion('I received a phone call claiming to be CBI placing me under digital arrest')} style={chipStyle}>⚠️ Digital Arrest Help</button>
+        <button type="button" onClick={() => handleQuickQuestion('What is the RBI circular on UPI fraud customer liability?')} style={chipStyle}>📚 UPI Fraud Liability</button>
+        <button type="button" onClick={() => handleQuickQuestion('Check if this website link or SMS code is a phishing scam')} style={chipStyle}>🛡️ Phishing Link Check</button>
+        <button type="button" onClick={() => handleQuickQuestion('How to check traffic violations & dispute an unfair traffic fine?')} style={chipStyle}>🚗 Traffic Fine Dispute</button>
+        <button type="button" onClick={() => handleQuickQuestion('Guide me step-by-step on how to file a Zero FIR at any police station')} style={chipStyle}>📑 Zero FIR Guide</button>
+        <button type="button" onClick={() => handleQuickQuestion('What are my rights under BNS regarding police questioning and arrest?')} style={chipStyle}>⚖️ BNS Legal Rights</button>
+        <button type="button" onClick={() => setEmergencyOpen(true)} style={{ ...chipStyle, backgroundColor: '#fef2f2', borderColor: '#fecaca', color: '#dc2626' }}>🚨 Emergency Dispatch</button>
       </div>
 
       {/* Input Bar */}
-      <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-amber-400/20 flex items-center gap-2 flex-none">
+      <form onSubmit={handleSend} className="p-3 bg-white border-t border-amber-400/20 flex items-center gap-2 flex-none">
         <input 
           type="file"
           ref={fileInputRef}
