@@ -459,8 +459,16 @@ class CurrencyDetector:
         counts, word_hits = {}, set()
         words = cls._ocr_words(ocr_items)
         for tok in words:
-            stripped = tok.lstrip("₹RS").strip() or tok
-            for cand in {tok, stripped}:
+            stripped = tok.lstrip("₹RS8").strip() or tok
+            # EasyOCR frequently misreads the ₹ glyph as a leading "8" digit
+            # (measured on a real ₹2000 note: "₹2000" -> "82000") — a plain
+            # .lstrip("₹RS") can't catch that since "8" is a real digit, so
+            # try stripping one leading "8" specifically when what remains is
+            # itself a valid denomination length.
+            variants = {tok, stripped}
+            if tok.isdigit() and tok.startswith("8") and len(tok) > 1:
+                variants.add(tok[1:])
+            for cand in variants:
                 if cand.isdigit() and int(cand) in candidates:
                     counts[int(cand)] = counts.get(int(cand), 0) + 1
                     break
@@ -907,6 +915,23 @@ class CurrencyDetector:
             guidance = ((guidance + " ") if guidance else "") + (
                 "Note: ₹2000 notes were withdrawn from circulation in May 2023 — "
                 "accept only for bank deposit/exchange.")
+        elif denomination is None and verdict in ("LIKELY_GENUINE", "GENUINE_FEATURES"):
+            # OCR could not confirm ANY denomination on an otherwise-passing
+            # note (caught 2026-07-21: a real ₹2000 read as generic "Verified
+            # Authentic" with no denomination flag at all — OCR missed the
+            # numeral entirely, and the withdrawal warning above never fires
+            # without a confirmed 2000 read). Never claim unqualified
+            # authenticity on a denomination we couldn't actually identify —
+            # surface the uncertainty and the two special cases explicitly.
+            confidence = "MEDIUM" if confidence == "HIGH" else confidence
+            guidance = ((guidance + " ") if guidance else "") + (
+                "Denomination could not be confirmed from this photo — physical/print checks "
+                "passed, but this does NOT verify the note is one of the six currently "
+                "circulating denominations (₹10/20/50/100/200/500). If this is a ₹2000 note, "
+                "it was withdrawn from circulation in May 2023 (accept only for bank deposit/"
+                "exchange). If ₹1000, it is demonetized and invalid. Retake with the "
+                "denomination numeral clearly visible to confirm."
+            )
 
         checks.append(uv_check)  # informational placement at the end, as before
 

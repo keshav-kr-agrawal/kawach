@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
 import { sendChat, getMessages, uploadMedia, linkReport, getAnonUserId, prepareNcrbReport, translateText, SUPPORTED_LANGUAGES } from '../../api/nayakService';
 import { uploadMediaBlob } from '../../api/mediaService';
 import { createReport, newReportId, REPORT_SOURCES } from '../../api/reportService';
@@ -203,42 +202,43 @@ ${bullets.length > 0 ? bullets.join('\n\n') : '* Media stored and analyzed.'}`;
 }
 
 function MarkdownMessage({ content }) {
+  if (!content) return null;
+  const str = typeof content === 'string' ? content : (typeof content === 'object' ? JSON.stringify(content) : String(content));
+  const lines = str.split('\n');
   return (
-    <div className="prose prose-xs max-w-none text-ink space-y-1.5 leading-relaxed select-text font-sans">
-      <ReactMarkdown
-        components={{
-          h1: ({ children }) => <h1 className="text-sm font-black text-ink font-sora mt-2.5 mb-1.5 border-b border-amber-400/20 pb-1">{children}</h1>,
-          h2: ({ children }) => <h2 className="text-xs font-black text-ink font-sora mt-2 mb-1">{children}</h2>,
-          h3: ({ children }) => <h3 className="text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1">{children}</h3>,
-          p: ({ children }) => <p className="text-xs leading-relaxed font-semibold text-ink mb-1.5 last:mb-0">{children}</p>,
-          strong: ({ children }) => <strong className="font-extrabold text-ink bg-amber-400/25 px-1 py-0.5 rounded text-[11px] font-sora">{children}</strong>,
-          em: ({ children }) => <em className="font-serif italic text-[#b08850] font-normal">{children}</em>,
-          ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-1.5 text-xs font-semibold text-ink">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-1.5 text-xs font-semibold text-ink">{children}</ol>,
-          li: ({ children }) => <li className="text-xs text-ink font-semibold leading-relaxed">{children}</li>,
-          blockquote: ({ children }) => (
-            <blockquote className="border-l-3 border-[#E9BA26] bg-amber-50/80 p-2.5 rounded-r-xl my-2 text-xs italic text-ink font-medium">
-              {children}
-            </blockquote>
-          ),
-          code: ({ inline, children }) => inline ? (
-            <code className="bg-amber-950 text-amber-300 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{children}</code>
-          ) : (
-            <pre className="bg-amber-950 text-amber-50 p-3 rounded-xl overflow-x-auto my-2 text-[11px] font-mono border border-amber-800">
-              <code>{children}</code>
-            </pre>
-          ),
-          table: ({ children }) => (
-            <div className="overflow-x-auto my-2.5 rounded-xl border border-amber-400/30">
-              <table className="w-full text-xs text-left border-collapse">{children}</table>
+    <div className="space-y-1.5 leading-relaxed select-text font-sans text-xs text-ink">
+      {lines.map((line, idx) => {
+        if (!line.trim()) return <div key={idx} className="h-1" />;
+        
+        if (line.startsWith('# ')) {
+          return <h1 key={idx} className="text-sm font-black text-ink font-sora mt-2 mb-1 border-b border-amber-400/20 pb-1">{line.slice(2)}</h1>;
+        } else if (line.startsWith('## ')) {
+          return <h2 key={idx} className="text-xs font-black text-ink font-sora mt-2 mb-1">{line.slice(3)}</h2>;
+        } else if (line.startsWith('### ')) {
+          return <h3 key={idx} className="text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1">{line.slice(4)}</h3>;
+        } else if (line.startsWith('> ')) {
+          return <blockquote key={idx} className="border-l-3 border-[#E9BA26] bg-amber-50/80 p-2.5 rounded-r-xl my-1 text-xs italic text-ink">{line.slice(2)}</blockquote>;
+        }
+
+        const parts = line.split(/(\*\*.*?\*\*)/g);
+        const renderedParts = parts.map((part, pIdx) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={pIdx} className="font-extrabold text-ink bg-amber-400/25 px-1 py-0.5 rounded text-[11px] font-sora">{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        });
+
+        if (line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*')) {
+          return (
+            <div key={idx} className="flex gap-2 items-start my-0.5 pl-1">
+              <span className="text-[#b08850] font-bold text-xs">•</span>
+              <span className="flex-1 font-semibold">{renderedParts}</span>
             </div>
-          ),
-          th: ({ children }) => <th className="bg-amber-100/70 p-2 font-black text-ink border-b border-amber-400/30 text-[10px] uppercase font-mono">{children}</th>,
-          td: ({ children }) => <td className="p-2 border-b border-amber-100 text-ink font-medium">{children}</td>,
-        }}
-      >
-        {content}
-      </ReactMarkdown>
+          );
+        }
+
+        return <p key={idx} className="font-semibold text-ink leading-relaxed">{renderedParts}</p>;
+      })}
     </div>
   );
 }
@@ -602,8 +602,8 @@ export default function AlertsChatView() {
       pushBot(
         `### 🔍 National Cyber Crime Portal — Complaint Pack\n\n` +
         `**Category:** ${pack.structured_fields.category}\n\n` +
-        `**Ready-to-paste description:**\n\n\`\`\`\n${pack.complaint_text}\n\`\`\`\n\n` +
-        `**Next step:** open [${pack.portal_url}](${pack.portal_url}) or call **${pack.helpline}**, then paste these details into the complaint form.\n\n` +
+        `**Ready-to-paste description:**\n\n${pack.complaint_text}\n\n` +
+        `**Next step:** open ${pack.portal_url} or call **${pack.helpline}**, then paste these details into the complaint form.\n\n` +
         `> ${pack.disclaimer}`
       );
     } catch (err) {
@@ -612,6 +612,17 @@ export default function AlertsChatView() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleQuickQuestion = (questionText) => {
+    setInputText(questionText);
+  };
+
+  const chipStyle = {
+    padding: '6px 12px', borderRadius: '16px', border: '1px solid #e2e8f0',
+    backgroundColor: '#f8fafc', fontSize: '11px', color: '#09090B', cursor: 'pointer',
+    whiteSpace: 'nowrap', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '5px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.03)', flexShrink: 0, transition: 'all 0.15s ease'
   };
 
   return (
@@ -787,48 +798,45 @@ export default function AlertsChatView() {
                 </div>
               </div>
 
-              {/* Render Interactive Category Dropdown & Filtered Services */}
+              {/* Render Interactive Nayak AI Service Refineries */}
               {index === 0 && (
-                <div className="my-4 p-4 bg-amber-50/80 border border-amber-400/35 rounded-2xl max-w-md w-full shadow-2xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2.5 border-b border-amber-400/20">
+                <div className="my-3 p-4 bg-white border-2 border-[#E9BA26] rounded-2xl max-w-md w-full shadow-xs space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-amber-100">
                     <span className="text-[10px] font-black text-[#b08850] uppercase tracking-wider font-mono flex items-center gap-1.5">
-                      <span>⚡</span> Select AI Refinery &amp; Tool:
+                      ⚡ Nayak AI Service Refineries
                     </span>
-                    
-                    {/* Category Dropdown */}
                     <select
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="bg-white border border-amber-400/40 rounded-xl px-2.5 py-1 text-xs font-bold text-ink focus:outline-none focus:border-[#b08850] shadow-2xs cursor-pointer"
+                      className="bg-amber-50 border border-amber-300 rounded-lg px-2 py-0.5 text-[10px] font-bold text-ink focus:outline-none cursor-pointer"
                     >
-                      <option value="ALL">📁 All Refineries ({NAYAK_SERVICES.length})</option>
-                      <option value="DIGITAL_SAFETY">🛡️ Digital Safety &amp; Forensics</option>
-                      <option value="GEO_SAFETY">🗺️ Emergency &amp; Geo Safety</option>
-                      <option value="LEGAL">⚖️ BNS Legal Rulebooks</option>
-                      <option value="WORK_SHORTCUTS">🛠️ Citizen Work Shortcuts</option>
+                      <option value="ALL">All Tools ({NAYAK_SERVICES.length})</option>
+                      <option value="DIGITAL_SAFETY">🛡️ Digital Safety</option>
+                      <option value="GEO_SAFETY">🗺️ Emergency &amp; Geo</option>
+                      <option value="LEGAL">⚖️ BNS Legal</option>
+                      <option value="WORK_SHORTCUTS">🛠️ Work Shortcuts</option>
                     </select>
                   </div>
 
-                  {/* Services List inside selected category */}
-                  <div className="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
+                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-1">
                     {displayedServices.map((s) => (
                       <button
                         key={s.id}
                         onClick={() => handleServiceClick(s)}
-                        className="w-full flex items-center justify-between p-3 bg-white hover:bg-amber-100/60 border border-amber-400/30 rounded-xl shadow-2xs transition-all hover:border-[#b08850] text-left active:scale-[0.99] cursor-pointer group"
+                        className="w-full flex items-center justify-between p-2.5 bg-amber-50/70 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all text-left group cursor-pointer"
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className="text-xl p-2 bg-amber-100/70 rounded-xl group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-lg p-1.5 bg-white rounded-lg shadow-2xs group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
                           <div className="truncate">
-                            <div className="font-sora text-xs font-black text-ink truncate">
+                            <div className="font-sora text-xs font-bold text-ink truncate">
                               {s.label}
                             </div>
-                            <p className="text-[10px] text-slate-500 font-semibold mt-0.5 truncate">
+                            <p className="text-[9px] text-ink-soft font-semibold truncate">
                               {s.type === 'upload' ? '📷 Tap to select file for AI scan' : '⚖️ Tap to launch automated AI query'}
                             </p>
                           </div>
                         </div>
-                        <span className="text-[9px] font-mono font-extrabold text-[#b08850] bg-amber-400/20 px-2 py-1 rounded-lg shrink-0 uppercase tracking-wider ml-2">
+                        <span className="text-[8px] font-mono font-extrabold text-[#b08850] bg-white border border-amber-200 px-2 py-0.5 rounded shrink-0 uppercase tracking-wider ml-1">
                           {s.badge}
                         </span>
                       </button>
@@ -836,6 +844,7 @@ export default function AlertsChatView() {
                   </div>
                 </div>
               )}
+
             </React.Fragment>
           );
         })}
@@ -844,12 +853,40 @@ export default function AlertsChatView() {
           <div className="flex justify-start">
             <div className="bg-white border border-amber-400/20 rounded-2xl p-3 text-xs text-ink-soft font-bold flex items-center gap-2">
               <span className="w-3.5 h-3.5 border-2 border-[#E9BA26] border-t-transparent rounded-full animate-spin" />
-              Nayak AI is consulting legal rulebooks & incident DB...
+              Nayak AI is consulting legal rulebooks &amp; incident DB...
             </div>
           </div>
         )}
 
         <div ref={messagesEndRef} />
+      </div>
+
+      {/* Side-scrollable AI Refinery & Prompt Shortcut small buttons right above the message box */}
+      <div 
+        style={{ 
+          padding: '8px 12px', 
+          display: 'flex', 
+          gap: '6px', 
+          overflowX: 'auto', 
+          scrollbarWidth: 'none', 
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch',
+          backgroundColor: '#ffffff',
+          borderTop: '1px solid #f1f5f9',
+          whiteSpace: 'nowrap'
+        }}
+      >
+        <button type="button" onClick={() => fileInputRef.current?.click()} style={chipStyle}>💵 Currency Note Scan</button>
+        <button type="button" onClick={() => fileInputRef.current?.click()} style={chipStyle}>🎭 Deepfake Scan</button>
+        <button type="button" onClick={() => handleQuickQuestion('Verify rumor or fake news in Bengaluru')} style={chipStyle}>🔍 Fake News Check</button>
+        <button type="button" onClick={() => handleQuickQuestion('Is the route to HSR safe right now?')} style={chipStyle}>🗺️ Safe Route Check</button>
+        <button type="button" onClick={() => handleQuickQuestion('I received a phone call claiming to be CBI placing me under digital arrest')} style={chipStyle}>⚠️ Digital Arrest Help</button>
+        <button type="button" onClick={() => handleQuickQuestion('What is the RBI circular on UPI fraud customer liability?')} style={chipStyle}>📚 UPI Fraud Liability</button>
+        <button type="button" onClick={() => handleQuickQuestion('Check if this website link or SMS code is a phishing scam')} style={chipStyle}>🛡️ Phishing Link Check</button>
+        <button type="button" onClick={() => handleQuickQuestion('How to check traffic violations & dispute an unfair traffic fine?')} style={chipStyle}>🚗 Traffic Fine Dispute</button>
+        <button type="button" onClick={() => handleQuickQuestion('Guide me step-by-step on how to file a Zero FIR at any police station')} style={chipStyle}>📑 Zero FIR Guide</button>
+        <button type="button" onClick={() => handleQuickQuestion('What are my rights under BNS regarding police questioning and arrest?')} style={chipStyle}>⚖️ BNS Legal Rights</button>
+        <button type="button" onClick={() => setEmergencyOpen(true)} style={{ ...chipStyle, backgroundColor: '#fef2f2', borderColor: '#fecaca', color: '#dc2626' }}>🚨 Emergency Dispatch</button>
       </div>
 
       {/* Input Bar */}
@@ -859,7 +896,7 @@ export default function AlertsChatView() {
           ref={fileInputRef}
           onChange={handleFileAttach}
           className="hidden"
-          accept="image/*,video/*,.pdf"
+          accept="image/*,video/*,audio/*"
         />
 
         <button

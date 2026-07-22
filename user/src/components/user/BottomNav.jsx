@@ -42,7 +42,7 @@ export default function BottomNav() {
     { 
       id: 'chat', 
       label: 'Nayak', 
-      path: '/user/chat',
+      path: '/user/nayak',
       renderIcon: (isActive) => (
         <svg viewBox="0 0 24 24" fill={isActive ? '#09090b' : 'none'} stroke={isActive ? '#09090b' : 'rgba(9, 9, 11, 0.65)'} strokeWidth={isActive ? '2.5' : '2'} className="w-5 h-5 transition-all">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -67,7 +67,7 @@ export default function BottomNav() {
     if (path.startsWith('/user/map')) return 'map';
     if (path.startsWith('/user/services')) return 'services';
     if (path.startsWith('/user/camera')) return 'camera';
-    if (path.startsWith('/user/chat')) return 'chat';
+    if (path.startsWith('/user/chat') || path.startsWith('/user/nayak') || path.startsWith('/nayak')) return 'chat';
     if (path.startsWith('/user/feed')) return 'feed';
     return '';
   };

@@ -236,7 +236,7 @@ function UserLayout({ userReports }) {
     if (path.startsWith('/user/map')) return { title: 'SENTINEL GHOST MAP', subtitle: 'PII-Free Safety Grid' };
     if (path.startsWith('/user/feed')) return { title: 'LOCAL INCIDENT FEED', subtitle: 'Peer-to-Peer Broadcasts' };
     if (path.startsWith('/user/services')) return { title: 'CIVIC DIRECTORY', subtitle: 'Verified Helplines & Contacts' };
-    if (path.startsWith('/user/chat')) return { title: 'NAYAK AI COUNSEL', subtitle: 'Law-Backed Counsel & Threat Verification' };
+    if (path.startsWith('/user/nayak') || path.startsWith('/user/chat') || path.startsWith('/nayak')) return { title: 'NAYAK AI COUNSEL', subtitle: 'Law-Backed Counsel & Threat Verification' };
     if (path.startsWith('/user/camera')) return { title: 'SECURE CAPTURE', subtitle: 'Anonymous Incident Camera' };
     if (path.startsWith('/user/library')) return { title: 'CITIZEN LAW LIBRARY', subtitle: 'Know Your Rights' };
     if (path.startsWith('/user/profile')) return { title: 'CITIZEN PROFILE', subtitle: 'Sentinel Privacy Settings' };
@@ -266,12 +266,12 @@ function UserLayout({ userReports }) {
               { id: 'map', label: 'Safety Map', path: '/user/map', icon: '🗺️' },
               { id: 'services', label: 'Civic Directory', path: '/user/services', icon: '📞' },
               { id: 'camera', label: 'Incident Capture', path: '/user/camera', icon: '📸' },
-              { id: 'chat', label: 'Nayak AI Counsel', path: '/user/chat', icon: '⚖️' },
+              { id: 'chat', label: 'Nayak AI Counsel', path: '/user/nayak', icon: '⚖️' },
               { id: 'feed', label: 'Incident Feed', path: '/user/feed', icon: '🧭' },
               { id: 'library', label: 'Law Library', path: '/user/library', icon: '📖' },
               { id: 'profile', label: 'My Profile', path: '/user/profile', icon: '👤' },
             ].map((item) => {
-              const isActive = location.pathname.startsWith(item.path);
+              const isActive = location.pathname.startsWith(item.path) || (item.id === 'chat' && (location.pathname.startsWith('/user/chat') || location.pathname.startsWith('/nayak')));
               return (
                 <button
                   key={item.id}
@@ -1075,7 +1075,8 @@ export default function App() {
         />
         <Route path="services" element={<ServicesDirectoryView gpsCoords={gpsCoords} />} />
         <Route path="camera" element={<SecureCameraView onUploadComplete={handleNewUpload} gpsCoords={gpsCoords} />} />
-        <Route path="chat" element={<AlertsChatView />} />
+        <Route path="nayak" element={<AlertsChatView />} />
+        <Route path="chat" element={<Navigate to="/user/nayak" replace />} />
         <Route
           path="feed"
           element={
@@ -1206,6 +1207,10 @@ export default function App() {
           </RequirePoliceAuth>
         }
       />
+
+      {/* Direct Nayak Short-Links */}
+      <Route path="/nayak" element={<Navigate to="/user/nayak" replace />} />
+      <Route path="/chat" element={<Navigate to="/user/nayak" replace />} />
 
       {/* Fallback to landing */}
       <Route path="*" element={<Navigate to="/" replace />} />
