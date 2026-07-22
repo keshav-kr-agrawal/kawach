@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { sendChat, getMessages, uploadMedia, linkReport, getAnonUserId, prepareNcrbReport, translateText, SUPPORTED_LANGUAGES } from '../../api/nayakService';
+import { sendChat, getMessages, uploadMedia, linkReport, getAnonUserId, translateText, SUPPORTED_LANGUAGES } from '../../api/nayakService';
 import { uploadMediaBlob } from '../../api/mediaService';
 import { createReport, newReportId, REPORT_SOURCES } from '../../api/reportService';
 import { routeReport } from '../../api/routingService';
@@ -7,115 +7,54 @@ import { routeReport } from '../../api/routingService';
 const EMERGENCY_CATEGORIES = ['Infrastructure', 'Violence/Loitering', 'Theft/Property', 'Traffic Warning', 'Emergency Alert'];
 const DEFAULT_COORDS = { lat: 12.9716, lng: 77.5946 }; // Bengaluru fallback
 
+// Exactly 5 selectable modes. Tapping one toggles it "active" (a selected
+// tag, not a one-shot action) — whatever the citizen sends next (text or a
+// file) carries `mode` to the backend so it routes deterministically to the
+// right real classifier/tool instead of relying purely on free-text intent
+// guessing.
 const NAYAK_SERVICES = [
-  // Category: DIGITAL_SAFETY (🛡️ Digital Safety & Forensics)
   {
     id: 'currency',
-    category: 'DIGITAL_SAFETY',
-    label: 'Counterfeit Currency Detector',
+    mode: 'currency',
+    label: 'Currency',
     icon: '💵',
     badge: 'CNN & RBI Rulebook',
     type: 'upload',
     accept: 'image/*',
-    prompt: '💵 Upload photo of ₹500 or ₹200 note for Computer Vision counterfeit scan...'
   },
   {
-    id: 'deepfake',
-    category: 'DIGITAL_SAFETY',
-    label: 'Deepfake & Face Swap Inspector',
-    icon: '🎭',
-    badge: 'MTCNN + EfficientNet-B7',
-    type: 'upload',
-    accept: 'video/*,image/*',
-    prompt: '🎭 Upload video clip or photo for AI facial deepfake analysis...'
+    id: 'scam-message',
+    mode: 'scam_message',
+    label: 'Scam Msg',
+    icon: '✉️',
+    badge: 'Script Pattern AI',
+    type: 'query',
   },
   {
-    id: 'scam-script',
-    category: 'DIGITAL_SAFETY',
-    label: 'Digital Arrest & Call Spoof Verifier',
+    id: 'link-detection',
+    mode: 'link_detection',
+    label: 'Link Detection',
+    icon: '🔗',
+    badge: 'Domain Verifier',
+    type: 'query',
+  },
+  {
+    id: 'scam-call',
+    mode: 'scam_call',
+    label: 'Scam Call',
     icon: '📞',
-    badge: 'Voiceprint & Speech AI',
-    type: 'query',
-    query: 'I received a video/voice call claiming to be CBI / ED threatening digital arrest. Is this a scam?'
+    badge: 'Voice/Video Upload',
+    type: 'upload',
+    accept: 'audio/mpeg,audio/mp3,.mp3,video/mp4,.mp4',
   },
   {
-    id: 'fraud-ring',
-    category: 'DIGITAL_SAFETY',
-    label: 'Cyber Fraud Ring & Mule Mapper',
-    icon: '🕸️',
-    badge: 'Louvain Graph AI',
-    type: 'query',
-    query: 'Analyze recent cyber fraud numbers and check if there is an active fraud ring targeting my area.'
-  },
-
-  // Category: GEO_SAFETY (🗺️ Emergency & Geo Safety)
-  {
-    id: 'geospatial',
-    category: 'GEO_SAFETY',
-    label: 'Geospatial Crime & Patrol Grid',
-    icon: '🗺️',
-    badge: 'DBSCAN Geo AI',
-    type: 'query',
-    query: 'Show geospatial safety intelligence and verified incident density near my current GPS location.'
-  },
-  {
-    id: 'sos-dispatch',
-    category: 'GEO_SAFETY',
-    label: 'Direct Emergency Dispatch SOS',
-    icon: '🚨',
-    badge: '112 Police & Fire Routing',
-    type: 'query',
-    query: 'EMERGENCY SOS: Require immediate police patrol and emergency unit dispatch to my location.'
-  },
-
-  // Category: LEGAL (⚖️ BNS Legal Rulebooks)
-  {
-    id: 'legal-rights',
-    category: 'LEGAL',
-    label: 'Legal Rights & Cop Powers',
+    id: 'law-check',
+    mode: 'law_check',
+    label: 'Law Check',
     icon: '⚖️',
-    badge: 'BNS 2026 Rulebook',
+    badge: 'BNS Rulebook',
     type: 'query',
-    query: 'What are my constitutional rights during police vehicle checks under BNS and Motor Vehicles Act?'
   },
-  {
-    id: 'vehicle-rights',
-    category: 'LEGAL',
-    label: 'Vehicle Stop & Traffic Law Rights',
-    icon: '🚗',
-    badge: 'Motor Vehicles Act',
-    type: 'query',
-    query: 'What documents am I required to show during a late-night police traffic stop under Motor Vehicles Act?'
-  },
-
-  // Category: WORK_SHORTCUTS (🛠️ Citizen Work Shortcuts)
-  {
-    id: 'voice-dictate',
-    category: 'WORK_SHORTCUTS',
-    label: 'Voice-to-Report Dictation',
-    icon: '🎙️',
-    badge: 'Hands-Free AI',
-    type: 'query',
-    query: '🎙️ Voice Dictation Mode: Speak your complaint in Hindi, Kannada, or English. Nayak will format a BNS report draft.'
-  },
-  {
-    id: 'bilingual-pdf',
-    category: 'WORK_SHORTCUTS',
-    label: 'Bilingual Station Complaint Generator',
-    icon: '📝',
-    badge: 'Station Draft',
-    type: 'query',
-    query: 'Draft an official police complaint letter in English & Kannada formatted for submission at the local SP office.'
-  },
-  {
-    id: 'cyber-1930',
-    category: 'WORK_SHORTCUTS',
-    label: 'National Cyber Crime (1930) Helper',
-    icon: '🔍',
-    badge: 'Helpline 1930',
-    type: 'ncrb',
-    accept: 'image/*,video/*'
-  }
 ];
 
 function formatForensicVerdict(v) {
@@ -317,7 +256,7 @@ export default function AlertsChatView() {
   const [emFile, setEmFile] = useState(null);
   const [emDispatching, setEmDispatching] = useState(false);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedMode, setSelectedMode] = useState(null);
   const [language, setLanguage] = useState(() => localStorage.getItem('nayak_language') || 'English');
   const [translatingId, setTranslatingId] = useState(null);
 
@@ -346,9 +285,6 @@ export default function AlertsChatView() {
   };
   const messagesEndRef = useRef(null);
 
-  const displayedServices = selectedCategory === 'ALL'
-    ? NAYAK_SERVICES
-    : NAYAK_SERVICES.filter((s) => s.category === selectedCategory);
   const fileInputRef = useRef(null);
   const emFileInputRef = useRef(null);
 
@@ -405,11 +341,12 @@ export default function AlertsChatView() {
     const previewUrl = URL.createObjectURL(file);
     const isImg = file.type.startsWith('image/');
     const isVid = file.type.startsWith('video/');
+    const isAud = file.type.startsWith('audio/') || /\.mp3$/i.test(file.name);
     const userMsg = {
       id: 'user-' + Date.now(),
       sender: 'user',
-      text: `Attached media: ${file.name}`,
-      mediaUrl: previewUrl,
+      text: isAud ? `🎙️ Attached audio: ${file.name}` : `Attached media: ${file.name}`,
+      mediaUrl: isAud ? null : previewUrl,
       isImage: isImg,
       isVideo: isVid,
       timestamp: now()
@@ -417,10 +354,9 @@ export default function AlertsChatView() {
     setMessages((prev) => [...prev, userMsg]);
 
     try {
-      const mediaType = file.type.startsWith('image/') ? 'image'
-        : file.type.startsWith('video/') ? 'video' : 'other';
+      const mediaType = isImg ? 'image' : isVid ? 'video' : isAud ? 'audio' : 'other';
       if (mediaType === 'other') {
-        pushBot("🎙️ Audio/document analysis isn't live yet. Describe what it contains (e.g. paste the caller's words) and I'll assess the content as text.");
+        pushBot("📄 That file type isn't supported yet. Upload an image, video (mp4), or audio (mp3), or describe it as text.");
         return;
       }
 
@@ -511,7 +447,7 @@ export default function AlertsChatView() {
     setBusy(true);
 
     try {
-      const res = await sendChat({ sessionId, message: query, lat: coords.lat, lng: coords.lng, lang: language });
+      const res = await sendChat({ sessionId, message: query, lat: coords.lat, lng: coords.lng, lang: language, mode: selectedMode });
       if (res?.session_id) {
         setSessionId(res.session_id);
         localStorage.setItem('nayak_session_id', res.session_id);
@@ -631,45 +567,12 @@ export default function AlertsChatView() {
   };
 
   const handleServiceClick = (service) => {
-    if (service.type === 'upload') {
-      if (fileInputRef.current) {
-        fileInputRef.current.accept = service.accept || 'image/*,video/*';
-        fileInputRef.current.click();
-      }
-    } else if (service.type === 'query') {
-      setInputText(service.query);
-    } else if (service.type === 'ncrb') {
-      handleNcrbReport();
+    const nowSelected = selectedMode === service.mode ? null : service.mode;
+    setSelectedMode(nowSelected);
+    if (nowSelected && service.type === 'upload' && fileInputRef.current) {
+      fileInputRef.current.accept = service.accept || 'image/*,video/*';
+      fileInputRef.current.click();
     }
-  };
-
-  const handleNcrbReport = async () => {
-    const lastUserMsg = [...messages].reverse().find((m) => m.sender === 'user');
-    const narrative = inputText.trim() || lastUserMsg?.text?.trim();
-    if (!narrative) {
-      pushBot('🔍 To prepare an NCRB (1930) complaint pack, first describe what happened — type it in the message box (or ask me about it), then tap this shortcut again.');
-      return;
-    }
-    setBusy(true);
-    try {
-      const pack = await prepareNcrbReport({ narrative });
-      pushBot(
-        `### 🔍 National Cyber Crime Portal — Complaint Pack\n\n` +
-        `**Category:** ${pack.structured_fields.category}\n\n` +
-        `**Ready-to-paste description:**\n\n${pack.complaint_text}\n\n` +
-        `**Next step:** open ${pack.portal_url} or call **${pack.helpline}**, then paste these details into the complaint form.\n\n` +
-        `> ${pack.disclaimer}`
-      );
-    } catch (err) {
-      console.error('[NCRB PACK FAILED]', err);
-      pushBot('⚠️ Could not reach the report-prep service. You can still file directly at cybercrime.gov.in or call 1930 — describe the incident, suspect phone/UPI/bank details, and the date.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleQuickQuestion = (questionText) => {
-    setInputText(questionText);
   };
 
   const chipStyle = {
@@ -702,12 +605,12 @@ export default function AlertsChatView() {
       )}
 
       {/* Header — Restored with top notch safety margin */}
-      <div className="px-4 pt-4 pb-3 bg-white border-b border-amber-400/20 flex items-center justify-between gap-2 flex-none md:px-6 md:pt-6 md:pb-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[8px] sm:text-[9px] font-bold text-[#b08850] uppercase tracking-wide sm:tracking-widest font-mono truncate">
+      <div className="px-4 pt-4 pb-3 bg-white border-b border-amber-400/20 flex items-center justify-between flex-none md:px-6 md:pt-6 md:pb-3">
+        <div>
+          <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
             LAW-BACKED LEGAL &amp; THREAT COUNSEL
-          </p>
-          <h2 className="text-lg font-black text-ink font-sora md:text-xl truncate">
+          </span>
+          <h2 className="text-lg font-black text-ink font-sora md:text-xl">
             Nayak <span className="font-serif italic font-normal text-[#b08850] pr-1">AI Counsel</span>
           </h2>
         </div>
@@ -852,53 +755,6 @@ export default function AlertsChatView() {
                 </div>
               </div>
 
-              {/* Render Interactive Nayak AI Service Refineries */}
-              {index === 0 && (
-                <div className="my-3 p-4 bg-white border-2 border-[#E9BA26] rounded-2xl max-w-md w-full shadow-xs space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-amber-100">
-                    <span className="text-[10px] font-black text-[#b08850] uppercase tracking-wider font-mono flex items-center gap-1.5">
-                      ⚡ Nayak AI Service Refineries
-                    </span>
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="bg-amber-50 border border-amber-300 rounded-lg px-2 py-0.5 text-[10px] font-bold text-ink focus:outline-none cursor-pointer"
-                    >
-                      <option value="ALL">All Tools ({NAYAK_SERVICES.length})</option>
-                      <option value="DIGITAL_SAFETY">🛡️ Digital Safety</option>
-                      <option value="GEO_SAFETY">🗺️ Emergency &amp; Geo</option>
-                      <option value="LEGAL">⚖️ BNS Legal</option>
-                      <option value="WORK_SHORTCUTS">🛠️ Work Shortcuts</option>
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-1">
-                    {displayedServices.map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => handleServiceClick(s)}
-                        className="w-full flex items-center justify-between p-2.5 bg-amber-50/70 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all text-left group cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="text-lg p-1.5 bg-white rounded-lg shadow-2xs group-hover:scale-110 transition-transform shrink-0">{s.icon}</span>
-                          <div className="truncate">
-                            <div className="font-sora text-xs font-bold text-ink truncate">
-                              {s.label}
-                            </div>
-                            <p className="text-[9px] text-ink-soft font-semibold truncate">
-                              {s.type === 'upload' ? '📷 Tap to select file for AI scan' : '⚖️ Tap to launch automated AI query'}
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-[8px] font-mono font-extrabold text-[#b08850] bg-white border border-amber-200 px-2 py-0.5 rounded shrink-0 uppercase tracking-wider ml-1">
-                          {s.badge}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
             </React.Fragment>
           );
         })}
@@ -915,14 +771,16 @@ export default function AlertsChatView() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Side-scrollable AI Refinery & Prompt Shortcut small buttons right above the message box */}
-      <div 
-        style={{ 
-          padding: '8px 12px', 
-          display: 'flex', 
-          gap: '6px', 
-          overflowX: 'auto', 
-          scrollbarWidth: 'none', 
+      {/* Nayak mode tags — tap to select; whatever you send next (text or a
+          file) carries this mode to the backend so it routes deterministically
+          instead of guessing intent from free text. Tap again to deselect. */}
+      <div
+        style={{
+          padding: '8px 12px',
+          display: 'flex',
+          gap: '6px',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch',
           backgroundColor: '#ffffff',
@@ -930,18 +788,32 @@ export default function AlertsChatView() {
           whiteSpace: 'nowrap'
         }}
       >
-        <button type="button" onClick={() => fileInputRef.current?.click()} style={chipStyle}>💵 Currency Note Scan</button>
-        <button type="button" onClick={() => fileInputRef.current?.click()} style={chipStyle}>🎭 Deepfake Scan</button>
-        <button type="button" onClick={() => handleQuickQuestion('Verify rumor or fake news in Bengaluru')} style={chipStyle}>🔍 Fake News Check</button>
-        <button type="button" onClick={() => handleQuickQuestion('Is the route to HSR safe right now?')} style={chipStyle}>🗺️ Safe Route Check</button>
-        <button type="button" onClick={() => handleQuickQuestion('I received a phone call claiming to be CBI placing me under digital arrest')} style={chipStyle}>⚠️ Digital Arrest Help</button>
-        <button type="button" onClick={() => handleQuickQuestion('What is the RBI circular on UPI fraud customer liability?')} style={chipStyle}>📚 UPI Fraud Liability</button>
-        <button type="button" onClick={() => handleQuickQuestion('Check if this website link or SMS code is a phishing scam')} style={chipStyle}>🛡️ Phishing Link Check</button>
-        <button type="button" onClick={() => handleQuickQuestion('How to check traffic violations & dispute an unfair traffic fine?')} style={chipStyle}>🚗 Traffic Fine Dispute</button>
-        <button type="button" onClick={() => handleQuickQuestion('Guide me step-by-step on how to file a Zero FIR at any police station')} style={chipStyle}>📑 Zero FIR Guide</button>
-        <button type="button" onClick={() => handleQuickQuestion('What are my rights under BNS regarding police questioning and arrest?')} style={chipStyle}>⚖️ BNS Legal Rights</button>
-        <button type="button" onClick={() => setEmergencyOpen(true)} style={{ ...chipStyle, backgroundColor: '#fef2f2', borderColor: '#fecaca', color: '#dc2626' }}>🚨 Emergency Dispatch</button>
+        {NAYAK_SERVICES.map((s) => {
+          const isActive = selectedMode === s.mode;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => handleServiceClick(s)}
+              style={{
+                ...chipStyle,
+                ...(isActive
+                  ? { backgroundColor: '#E9BA26', borderColor: '#c99a1a', color: '#09090b', fontWeight: 800 }
+                  : {}),
+              }}
+              title={s.badge}
+            >
+              {s.icon} {s.label}{isActive ? ' ✓' : ''}
+            </button>
+          );
+        })}
       </div>
+      {selectedMode && (
+        <p className="px-3 pb-1 text-[10px] font-semibold text-[#b08850] bg-white">
+          {NAYAK_SERVICES.find((s) => s.mode === selectedMode)?.icon} {NAYAK_SERVICES.find((s) => s.mode === selectedMode)?.label} mode active
+          {NAYAK_SERVICES.find((s) => s.mode === selectedMode)?.type === 'upload' ? ' — pick a file, or tap again to cancel.' : ' — type your message below.'}
+        </p>
+      )}
 
       {/* Input Bar */}
       <form onSubmit={handleSend} className="p-3 bg-white border-t border-amber-400/20 flex items-center gap-2 flex-none">

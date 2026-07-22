@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.models import NayakSession, NayakMessage, NayakUserUpload, FIRRecord, AuditLog
 from app.routes.nayak_rag import retrieve_law_chunks, get_embedding
+from app.routes.digital_arrest import score_scam_script, analyze_voice_heuristic
 
 router = APIRouter()
 
@@ -51,6 +52,19 @@ class ChatRequest(BaseModel):
     lat: Optional[float] = None
     lng: Optional[float] = None
     lang: Optional[str] = None  # e.g. "Hindi", "Kannada" — reply language for this turn
+    mode: Optional[str] = None  # scam_message | link_detection | scam_call | law_check — see MODE_HANDLERS
+
+
+# The citizen app's 5 selectable Nayak tags carry `mode` so the backend
+# routes deterministically to a real tool instead of relying purely on
+# Gemini free-text intent guessing. "currency" isn't listed here — it's
+# upload-only and already routes via /upload's media_type dispatch.
+MODE_LABELS = {
+    "scam_message": "Scam Message Check",
+    "link_detection": "Link/Domain Check",
+    "scam_call": "Scam Call Script Check",
+    "law_check": "Law Check",
+}
 
 
 # 12 regional languages (ET PS: "advisory in 12 regional languages"). Passed
@@ -193,6 +207,75 @@ def run_classify_text(text_content: str, api_key: str = None) -> dict:
         "matched_pattern": None,
         "reasoning": "No threat indicators detected during text scan."
     }
+
+
+def _handle_mode_request(mode: str, message: str, db: Session, api_key: Optional[str]) -> str:
+    """
+    Deterministic dispatch for the 4 text-based Nayak mode tags (currency is
+    upload-only and already handled by /upload's media_type routing). Each
+    branch calls an existing real function — no new scoring logic, just a
+    direct route to it instead of leaving Gemini to guess the intent.
+    """
+    text = (message or "").strip()
+    if not text:
+        return f"Type the {MODE_LABELS[mode].lower()} content first (paste the message/link/script), then send."
+
+    if mode == "scam_message":
+        result = run_classify_text(text, api_key)
+        verdict = "🚨 Likely Scam Message" if result.get("is_scam") else "✅ No Scam Indicators Found"
+        return (
+            f"### 🛡️ Scam Message Check\n\n"
+            f"#### {verdict}\n"
+            f"**Confidence:** {round(float(result.get('confidence', 0.5)) * 100, 1)}%\n\n"
+            f"- Pattern: {result.get('matched_pattern') or 'none matched'}\n"
+            f"- {result.get('reasoning', '')}"
+        )
+
+    if mode == "link_detection":
+        # Pull the first URL-looking token out of the message; fall back to the whole text.
+        import re as _re
+        url_match = _re.search(r"https?://\S+|www\.\S+|[\w.-]+\.[a-z]{2,}(?:/\S*)?", text, _re.IGNORECASE)
+        url = url_match.group(0) if url_match else text
+        result = run_check_link(url, api_key)
+        verdict_label = {"official": "✅ Official/Whitelisted", "suspicious": "⚠️ Suspicious",
+                          "confirmed_fake": "🚨 Confirmed Fake"}.get(result.get("verdict"), result.get("verdict", "unknown"))
+        reasons = result.get("reasons") or []
+        return (
+            f"### 🛡️ Link/Domain Check\n\n"
+            f"#### {verdict_label}\n"
+            f"**Checked:** {url}\n"
+            f"**Confidence:** {round(float(result.get('confidence', 0.5)) * 100, 1)}%\n\n"
+            + "\n".join(f"- {r}" for r in reasons)
+        )
+
+    if mode == "scam_call":
+        strength, matched = score_scam_script(text)
+        cats = ", ".join(m["category"] for m in matched) or "none matched"
+        verdict = "🚨 Matches Known Scam-Call Script" if strength >= 0.4 else "✅ No Scam-Call Pattern Detected"
+        return (
+            f"### 🛡️ Scam Call Script Check\n\n"
+            f"#### {verdict}\n"
+            f"**Script score:** {round(strength * 100, 1)}%\n\n"
+            f"- Categories matched: {cats}\n"
+            f"- Real law enforcement never demands secrecy, isolation on video, or 'clearance deposits' — disconnect and report to 1930 if any of these appear."
+        )
+
+    if mode == "law_check":
+        chunks = retrieve_law_chunks(text, db, api_key, top_k=3)
+        if not chunks:
+            return "### ⚖️ Law Check\n\nNo matching law section found for that query. Try rephrasing with the specific act, right, or scenario."
+        parts = ["### ⚖️ Law Check\n"]
+        for c in chunks:
+            parts.append(
+                f"#### {c['act']} — {c['section']}: {c['title']}\n"
+                f"- {c['citizen_explanation']}\n"
+                f"- **Action:** {c['recommended_action']}\n"
+                f"- **Penalty:** {c['penalty_summary']}"
+            )
+        return "\n\n".join(parts)
+
+    return "Mode not recognized."
+
 
 # Proximity Area Incidents check utility
 def run_get_area_incidents(lat: float, lng: float, radius_km: float, db: Session) -> list:
@@ -466,10 +549,27 @@ def handle_nayak_chat(
         content=req.message
     )
     db.add(user_msg)
-    
+
     session.last_active_at = datetime.utcnow()
     db.commit()
-    
+
+    # 2b. Mode-tagged request — a citizen selected one of the 5 Nayak tags,
+    # so route deterministically to the real tool instead of the general
+    # Gemini agentic loop (which would otherwise have to guess the intent
+    # from free text). Each branch reuses an existing real function; nothing
+    # new is fabricated here, just a more direct path to it.
+    if req.mode in MODE_LABELS:
+        api_key_for_mode = os.environ.get("GEMINI_API_KEY")
+        reply_txt = _handle_mode_request(req.mode, req.message, db, api_key_for_mode)
+        bot_reply = NayakMessage(session_id=session_id, role="assistant", content=reply_txt, tool_name=req.mode)
+        db.add(bot_reply)
+        db.commit()
+        return {
+            "session_id": session_id,
+            "message": {"role": "assistant", "content": reply_txt},
+            "proposal": None,
+        }
+
     # 3. Retrieve session context/history
     history = db.query(NayakMessage).filter(NayakMessage.session_id == session_id).order_by(NayakMessage.created_at.asc()).all()
     
@@ -835,6 +935,48 @@ def _classify_media_for_real(media_url: str, media_type: str) -> dict:
                 "source": "classifier:/classify-currency",
             }
 
+        if media_type == "audio":
+            wav_bytes = blob
+            decode_note = ""
+            try:
+                # Fast path: already a real WAV (stdlib `wave`, no extra deps).
+                strength, finding = analyze_voice_heuristic(wav_bytes)
+            except ValueError:
+                # Likely mp3/other compressed audio — try transcoding via
+                # pydub (needs an ffmpeg binary on the host). No fabricated
+                # verdict if that's unavailable; say so honestly instead.
+                try:
+                    from pydub import AudioSegment
+                    import io as _io
+                    segment = AudioSegment.from_file(_io.BytesIO(blob))
+                    wav_buf = _io.BytesIO()
+                    segment.export(wav_buf, format="wav")
+                    strength, finding = analyze_voice_heuristic(wav_buf.getvalue())
+                    decode_note = " (transcoded from compressed audio via ffmpeg)"
+                except Exception as decode_err:
+                    print(f"[NAYAK] audio transcode failed: {decode_err}", flush=True)
+                    return {
+                        "is_authenticated": None,
+                        "score": None,
+                        "verdict": "PENDING_ANALYSIS",
+                        "details": (
+                            "Could not decode this audio format on this server (no ffmpeg available for "
+                            "compressed audio). Upload a 16-bit PCM WAV file, or describe the call in text instead. "
+                            "No verdict was fabricated."
+                        ),
+                        "source": "audio_decode_unavailable",
+                    }
+
+            is_auth = strength < 0.5
+            return {
+                "is_authenticated": is_auth,
+                "score": round((1.0 - strength) * 100, 1),
+                "verdict": "SUSPECT_VOICE" if not is_auth else "LIKELY_HUMAN",
+                "confidence": "MEDIUM",
+                "details": f"Acoustic heuristic{decode_note}: {finding}",
+                "source": "heuristic:analyze_voice_heuristic",
+            }
+
         return {"is_authenticated": None, "score": None,
                 "details": f"No classifier pipeline for media_type '{media_type}' yet.",
                 "source": "none"}
@@ -858,7 +1000,7 @@ def handle_nayak_upload(
 ):
     upload_id = str(uuid.uuid4())
 
-    if req.media_type in ("video", "image"):
+    if req.media_type in ("video", "image", "audio"):
         verdict = _classify_media_for_real(req.media_url, req.media_type)
     else:
         verdict = {"is_authenticated": None, "score": None,

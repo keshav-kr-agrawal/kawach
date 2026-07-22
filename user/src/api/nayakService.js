@@ -31,11 +31,11 @@ export const SUPPORTED_LANGUAGES = [
   'Marathi', 'Bengali', 'Gujarati', 'Punjabi', 'Urdu', 'Odia',
 ];
 
-export async function sendChat({ sessionId, message, lat, lng, lang }) {
+export async function sendChat({ sessionId, message, lat, lng, lang, mode }) {
   const res = await fetch(`${API_BASE}/api/nayak/chat`, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({ session_id: sessionId, message, lat, lng, lang }),
+    body: JSON.stringify({ session_id: sessionId, message, lat, lng, lang, mode: mode || null }),
   });
   if (!res.ok) throw new Error(`chat HTTP ${res.status}`);
   return res.json();

@@ -113,9 +113,9 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
       
       {/* Editorial Header — Restored with top notch safety padding */}
       <div className="px-4 pt-6 pb-3 bg-white border-b border-amber-400/20 md:px-6 md:pt-8 md:pb-4">
-        <p className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest mb-0.5 font-mono">
+        <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block mb-0.5 font-mono">
           BHARATIYA NYAYA SANHITA (BNS) CITATIONS
-        </p>
+        </span>
         <h2 className="text-xl font-black text-ink font-sora md:text-2xl">
           Citizen <span className="font-serif italic font-normal text-[#b08850] pr-1">Law Library</span>
         </h2>
