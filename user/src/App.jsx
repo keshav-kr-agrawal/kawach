@@ -248,9 +248,9 @@ function UserLayout({ userReports }) {
 
   if (isDesktop) {
     return (
-      <div className="flex flex-row h-screen w-screen overflow-hidden relative bg-white select-text">
+      <div className="flex flex-row h-full w-full overflow-hidden relative bg-white select-text">
         {/* Desktop Left Sidebar */}
-        <div className="flex flex-col w-64 bg-white border-r border-amber-200 h-full p-6 select-none flex-none">
+        <div className="flex flex-col w-64 bg-white border-r border-amber-200 h-full p-6 select-none flex-none overflow-y-auto">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
             <img src="/kawach.png" alt="KAWACH Logo" className="w-10 h-10 object-contain" />

@@ -48,6 +48,12 @@ body.in-app {
   height: 100dvh;
   width: 100%;
   width: 100vw;
+  /* Real device notch/status-bar inset. Safe against double-counting
+     ONLY because box-sizing:border-box above makes this padding consume
+     part of the fixed 100dvh height instead of adding to it, and #root
+     below has no competing fixed height of its own (flex:1 1 auto) — do
+     not reintroduce a fixed height on #root without re-checking this. */
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 body.in-app #root {
