@@ -704,23 +704,26 @@ export default function AlertsChatView() {
       {/* Header — Restored with top notch safety margin */}
       <div className="px-4 pt-4 pb-3 bg-white border-b border-amber-400/20 flex items-center justify-between gap-2 flex-none md:px-6 md:pt-6 md:pb-3">
         <div className="min-w-0 flex-1">
+          <p className="text-[8px] sm:text-[9px] font-bold text-[#b08850] uppercase tracking-wide sm:tracking-widest font-mono truncate">
+            LAW-BACKED LEGAL &amp; THREAT COUNSEL
+          </p>
           <h2 className="text-lg font-black text-ink font-sora md:text-xl truncate">
             Nayak <span className="font-serif italic font-normal text-[#b08850] pr-1">AI Counsel</span>
           </h2>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
           <select
             value={language}
             onChange={(e) => changeLanguage(e.target.value)}
             title="Reply language"
-            className="w-14 md:w-auto text-[9px] md:text-[10px] font-bold text-ink-soft border border-amber-400/30 rounded-lg px-1 py-1.5 md:px-1.5 bg-white uppercase tracking-wider font-mono focus:outline-none"
+            className="w-14 md:w-auto text-[9px] md:text-[10px] font-bold text-ink-soft border border-amber-400/30 rounded-lg px-1 md:px-1.5 py-1.5 bg-white uppercase tracking-wider font-mono focus:outline-none"
           >
             {SUPPORTED_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
           <button
             onClick={() => setEmergencyOpen(true)}
-            className="px-2.5 py-2 md:px-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs uppercase tracking-wider font-sora animate-pulse shrink-0"
+            className="px-2.5 md:px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs uppercase tracking-wider font-sora animate-pulse shrink-0"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span className="hidden sm:inline">Emergency </span>SOS

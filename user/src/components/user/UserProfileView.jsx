@@ -45,9 +45,15 @@ export default function UserProfileView({
       
       {/* Header Banner — Restored with top notch safety padding */}
       <div className="px-4 pt-6 pb-3 bg-white border-b border-amber-400/20 md:px-6 md:pt-8 md:pb-4">
+        <p className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest mb-0.5 font-mono">
+          PRIVACY CONTROL &amp; INCIDENT HISTORY
+        </p>
         <h2 className="text-xl font-black text-ink font-sora md:text-2xl">
           Citizen <span className="font-serif italic font-normal text-[#b08850] pr-1">Profile</span>
         </h2>
+        <p className="text-ink-soft text-xs font-semibold mt-1 leading-relaxed hidden sm:block">
+          Manage your anonymous sentinel identity, saved law codes, and public report status.
+        </p>
       </div>
 
       <div className="p-5 space-y-6">

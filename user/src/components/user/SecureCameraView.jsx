@@ -234,6 +234,9 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       {/* Header — Restored with top notch safety padding */}
       <div className="px-4 pt-6 pb-3 bg-white border-b border-amber-400/20 flex-none flex items-center justify-between z-20 md:px-6 md:pt-8 md:pb-4">
         <div>
+          <p className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest font-mono">
+            ANONYMOUS EVIDENCE RECORDING
+          </p>
           <h2 className="text-xl font-black text-ink font-sora">
             Secure <span className="font-serif italic font-normal text-[#b08850] pr-1">Capture</span>
           </h2>
