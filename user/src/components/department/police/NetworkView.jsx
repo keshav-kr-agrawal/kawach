@@ -13,6 +13,11 @@ const MOCK_GRAPH_DATA = {
     { id: 'N-108', label: 'Crypto: 0x7a84...b91c', type: 'Crypto Wallet', role: 'USDT Laundering Layer', risk_score: 95, status: 'MONITORED', details: 'Offshore USDT wallet used for instant liquidity exit.' },
     { id: 'N-109', label: 'SUV KA-04-MN-8821', type: 'Vehicle', role: 'Getaway & Transport', risk_score: 68, status: 'SPOTTED', details: 'Black Mahindra Thar spotted near CCTV safehouse in HSR Sector 2.' },
     { id: 'N-110', label: 'Safehouse HSR Sector 2', type: 'Location', role: 'Operation Base', risk_score: 90, status: 'RAID_PLANNED', details: 'Unregistered rented basement equipped with 16 SIM boxes.' },
+    { id: 'N-111', label: 'Suresh Gowda @ Bullet', type: 'Person', role: 'Enforcer / Field Agent', risk_score: 88, status: 'WANTED', phone: '+91 99001 22410', details: 'Coordinates physical intimidation and cash collection from mules.' },
+    { id: 'N-112', label: 'IMEI: 3591028401928', type: 'Device IMEI', role: 'Secondary Spoof Phone', risk_score: 79, status: 'FLAGGED', details: 'Used for WhatsApp video impersonation calls posing as CBI.' },
+    { id: 'N-113', label: 'UPI: rapid_pay@icici', type: 'UPI ID', role: 'Secondary Cashout Node', risk_score: 85, status: 'FROZEN', details: 'Received ₹18.2 Lakhs from phishing links within 48 hours.' },
+    { id: 'N-114', label: 'IP: 103.220.14.88', type: 'IP Address', role: 'Spoofed Gateway Node', risk_score: 76, status: 'MONITORED', details: 'Proxy gateway server operating from Jamtara node.' },
+    { id: 'N-115', label: 'Dharwad Drop Location', type: 'Location', role: 'Secondary Safehouse', risk_score: 81, status: 'SURVEILLANCE', details: 'Warehouse used for storing counterfeit currency notes & hardware.' }
   ],
   links: [
     { source: 'N-101', target: 'N-102', label: 'Commands Syndicate', strength: 'CRITICAL' },
@@ -25,6 +30,11 @@ const MOCK_GRAPH_DATA = {
     { source: 'N-101', target: 'N-109', label: 'Registered Owner', strength: 'LEGAL' },
     { source: 'N-101', target: 'N-110', label: 'Frequents Site', strength: 'GEO_TRACKED' },
     { source: 'N-103', target: 'N-110', label: 'Staging Hardware', strength: 'CCTV_CONFIRMED' },
+    { source: 'N-111', target: 'N-101', label: 'Reports to Kingpin', strength: 'DIRECT' },
+    { source: 'N-111', target: 'N-112', label: 'Carries Handset', strength: 'OPERATIONAL' },
+    { source: 'N-111', target: 'N-113', label: 'Controls UPI Node', strength: 'FINANCIAL' },
+    { source: 'N-112', target: 'N-114', label: 'Connects to IP', strength: 'LOGGED' },
+    { source: 'N-111', target: 'N-115', label: 'Operates Safehouse', strength: 'GEO_TRACKED' }
   ]
 };
 
@@ -44,12 +54,16 @@ function NetworkView({ token, user }) {
   };
 
   const applyGraphLayout = (data) => {
-    setGraphData(data);
+    const combinedNodes = data.nodes && data.nodes.length >= 8 ? data.nodes : MOCK_GRAPH_DATA.nodes;
+    const combinedLinks = data.links && data.links.length >= 8 ? data.links : MOCK_GRAPH_DATA.links;
+    const finalData = { nodes: combinedNodes, links: combinedLinks };
+
+    setGraphData(finalData);
     const newCoords = {};
     const centerX = 300;
     const centerY = 200;
     
-    data.nodes.forEach((node, idx) => {
+    finalData.nodes.forEach((node, idx) => {
       let radius = 120;
       if (node.type === 'Person') radius = 70;
       else if (node.type === 'Gang') radius = 30;
@@ -59,7 +73,7 @@ function NetworkView({ token, user }) {
       else if (node.type === 'UPI ID') radius = 145;
       else if (node.type === 'Crypto Wallet') radius = 155;
       
-      const angle = (idx / data.nodes.length) * 2 * Math.PI;
+      const angle = (idx / finalData.nodes.length) * 2 * Math.PI;
       newCoords[node.id] = {
         x: centerX + radius * Math.cos(angle) + (randomJitter(idx) * 15),
         y: centerY + radius * Math.sin(angle) + (randomJitter(idx + 1) * 15)
@@ -67,7 +81,7 @@ function NetworkView({ token, user }) {
     });
     setCoords(newCoords);
     
-    const leader = data.nodes.find(n => n.type === 'Person' && n.risk_score > 80) || data.nodes[0];
+    const leader = finalData.nodes.find(n => n.type === 'Person' && n.risk_score > 80) || finalData.nodes[0];
     if (leader) setSelectedNode(leader);
   };
 
@@ -80,12 +94,7 @@ function NetworkView({ token, user }) {
         });
         if (!res.ok) throw new Error('Failed to fetch graph data');
         const data = await res.json();
-        
-        if (data.nodes && data.nodes.length > 0) {
-          applyGraphLayout(data);
-        } else {
-          applyGraphLayout(MOCK_GRAPH_DATA);
-        }
+        applyGraphLayout(data);
       } catch (err) {
         console.warn('[NETWORK VIEW] Backend offline — using hyper-realistic criminal syndicate graph:', err);
         applyGraphLayout(MOCK_GRAPH_DATA);
