@@ -17,73 +17,56 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
+html, body {
   margin: 0;
   padding: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
   background-color: #ffffff; /* White base */
   color: #171307;
+  box-sizing: border-box;
+}
+
+*, *:before, *:after {
+  box-sizing: border-box;
 }
 
 #root {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   margin: 0 auto;
   position: relative;
   background-color: #ffffff;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
-/* Scoped Mobile PWA mock frame */
+/* Chrome responsive layout container */
 body.in-app {
   display: flex;
-  justify-content: center;
-  align-items: stretch;
+  flex-direction: column;
   background: #ffffff;
   overflow: hidden;
   box-sizing: border-box;
   height: 100%;
-  height: 100dvh;
   width: 100%;
-  width: 100vw;
-  /* Real device notch/status-bar inset. Safe against double-counting
-     ONLY because box-sizing:border-box above makes this padding consume
-     part of the fixed 100dvh height instead of adding to it, and #root
-     below has no competing fixed height of its own (flex:1 1 auto) — do
-     not reintroduce a fixed height on #root without re-checking this. */
-  padding-top: env(safe-area-inset-top, 0px);
+  margin: 0;
+  padding: 0;
 }
 
 body.in-app #root {
   width: 100%;
   height: 100%;
-  min-height: 0;
-  max-height: 100%;
+  max-width: 100%;
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-@media (max-width: 768px) {
-  body.in-app #root {
-    max-width: 480px; /* Force mobile phone frame on desktop screen width < 768px */
-    margin: 0 auto;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    border-left: 1px solid #ECE6D7;
-    border-right: 1px solid #ECE6D7;
-  }
-}
-
-@media (max-width: 480px) {
-  body.in-app #root {
-    max-width: 100%;
-    border-left: none;
-    border-right: none;
-    box-shadow: none;
-  }
+  margin: 0;
+  box-shadow: none;
+  border: none;
 }
 
 /* Full-height subview container without bottom navigation padding */
