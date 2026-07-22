@@ -34,6 +34,12 @@ export default function LoginView({ onLogin }) {
     setLoading(true);
     setNotice('');
     try {
+      // A real network-down backend already resolves through client.js's
+      // own mock fallback (it returns a working simulated session), so
+      // reaching this catch means the LIVE backend actively rejected the
+      // credentials (wrong password / unseeded account) — that's a real
+      // error the officer needs to see and fix, not something to paper
+      // over with a fake session that will 401 on every later request.
       const data = await api.post('/auth/login-json', {
         username,
         password,
@@ -41,20 +47,13 @@ export default function LoginView({ onLogin }) {
         district_id: null,
       });
       setPending(data);
-    } catch {
-      // Backend offline or bad seed credentials — degrade honestly to a
-      // demo session and say so, rather than blocking the console.
-      setNotice('Live auth service unreachable — issuing a local demo session.');
-      setPending({
-        access_token: 'demo_session_token',
-        username,
-        role: account.role,
-        district_id: null,
-        station_id: null,
-      });
-    } finally {
       setLoading(false);
       setStep('mfa');
+    } catch (err) {
+      setLoading(false);
+      setNotice(err?.status === 401
+        ? 'Incorrect username or password for this account.'
+        : `Login failed: ${err?.message || 'unknown error'}`);
     }
   };
 

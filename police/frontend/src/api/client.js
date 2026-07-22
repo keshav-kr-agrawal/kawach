@@ -18,6 +18,18 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/** A stale/invalid token means every request will 401 forever — clear the
+ * session and force a fresh login instead of leaving the console stuck
+ * behind a permanent error banner. */
+function forceReLogin() {
+  localStorage.removeItem('kawach_token');
+  localStorage.removeItem('kawach_user');
+  if (!location.hash.startsWith('#/login')) {
+    location.hash = '#/login';
+    location.reload();
+  }
+}
+
 async function request(path, { method = 'GET', body } = {}) {
   let res;
   try {
@@ -31,6 +43,21 @@ async function request(path, { method = 'GET', body } = {}) {
     // Backend down / no network — switch to the simulation layer.
     setBackendStatus('offline');
     return mockRequest(path, method, body);
+  }
+
+  // A cold Render free-tier instance (or Cloudflare in front of it) can
+  // answer with a real HTTP gateway error (502/503/504) while it wakes up —
+  // that's not "the app rejected this request", it's "infra isn't ready
+  // yet", so treat it the same as unreachable rather than surfacing a raw
+  // error the user can't act on.
+  if ([502, 503, 504].includes(res.status)) {
+    setBackendStatus('offline');
+    return mockRequest(path, method, body);
+  }
+
+  if (res.status === 401) {
+    forceReLogin();
+    throw new Error('Session expired — signing you out.');
   }
 
   setBackendStatus('live');
