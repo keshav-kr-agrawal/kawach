@@ -267,6 +267,8 @@ export default function AlertsChatView() {
   const [selectedMode, setSelectedMode] = useState(null);
   const [language, setLanguage] = useState(() => localStorage.getItem('nayak_language') || 'English');
   const [translatingId, setTranslatingId] = useState(null);
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [activeMediaService, setActiveMediaService] = useState(null);
 
   const changeLanguage = (lang) => {
     setLanguage(lang);
@@ -294,6 +296,7 @@ export default function AlertsChatView() {
   const messagesEndRef = useRef(null);
 
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
   const emFileInputRef = useRef(null);
 
   const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -821,14 +824,8 @@ export default function AlertsChatView() {
           );
         })}
       </div>
-      {selectedMode && (
-        <p className="px-3 pb-1 text-[10px] font-semibold text-[#b08850] bg-white">
-          {NAYAK_SERVICES.find((s) => s.mode === selectedMode)?.icon} {NAYAK_SERVICES.find((s) => s.mode === selectedMode)?.label} mode active
-          {NAYAK_SERVICES.find((s) => s.mode === selectedMode)?.type === 'upload' ? ' — pick a file, or tap again to cancel.' : ' — type your message below.'}
-        </p>
-      )}
 
-      {/* Input Bar */}
+      {/* Input Toolbar */}
       <form onSubmit={handleSend} className="p-3 bg-white border-t border-amber-400/20 flex items-center gap-2 flex-none">
         <input 
           type="file"
@@ -837,13 +834,24 @@ export default function AlertsChatView() {
           className="hidden"
           accept="image/*,video/*,audio/*"
         />
+        <input 
+          type="file"
+          ref={cameraInputRef}
+          onChange={handleFileAttach}
+          className="hidden"
+          accept="image/*,video/*"
+          capture="environment"
+        />
 
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            setActiveMediaService({ id: 'attachment', label: 'Media Evidence', icon: '📎', accept: 'image/*,video/*,audio/*' });
+            setMediaModalOpen(true);
+          }}
           disabled={busy}
-          className="p-3 bg-amber-50 hover:bg-amber-100 border border-amber-400/30 text-[#b08850] rounded-xl transition-all disabled:opacity-50 shrink-0"
-          title="Attach document or media"
+          className="p-3 bg-amber-50 hover:bg-amber-100 border border-amber-400/30 text-[#b08850] rounded-xl transition-all disabled:opacity-50 shrink-0 cursor-pointer"
+          title="Attach document or media (Camera or File)"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
         </button>
@@ -866,11 +874,85 @@ export default function AlertsChatView() {
         <button
           type="submit"
           disabled={busy || !inputText.trim()}
-          className="p-3 bg-[#E9BA26] hover:bg-amber-400 text-ink font-bold rounded-xl border border-amber-950/10 transition-all disabled:opacity-50"
+          className="p-3 bg-[#E9BA26] hover:bg-amber-400 text-ink font-bold rounded-xl border border-amber-950/10 transition-all disabled:opacity-50 cursor-pointer"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </form>
+
+      {/* Media Choice Modal (Camera Snap vs File Upload) */}
+      {mediaModalOpen && (
+        <div className="fixed inset-0 z-50 bg-amber-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-[#E9BA26] rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-amber-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-amber-100 text-amber-800 rounded-xl font-black text-sm">
+                  {activeMediaService?.icon || '📸'}
+                </span>
+                <div>
+                  <h3 className="font-black text-ink text-sm font-sora uppercase tracking-wider">
+                    {activeMediaService ? `Attach ${activeMediaService.label}` : 'Attach Evidence'}
+                  </h3>
+                  <span className="text-[9px] font-bold text-[#b08850] font-mono">
+                    Nayak Forensic AI Inspection
+                  </span>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setMediaModalOpen(false)}
+                className="w-7 h-7 rounded-lg bg-amber-50 text-ink-soft hover:text-ink font-bold flex items-center justify-center border border-amber-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs font-semibold text-ink-soft leading-relaxed">
+              Choose how you want to capture or attach evidence for forensic analysis:
+            </p>
+
+            <div className="grid grid-cols-1 gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => triggerUpload(true)}
+                className="w-full p-4 bg-amber-400/20 hover:bg-amber-400/35 text-ink border-2 border-[#E9BA26] rounded-2xl flex items-center gap-3 transition-all cursor-pointer group shadow-xs"
+              >
+                <div className="w-10 h-10 rounded-xl bg-[#E9BA26] flex items-center justify-center text-lg text-ink font-black shadow-xs group-hover:scale-105 transition-transform">
+                  📸
+                </div>
+                <div className="text-left">
+                  <h4 className="font-black text-xs font-sora text-ink">Take Photo / Live Camera</h4>
+                  <p className="text-[10px] text-ink-soft font-semibold">Snap live picture directly with camera</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => triggerUpload(false)}
+                className="w-full p-4 bg-slate-50 hover:bg-amber-50 text-ink border border-slate-200 hover:border-amber-300 rounded-2xl flex items-center gap-3 transition-all cursor-pointer group shadow-xs"
+              >
+                <div className="w-10 h-10 rounded-xl bg-slate-200 flex items-center justify-center text-lg text-slate-800 font-black shadow-xs group-hover:scale-105 transition-transform">
+                  📁
+                </div>
+                <div className="text-left">
+                  <h4 className="font-black text-xs font-sora text-ink">Upload File / Gallery</h4>
+                  <p className="text-[10px] text-[#64748B] font-semibold">Choose photo, video or audio file from storage</p>
+                </div>
+              </button>
+            </div>
+
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={() => setMediaModalOpen(false)}
+                className="text-xs font-bold text-slate-400 hover:text-slate-600 font-mono"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Emergency Dispatch Modal */}
       {emergencyOpen && (
