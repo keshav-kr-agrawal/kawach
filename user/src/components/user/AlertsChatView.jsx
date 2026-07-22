@@ -216,6 +216,35 @@ Physical verification (paper texture, raised print) at your local bank branch re
 ${bullets.length > 0 ? bullets.join('\n\n') : '* Media stored and analyzed.'}`;
 }
 
+// Heading styles by level (1-6). Levels 4-6 all share the h4-ish look —
+// this renderer's messages never go deeper than #### in practice, but a
+// generic 1-6 match means a stray extra hash never falls through to
+// plain text and shows up as a literal '#####' on screen.
+const HEADING_STYLE = {
+  1: 'text-sm font-black text-ink font-sora mt-2 mb-1 border-b border-amber-400/20 pb-1',
+  2: 'text-xs font-black text-ink font-sora mt-2 mb-1',
+  3: 'text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1',
+  4: 'text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1',
+  5: 'text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1',
+  6: 'text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1',
+};
+
+/**
+ * Inline formatting: **bold** only (this app never emits italics/links/code
+ * spans in chat text). Any stray, unpaired '**' left over after well-formed
+ * pairs are extracted is stripped rather than shown — a source string with
+ * odd markup should never leak raw asterisks onto the screen.
+ */
+function renderInline(text) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, pIdx) => {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      return <strong key={pIdx} className="font-extrabold text-ink bg-amber-400/25 px-1 py-0.5 rounded text-[11px] font-sora">{part.slice(2, -2)}</strong>;
+    }
+    return part.includes('**') ? part.replace(/\*\*/g, '') : part;
+  });
+}
+
 function MarkdownMessage({ content }) {
   if (!content) return null;
   const str = typeof content === 'string' ? content : (typeof content === 'object' ? JSON.stringify(content) : String(content));
@@ -225,31 +254,19 @@ function MarkdownMessage({ content }) {
       {lines.map((line, idx) => {
         if (!line.trim()) return <div key={idx} className="h-1" />;
 
-        if (line.trim() === '---') {
+        if (line.trim() === '---' || line.trim() === '***') {
           return <hr key={idx} className="my-2 border-amber-400/20" />;
         }
 
-        if (line.startsWith('#### ')) {
-          return <h4 key={idx} className="text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1">{line.slice(5)}</h4>;
-        } else if (line.startsWith('### ')) {
-          return <h3 key={idx} className="text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1">{line.slice(4)}</h3>;
-        } else if (line.startsWith('## ')) {
-          return <h2 key={idx} className="text-xs font-black text-ink font-sora mt-2 mb-1">{line.slice(3)}</h2>;
-        } else if (line.startsWith('# ')) {
-          return <h1 key={idx} className="text-sm font-black text-ink font-sora mt-2 mb-1 border-b border-amber-400/20 pb-1">{line.slice(2)}</h1>;
-        } else if (line.startsWith('> ')) {
-          return <blockquote key={idx} className="border-l-3 border-[#E9BA26] bg-amber-50/80 p-2.5 rounded-r-xl my-1 text-xs italic text-ink">{line.slice(2)}</blockquote>;
+        const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+        if (headingMatch) {
+          const level = headingMatch[1].length;
+          const Tag = `h${Math.min(level, 3)}`;
+          return <Tag key={idx} className={HEADING_STYLE[level]}>{renderInline(headingMatch[2])}</Tag>;
         }
-
-        const renderInline = (text) => {
-          const parts = text.split(/(\*\*.*?\*\*)/g);
-          return parts.map((part, pIdx) => {
-            if (part.startsWith('**') && part.endsWith('**')) {
-              return <strong key={pIdx} className="font-extrabold text-ink bg-amber-400/25 px-1 py-0.5 rounded text-[11px] font-sora">{part.slice(2, -2)}</strong>;
-            }
-            return part;
-          });
-        };
+        if (line.startsWith('> ')) {
+          return <blockquote key={idx} className="border-l-3 border-[#E9BA26] bg-amber-50/80 p-2.5 rounded-r-xl my-1 text-xs italic text-ink">{renderInline(line.slice(2))}</blockquote>;
+        }
 
         // A real bullet marker is a single •/-/* followed by whitespace —
         // NOT a double-asterisk bold line (**Label:** ...), which used to
@@ -264,8 +281,6 @@ function MarkdownMessage({ content }) {
           );
         }
 
-        const renderedParts = renderInline(line);
-
         const orderedMatch = line.trim().match(/^(\d+)\.\s+(.*)$/);
         if (orderedMatch) {
           return (
@@ -276,7 +291,7 @@ function MarkdownMessage({ content }) {
           );
         }
 
-        return <p key={idx} className="font-semibold text-ink leading-relaxed">{renderedParts}</p>;
+        return <p key={idx} className="font-semibold text-ink leading-relaxed">{renderInline(line)}</p>;
       })}
     </div>
   );
