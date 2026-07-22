@@ -72,7 +72,17 @@ export function buildSimReports() {
     // Education
     r('EDUCATION', 'School compound wall leaning', 'Wall bulging towards the play area after rains, GHPS Yeshwanthpur.', { priority: 'HIGH', hoursAgo: 37 }),
     r('EDUCATION', 'Mid-day meal quality complaint', 'Parents report spoiled food twice this week at a Hoskote school.', { hoursAgo: 61 }),
-    // Police
+    // Police (Floor forces high-priority critical response)
+    r('POLICE', 'Jamtara-Bengaluru Mule Bank Account Syndicate', 'Coordinated mule network operating 14 dormant bank accounts across SBI & HDFC branches.', { priority: 'CRITICAL', hoursAgo: 1, urgency: 96, escalated: true, verdict: 'MULE_NETWORK_SPIKE', trust: 94 }),
+    r('POLICE', 'WhatsApp CBI Video Call Impersonation', 'Fake police badge display & digital arrest extortion attempt targeting senior citizen in Koramangala.', { priority: 'CRITICAL', hoursAgo: 1.5, urgency: 95, escalated: true, verdict: 'DIGITAL_ARREST', trust: 92 }),
+    r('POLICE', 'Counterfeit ₹500 Notes Intercepted at APMC Market', 'UV light scan confirmed 12 fake currency notes lacking fluorescent security threads.', { priority: 'HIGH', hoursAgo: 4, urgency: 88, verdict: 'FICN_COUNTERFEIT', trust: 89 }),
+    r('POLICE', 'Commercial Jewellery Store Night Break-in', 'Burglary ring bypassed electronic shutter sensors at Jayanagar 4th Block.', { priority: 'HIGH', hoursAgo: 8, urgency: 84 }),
+    r('POLICE', 'SIM-Swap & OTP Interception Attack', 'Targeted SIM swap incident resulting in unauthorized ₹4.2 Lakh withdrawal.', { priority: 'HIGH', hoursAgo: 11, urgency: 86 }),
+    r('POLICE', 'VNC Botnet Relay Server Location Flagged', 'Unregistered cloud server IP 192.168.45.102 relaying extortion calls.', { priority: 'HIGH', hoursAgo: 16, urgency: 82 }),
+    r('POLICE', 'Synthetic MDMA Distribution Network', 'Telegram-based drug trafficking network operating near HSR Sector 1.', { priority: 'CRITICAL', hoursAgo: 20, urgency: 91, escalated: true }),
+    r('POLICE', 'Stolen Vehicle Tracking: Mahindra Thar KA-04-MN-8821', 'ANPR camera flagged suspect getaway vehicle at Electronic City Toll Gate.', { priority: 'HIGH', hoursAgo: 28, urgency: 78 }),
+    r('POLICE', 'Extortion Call Ring Operating out of Rented Safehouse', 'Basement equipped with 16 active SIM boxes detected via RF spectrum analysis.', { priority: 'CRITICAL', hoursAgo: 32, urgency: 93, escalated: true }),
+    r('POLICE', 'Fake Crypto Investment Portal (0x7a84...b91c)', 'Phishing portal promising 200% returns linked to offshore USDT exit wallet.', { priority: 'HIGH', hoursAgo: 40, urgency: 85 }),
     r('POLICE', 'Chain snatching near metro exit', 'Two incidents this week at Majestic exit 3, evening hours; CCTV available.', { priority: 'HIGH', hoursAgo: 14, urgency: 79 }),
     r('POLICE', 'Digital arrest call targeting senior citizen', 'Caller posing as CBI kept victim on video for 2 hours demanding transfer; number shared.', { priority: 'CRITICAL', hoursAgo: 2.5, urgency: 94, escalated: true, verdict: 'SCAM_PATTERN', trust: 91 }),
     r('POLICE', 'Counterfeit ₹500 notes at vegetable market', 'Vendor received two suspect notes; security thread looks printed.', { priority: 'HIGH', hoursAgo: 24, verdict: 'SUSPECT_FEATURES', trust: 84 }),
