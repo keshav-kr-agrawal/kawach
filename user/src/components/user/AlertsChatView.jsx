@@ -209,13 +209,19 @@ function MarkdownMessage({ content }) {
     <div className="space-y-1.5 leading-relaxed select-text font-sans text-xs text-ink">
       {lines.map((line, idx) => {
         if (!line.trim()) return <div key={idx} className="h-1" />;
-        
-        if (line.startsWith('# ')) {
-          return <h1 key={idx} className="text-sm font-black text-ink font-sora mt-2 mb-1 border-b border-amber-400/20 pb-1">{line.slice(2)}</h1>;
-        } else if (line.startsWith('## ')) {
-          return <h2 key={idx} className="text-xs font-black text-ink font-sora mt-2 mb-1">{line.slice(3)}</h2>;
+
+        if (line.trim() === '---') {
+          return <hr key={idx} className="my-2 border-amber-400/20" />;
+        }
+
+        if (line.startsWith('#### ')) {
+          return <h4 key={idx} className="text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1">{line.slice(5)}</h4>;
         } else if (line.startsWith('### ')) {
           return <h3 key={idx} className="text-xs font-bold text-[#b08850] uppercase tracking-wider font-mono mt-2 mb-1">{line.slice(4)}</h3>;
+        } else if (line.startsWith('## ')) {
+          return <h2 key={idx} className="text-xs font-black text-ink font-sora mt-2 mb-1">{line.slice(3)}</h2>;
+        } else if (line.startsWith('# ')) {
+          return <h1 key={idx} className="text-sm font-black text-ink font-sora mt-2 mb-1 border-b border-amber-400/20 pb-1">{line.slice(2)}</h1>;
         } else if (line.startsWith('> ')) {
           return <blockquote key={idx} className="border-l-3 border-[#E9BA26] bg-amber-50/80 p-2.5 rounded-r-xl my-1 text-xs italic text-ink">{line.slice(2)}</blockquote>;
         }
@@ -233,6 +239,16 @@ function MarkdownMessage({ content }) {
             <div key={idx} className="flex gap-2 items-start my-0.5 pl-1">
               <span className="text-[#b08850] font-bold text-xs">•</span>
               <span className="flex-1 font-semibold">{renderedParts}</span>
+            </div>
+          );
+        }
+
+        const orderedMatch = line.trim().match(/^(\d+)\.\s+(.*)$/);
+        if (orderedMatch) {
+          return (
+            <div key={idx} className="flex gap-2 items-start my-0.5 pl-1">
+              <span className="text-[#b08850] font-bold text-xs shrink-0">{orderedMatch[1]}.</span>
+              <span className="flex-1 font-semibold">{orderedMatch[2]}</span>
             </div>
           );
         }
