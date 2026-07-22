@@ -58,6 +58,17 @@ export default function BottomNav() {
           <polygon points="12 2 19 21 12 17 5 21 12 2"/>
         </svg>
       )
+    },
+    { 
+      id: 'profile', 
+      label: 'Profile', 
+      path: '/user/profile',
+      renderIcon: (isActive) => (
+        <svg viewBox="0 0 24 24" fill={isActive ? '#09090b' : 'none'} stroke={isActive ? '#09090b' : 'rgba(9, 9, 11, 0.65)'} strokeWidth={isActive ? '2.5' : '2'} className="w-4 h-4 transition-all">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      )
     }
   ];
 
@@ -69,11 +80,13 @@ export default function BottomNav() {
     if (path.startsWith('/user/camera')) return 'camera';
     if (path.startsWith('/user/chat') || path.startsWith('/user/nayak') || path.startsWith('/nayak')) return 'chat';
     if (path.startsWith('/user/feed')) return 'feed';
+    if (path.startsWith('/user/profile')) return 'profile';
     return '';
   };
 
   const activeTab = getActiveTabId();
   const activeIndex = tabs.findIndex(t => t.id === activeTab);
+  const tabWidthPct = 100 / tabs.length;
 
   return (
     <div className="flex-none w-full relative z-40 select-none" style={{
@@ -103,7 +116,7 @@ export default function BottomNav() {
               borderRadius: '50%',
               backgroundColor: '#ffffff', // White sliding indicator circle
               top: '4px',
-              left: `calc(${activeIndex * 20}% + (20% - 32px) / 2)`,
+              left: `calc(${activeIndex * tabWidthPct}% + (${tabWidthPct}% - 32px) / 2)`,
               transition: 'left 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
               zIndex: 1,
               boxShadow: '0 3px 10px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06)',

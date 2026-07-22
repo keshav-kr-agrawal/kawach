@@ -1046,7 +1046,7 @@ export default function App() {
         path="/"
         element={
           citizenToken ? (
-            <Navigate to="/user/map" replace />
+            <Navigate to="/user/nayak" replace />
           ) : (
             <CitizenAppWrapper>
               <CitizenLoginView
@@ -1057,7 +1057,7 @@ export default function App() {
                     sessionStorage.removeItem('redirect_path');
                     navigate(savedRedirect);
                   } else {
-                    navigate('/user/map');
+                    navigate('/user/nayak');
                   }
                 }}
                 onBackToHome={() => navigate('/portals')}
@@ -1075,7 +1075,7 @@ export default function App() {
         path="/portals"
         element={
           <LandingPageView
-            onEnterCitizen={() => navigate(citizenToken ? '/user/map' : '/')}
+            onEnterCitizen={() => navigate(citizenToken ? '/user/nayak' : '/')}
             onOfficialLogin={(token, user) => {
               setOfficialToken(token);
               setOfficialUser(user);
@@ -1095,7 +1095,7 @@ export default function App() {
           </RequireCitizenAuth>
         }
       >
-        <Route index element={<Navigate to="/user/map" replace />} />
+        <Route index element={<Navigate to="/user/nayak" replace />} />
         <Route
           path="map"
           element={

@@ -14,6 +14,14 @@ const DEFAULT_COORDS = { lat: 12.9716, lng: 77.5946 }; // Bengaluru fallback
 // guessing.
 const NAYAK_SERVICES = [
   {
+    id: 'sos-alert',
+    mode: 'sos_alert',
+    label: 'Send Alert',
+    icon: '🚨',
+    badge: 'Immediate Dispatch',
+    type: 'alert',
+  },
+  {
     id: 'currency',
     mode: 'currency',
     label: 'Currency',
@@ -567,6 +575,10 @@ export default function AlertsChatView() {
   };
 
   const handleServiceClick = (service) => {
+    if (service.type === 'alert') {
+      setEmergencyOpen(true);
+      return;
+    }
     const nowSelected = selectedMode === service.mode ? null : service.mode;
     setSelectedMode(nowSelected);
     if (nowSelected && service.type === 'upload' && fileInputRef.current) {
