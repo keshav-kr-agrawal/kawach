@@ -298,6 +298,13 @@ export default function AlertsChatView() {
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const emFileInputRef = useRef(null);
+  const chatVideoRef = useRef(null);
+  const chatStreamRef = useRef(null);
+
+  const [currencyModalOpen, setCurrencyModalOpen] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
+  const [captureMode, setCaptureMode] = useState('visible'); // 'visible' | 'uv'
 
   const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const pushBot = (text, extra = {}) =>
@@ -345,7 +352,85 @@ export default function AlertsChatView() {
     }
   };
 
-  const processFile = async (file) => {
+  const startChatCamera = async () => {
+    try {
+      setCameraError(null);
+      let mediaStream = null;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+      } catch (err1) {
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+        } catch (err2) {
+          throw err2;
+        }
+      }
+      chatStreamRef.current = mediaStream;
+      setCameraActive(true);
+    } catch (err) {
+      console.error('[CHAT CAMERA ACCESS FAILED]', err);
+      setCameraError('Camera access blocked or unavailable. Please enable permissions.');
+      setCameraActive(false);
+    }
+  };
+
+  const stopChatCamera = () => {
+    if (chatStreamRef.current) {
+      chatStreamRef.current.getTracks().forEach(track => track.stop());
+      chatStreamRef.current = null;
+    }
+    setCameraActive(false);
+  };
+
+  useEffect(() => {
+    if (currencyModalOpen) {
+      startChatCamera();
+    } else {
+      stopChatCamera();
+    }
+    return () => {
+      stopChatCamera();
+    };
+  }, [currencyModalOpen]);
+
+  useEffect(() => {
+    if (cameraActive && chatVideoRef.current && chatStreamRef.current) {
+      chatVideoRef.current.srcObject = chatStreamRef.current;
+      chatVideoRef.current.play().catch(err => console.log('Chat camera play error:', err));
+    }
+  }, [cameraActive, currencyModalOpen]);
+
+  const handleCapturePhoto = () => {
+    if (!chatVideoRef.current || !cameraActive) return;
+    
+    const video = chatVideoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const ext = 'jpg';
+          const fileName = `currency_${Date.now()}_${captureMode}.${ext}`;
+          const fileObj = new File([blob], fileName, { type: 'image/jpeg' });
+          
+          setCurrencyModalOpen(false);
+          processFile(fileObj, captureMode);
+        }
+      }, 'image/jpeg', 0.95);
+    }
+  };
+
+  const processFile = async (file, currentCapMode = 'visible') => {
     if (!file || busy) return;
 
     setBusy(true);
@@ -353,10 +438,17 @@ export default function AlertsChatView() {
     const isImg = file.type.startsWith('image/');
     const isVid = file.type.startsWith('video/');
     const isAud = file.type.startsWith('audio/') || /\.mp3$/i.test(file.name);
+    
+    const textLabel = isAud 
+      ? `🎙️ Attached audio: ${file.name}` 
+      : isImg && selectedMode === 'currency' 
+        ? `Attached currency note: ${file.name} [Scan Mode: ${currentCapMode.toUpperCase()}]` 
+        : `Attached media: ${file.name}`;
+
     const userMsg = {
       id: 'user-' + Date.now(),
       sender: 'user',
-      text: isAud ? `🎙️ Attached audio: ${file.name}` : `Attached media: ${file.name}`,
+      text: textLabel,
       mediaUrl: isAud ? null : previewUrl,
       isImage: isImg,
       isVideo: isVid,
@@ -385,7 +477,12 @@ export default function AlertsChatView() {
         return;
       }
 
-      const mediaRes = await uploadMedia({ mediaUrl: realUrl, mediaType, sessionId: activeSess });
+      const mediaRes = await uploadMedia({ 
+        mediaUrl: realUrl, 
+        mediaType, 
+        sessionId: activeSess, 
+        captureMode: isImg && selectedMode === 'currency' ? currentCapMode : undefined 
+      });
       const v = mediaRes.verdict || {};
 
       const formattedVerdict = formatForensicVerdict(v);
@@ -403,7 +500,7 @@ export default function AlertsChatView() {
 
   const handleFileAttach = (e) => {
     const file = e.target.files?.[0];
-    if (file) processFile(file);
+    if (file) processFile(file, captureMode);
   };
 
   const handleDragOver = (e) => {
@@ -426,7 +523,7 @@ export default function AlertsChatView() {
     setIsDraggingFile(false);
     const files = e.dataTransfer?.files;
     if (files && files.length > 0) {
-      processFile(files[0]);
+      processFile(files[0], captureMode);
     }
   };
 
@@ -440,7 +537,7 @@ export default function AlertsChatView() {
         const blob = item.getAsFile();
         if (blob) {
           e.preventDefault();
-          processFile(blob);
+          processFile(blob, captureMode);
           return;
         }
       }
@@ -584,9 +681,13 @@ export default function AlertsChatView() {
     }
     const nowSelected = selectedMode === service.mode ? null : service.mode;
     setSelectedMode(nowSelected);
-    if (nowSelected && service.type === 'upload' && fileInputRef.current) {
-      fileInputRef.current.accept = service.accept || 'image/*,video/*';
-      fileInputRef.current.click();
+    if (nowSelected) {
+      if (service.mode === 'currency') {
+        setCurrencyModalOpen(true);
+      } else if (service.type === 'upload' && fileInputRef.current) {
+        fileInputRef.current.accept = service.accept || 'image/*,video/*';
+        fileInputRef.current.click();
+      }
     }
   };
 
@@ -1011,6 +1112,144 @@ export default function AlertsChatView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Currency Note Scan / Upload Modal */}
+      {currencyModalOpen && (
+        <div className="fixed inset-0 z-50 bg-amber-950/70 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-amber-400 rounded-3xl p-6 w-full max-w-md space-y-4 shadow-2xl relative overflow-hidden">
+            {/* Top decorative accent bar */}
+            <div className="absolute top-0 left-0 right-0 h-2 bg-[#E9BA26]" />
+            
+            <div className="flex items-center justify-between border-b border-amber-100 pb-3 pt-1">
+              <h3 className="font-black text-ink text-base font-sora flex items-center gap-2">
+                💵 Currency Note Verification
+              </h3>
+              <button 
+                onClick={() => { setCurrencyModalOpen(false); setSelectedMode(null); }} 
+                className="text-ink-faint hover:text-ink-soft font-bold text-base p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Light Mode Selector */}
+            <div className="flex items-center justify-between bg-slate-50 border border-amber-400/20 p-2.5 rounded-xl">
+              <span className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">
+                Capture Mode
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCaptureMode('visible')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-colors ${
+                    captureMode === 'visible' 
+                      ? 'bg-[#E9BA26] text-ink border-[#c99a1a]' 
+                      : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  🔆 Visible Light
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCaptureMode('uv')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-colors ${
+                    captureMode === 'uv' 
+                      ? 'bg-[#E9BA26] text-ink border-[#c99a1a]' 
+                      : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  🧬 UV Light
+                </button>
+              </div>
+            </div>
+
+            {/* Camera View Area */}
+            {cameraActive ? (
+              <div className="space-y-4">
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-black border-2 border-amber-400/40 shadow-inner flex items-center justify-center">
+                  <video
+                    ref={chatVideoRef}
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Overlay scanning box */}
+                  <div className="absolute inset-0 border-[3px] border-dashed border-amber-400/60 m-8 rounded-xl pointer-events-none flex items-center justify-center">
+                    <span className="text-[9px] font-black text-amber-200 uppercase tracking-widest bg-black/60 px-2 py-0.5 rounded backdrop-blur-xs">
+                      Align Note Within Box
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCapturePhoto}
+                    className="flex-1 py-3 bg-[#E9BA26] hover:bg-amber-400 text-ink font-black rounded-xl text-xs uppercase tracking-wider font-sora shadow-md flex items-center justify-center gap-2 border border-amber-950/10"
+                  >
+                    📸 Capture &amp; Scan Note
+                  </button>
+                  <button
+                    type="button"
+                    onClick={stopChatCamera}
+                    className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-ink-soft font-bold rounded-xl text-xs"
+                  >
+                    Back
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {cameraError ? (
+                  <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-[11px] font-semibold text-rose-700 leading-relaxed">
+                    ⚠ {cameraError}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-ink-soft leading-relaxed font-semibold">
+                    Inspect your currency note using our live AI model (CNN + OCR + RBI rulebook verification). Take a live photo or upload an existing note crop.
+                  </p>
+                )}
+
+                <div className="grid grid-cols-1 gap-3">
+                  <button
+                    type="button"
+                    onClick={startChatCamera}
+                    className="w-full py-4.5 bg-slate-50 hover:bg-amber-50 border-2 border-dashed border-amber-400/30 hover:border-amber-400 text-ink font-bold rounded-2xl text-xs flex flex-col items-center justify-center gap-2 transition-all shadow-xs"
+                  >
+                    <span className="text-2xl">📸</span>
+                    <span className="font-sora font-black uppercase tracking-wider text-[10px]">Open Live Camera Scanner</span>
+                    <span className="text-[9px] text-ink-faint font-mono">Uses environment/back-facing lens</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (fileInputRef.current) {
+                        fileInputRef.current.accept = 'image/*';
+                        fileInputRef.current.click();
+                      }
+                      setCurrencyModalOpen(false);
+                    }}
+                    className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-ink-soft font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all"
+                  >
+                    <span>📁</span> Upload Note from Library
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => { setCurrencyModalOpen(false); setSelectedMode(null); }}
+                className="px-4 py-2 bg-slate-50 text-ink-soft hover:bg-slate-100 font-bold rounded-xl text-xs"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

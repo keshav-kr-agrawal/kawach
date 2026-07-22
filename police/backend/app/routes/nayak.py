@@ -79,6 +79,7 @@ class MediaUploadRequest(BaseModel):
     media_url: str
     media_type: str  # 'image', 'video', 'audio', 'link', 'text'
     session_id: Optional[str] = None
+    capture_mode: Optional[str] = "visible"
 
 # Helper dependency to resolve user ID
 def get_nayak_user_id(x_user_id: Optional[str] = Header(None)) -> str:
@@ -856,7 +857,7 @@ def handle_nayak_chat(
 CLASSIFIER_URL = os.environ.get("CLASSIFIER_URL", "http://localhost:8001")
 
 
-def _classify_media_for_real(media_url: str, media_type: str) -> dict:
+def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str = "visible") -> dict:
     """
     Fetch the media and run it through the real Classifier microservice:
     video -> /classify (deepfake forensics), image -> /classify-currency
@@ -892,7 +893,7 @@ def _classify_media_for_real(media_url: str, media_type: str) -> dict:
 
         if media_type == "image":
             r = requests.post(
-                f"{CLASSIFIER_URL}/classify-currency",
+                f"{CLASSIFIER_URL}/classify-currency?capture_mode={capture_mode}",
                 files={"file": ("nayak_note.jpg", blob, "image/jpeg")},
                 timeout=60,
             )
@@ -1001,7 +1002,7 @@ def handle_nayak_upload(
     upload_id = str(uuid.uuid4())
 
     if req.media_type in ("video", "image", "audio"):
-        verdict = _classify_media_for_real(req.media_url, req.media_type)
+        verdict = _classify_media_for_real(req.media_url, req.media_type, req.capture_mode or "visible")
     else:
         verdict = {"is_authenticated": None, "score": None,
                    "details": "Stored. Text/link/audio content is analyzed in-chat, not at upload.",
