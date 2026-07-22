@@ -555,3 +555,140 @@ img, video, svg { max-width: 100%; display: block; }
   .reveal { opacity: 1; transform: none; }
   html { scroll-behavior: auto; }
 }
+
+/* ============================================================
+   RESPONSIVE OVERRIDES (Chrome Mobile, Tablet, Desktop)
+   ============================================================ */
+@media (max-width: 768px) {
+  :root {
+    --page-pad: 1rem;
+    --text-hero: clamp(2rem, 7.5vw, 3.8rem);
+    --text-h1: clamp(1.5rem, 4vw, 2.4rem);
+    --text-h2: clamp(1.2rem, 2.5vw, 1.7rem);
+  }
+
+  .topbar {
+    padding: 0.75rem var(--page-pad);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .brand {
+    gap: 0.5rem;
+  }
+  .brand-name {
+    font-size: 1rem;
+  }
+
+  .hero {
+    min-height: auto;
+    padding: var(--s-12) var(--page-pad) var(--s-8);
+  }
+
+  .hero-ticker {
+    gap: var(--s-4);
+    margin-top: var(--s-6);
+  }
+
+  .tick .tick-num {
+    font-size: 1.4rem;
+  }
+
+  .doctrine {
+    padding: var(--s-12) var(--page-pad);
+    gap: var(--s-8);
+  }
+
+  .desk-head {
+    padding: var(--s-6) 0 var(--s-4);
+    gap: var(--s-4);
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .desk-head-id {
+    gap: var(--s-4);
+  }
+
+  .desk-head-glyph {
+    width: 48px;
+    height: 48px;
+    padding: 8px;
+  }
+
+  .stat-band {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-tile {
+    padding: var(--s-3) var(--s-4);
+  }
+
+  .stat-tile .stat-num {
+    font-size: 1.5rem;
+  }
+
+  .queue-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-3);
+  }
+
+  .tabs {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    display: flex;
+    padding-bottom: 2px;
+  }
+
+  .tab {
+    flex: 0 0 auto;
+    padding: var(--s-2) var(--s-3);
+  }
+
+  .ledger-row {
+    grid-template-columns: 1fr;
+    gap: var(--s-3);
+    padding: var(--s-4) var(--s-2);
+  }
+
+  .ledger-title {
+    font-size: 1.05rem;
+  }
+
+  .ledger-desc {
+    font-size: 0.88rem;
+  }
+
+  .ledger-side {
+    align-items: flex-start;
+    flex-direction: column;
+    width: 100%;
+    gap: var(--s-2);
+  }
+
+  .evidence-box {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .btn-resolve {
+    width: 100%;
+    text-align: center;
+  }
+
+  .pressure-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sla-section, .desk-section, .closing {
+    padding: var(--s-12) var(--page-pad);
+  }
+
+  .footer-line {
+    padding: var(--s-4) var(--page-pad);
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+}
