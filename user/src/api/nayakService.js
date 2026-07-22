@@ -26,13 +26,29 @@ function headers() {
   };
 }
 
-export async function sendChat({ sessionId, message, lat, lng }) {
+export const SUPPORTED_LANGUAGES = [
+  'English', 'Hindi', 'Kannada', 'Tamil', 'Telugu', 'Malayalam',
+  'Marathi', 'Bengali', 'Gujarati', 'Punjabi', 'Urdu', 'Odia',
+];
+
+export async function sendChat({ sessionId, message, lat, lng, lang }) {
   const res = await fetch(`${API_BASE}/api/nayak/chat`, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({ session_id: sessionId, message, lat, lng }),
+    body: JSON.stringify({ session_id: sessionId, message, lat, lng, lang }),
   });
   if (!res.ok) throw new Error(`chat HTTP ${res.status}`);
+  return res.json();
+}
+
+/** Translates client-formatted content (verdict cards, NCRB packs) that never passes through the chat LLM call. */
+export async function translateText(text, targetLanguage) {
+  const res = await fetch(`${API_BASE}/api/nayak/translate`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ text, target_language: targetLanguage }),
+  });
+  if (!res.ok) throw new Error(`translate HTTP ${res.status}`);
   return res.json();
 }
 
@@ -62,5 +78,27 @@ export async function linkReport(uploadId, reportId) {
     body: JSON.stringify({ report_id: reportId }),
   });
   if (!res.ok) throw new Error(`link-report HTTP ${res.status}`);
+  return res.json();
+}
+
+/**
+ * Builds a structured National Cyber Crime Portal (cybercrime.gov.in / 1930)
+ * complaint-prep pack — fields + ready-to-paste narrative + the real portal
+ * URL. KAWACH never auto-submits to NCRB; this only prepares the pack.
+ */
+export async function prepareNcrbReport({ narrative, suspectPhone, suspectUpi, suspectBankAccount, suspectBankName, evidenceMediaUrl }) {
+  const res = await fetch(`${API_BASE}/api/nayak/ncrb-report`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({
+      narrative,
+      suspect_phone: suspectPhone || null,
+      suspect_upi: suspectUpi || null,
+      suspect_bank_account: suspectBankAccount || null,
+      suspect_bank_name: suspectBankName || null,
+      evidence_media_url: evidenceMediaUrl || null,
+    }),
+  });
+  if (!res.ok) throw new Error(`ncrb-report HTTP ${res.status}`);
   return res.json();
 }

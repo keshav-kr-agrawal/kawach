@@ -52,6 +52,35 @@ export const api = {
   post: (path, body) => request(path, { method: 'POST', body }),
 };
 
+/**
+ * Multipart file upload — used by real-signal endpoints (deepfake frame,
+ * voice-clip acoustic heuristic) that need actual bytes, not a JSON number.
+ * Bypasses the mock-fallback layer on purpose: these calls exist specifically
+ * to prove a real model ran, so a network failure should surface as an
+ * honest error rather than a simulated verdict.
+ */
+export async function postFile(path, file) {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}/api${path}`, {
+    method: 'POST',
+    headers: { ...authHeaders() },
+    body: form,
+    signal: AbortSignal.timeout(60000),
+  });
+  if (!res.ok) {
+    let detail = `${res.status} ${res.statusText}`;
+    try {
+      const data = await res.json();
+      if (data?.detail) detail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+    } catch { /* non-JSON error body */ }
+    const err = new Error(detail);
+    err.status = res.status;
+    throw err;
+  }
+  return res.json();
+}
+
 export function downloadUrl(reportId) {
   return `${API_BASE}/api/reports/download/${reportId}`;
 }

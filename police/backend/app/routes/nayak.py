@@ -50,6 +50,16 @@ class ChatRequest(BaseModel):
     message: str
     lat: Optional[float] = None
     lng: Optional[float] = None
+    lang: Optional[str] = None  # e.g. "Hindi", "Kannada" — reply language for this turn
+
+
+# 12 regional languages (ET PS: "advisory in 12 regional languages"). Passed
+# straight through as an instruction to Gemini — no separate translation
+# model/pipeline exists, this is a same-call language directive.
+SUPPORTED_LANGUAGES = [
+    "English", "Hindi", "Kannada", "Tamil", "Telugu", "Malayalam",
+    "Marathi", "Bengali", "Gujarati", "Punjabi", "Urdu", "Odia",
+]
 
 class MediaUploadRequest(BaseModel):
     media_url: str
@@ -591,6 +601,9 @@ def handle_nayak_chat(
         "incidents in your reply when they exist — community corroboration matters.\n"
         + (f"\n{uploads_context}\n" if uploads_context else "")
         + (f"\nCitizen's current location: lat={req.lat}, lng={req.lng}\n" if req.lat is not None else "")
+        + (f"\n6. Respond ONLY in {req.lang} (script and language), including any legal citations' plain-language "
+           f"explanation — keep Act/Section names in their original form.\n"
+           if req.lang and req.lang != "English" and req.lang in SUPPORTED_LANGUAGES else "")
     )
     
     # Construct Gemini contents list from chat history
@@ -902,6 +915,130 @@ def link_upload_to_report(
     ))
     db.commit()
     return {"ok": True, "upload_id": upload_id, "linked_report_id": req.report_id}
+
+
+_NCRB_CATEGORY_MAP = [
+    (["digital arrest", "cbi", "customs", "enforcement directorate", " ed ", "impersonat", "arrest warrant"],
+     "Cyber Crime — Impersonation of Government Official / Digital Arrest"),
+    (["counterfeit", "fake note", "fake currency"], "Financial Fraud — Counterfeit Currency"),
+    (["upi", "otp", "bank account", "phishing", "loan app", "investment"], "Financial Fraud — Online Financial Fraud"),
+    (["deepfake", "morphed", "obscene", "explicit"], "Cyber Crime Against Women/Children — Obscene/Morphed Content"),
+    (["hack", "malware", "ransomware", "unauthorized access"], "Cyber Crime — Hacking/Unauthorized Access"),
+]
+
+
+def _ncrb_category_for(text: str) -> str:
+    t = (text or "").lower()
+    for keywords, category in _NCRB_CATEGORY_MAP:
+        if any(k in t for k in keywords):
+            return category
+    return "Cyber Crime — Other"
+
+
+class NcrbReportRequest(BaseModel):
+    narrative: str
+    suspect_phone: Optional[str] = None
+    suspect_upi: Optional[str] = None
+    suspect_bank_account: Optional[str] = None
+    suspect_bank_name: Optional[str] = None
+    evidence_media_url: Optional[str] = None
+    incident_date: Optional[str] = None
+
+
+@router.post("/ncrb-report")
+def prepare_ncrb_report(
+    req: NcrbReportRequest,
+    user_id: str = Depends(get_nayak_user_id),
+):
+    """
+    Guided-reporting pack for the National Cyber Crime Reporting Portal
+    (cybercrime.gov.in / 1930 helpline) — the ET PS's 'guided reporting to
+    NCRB portals' bullet. NCRB has no public submission API, so KAWACH does
+    NOT file anything on the citizen's behalf; this only prepares the
+    structured fields + a ready-to-paste narrative and links to the real
+    portal so the citizen (or an assisting officer) completes the filing
+    themselves. Being honest about that boundary matters more than faking
+    an "auto-filed" checkmark.
+    """
+    category = _ncrb_category_for(req.narrative)
+    incident_date = req.incident_date or datetime.utcnow().date().isoformat()
+
+    structured_fields = {
+        "category": category,
+        "incident_date": incident_date,
+        "suspect_phone": req.suspect_phone,
+        "suspect_upi": req.suspect_upi,
+        "suspect_bank_account": req.suspect_bank_account,
+        "suspect_bank_name": req.suspect_bank_name,
+        "evidence_media_url": req.evidence_media_url,
+    }
+
+    lines = [
+        f"Category: {category}",
+        f"Date of incident: {incident_date}",
+        f"Description: {req.narrative.strip()}",
+    ]
+    if req.suspect_phone:
+        lines.append(f"Suspect phone number: {req.suspect_phone}")
+    if req.suspect_upi:
+        lines.append(f"Suspect UPI ID: {req.suspect_upi}")
+    if req.suspect_bank_account:
+        bank = f" ({req.suspect_bank_name})" if req.suspect_bank_name else ""
+        lines.append(f"Suspect bank account: {req.suspect_bank_account}{bank}")
+    if req.evidence_media_url:
+        lines.append(f"Evidence attached: {req.evidence_media_url}")
+    complaint_text = "\n".join(lines)
+
+    return {
+        "structured_fields": structured_fields,
+        "complaint_text": complaint_text,
+        "portal_url": "https://cybercrime.gov.in/",
+        "helpline": "1930",
+        "disclaimer": (
+            "KAWACH prepares this complaint pack for you — it does not submit to "
+            "NCRB automatically (no public submission API exists). Open the portal "
+            "or call 1930, then paste/enter these details yourself."
+        ),
+    }
+
+
+class TranslateRequest(BaseModel):
+    text: str
+    target_language: str
+
+
+@router.post("/translate")
+def translate_text(req: TranslateRequest):
+    """
+    Translates client-formatted content (forensic verdict cards, NCRB packs)
+    that never passes through the main chat LLM call. Same Gemini call
+    pattern as run_check_link/run_classify_text above. Degrades honestly:
+    if no API key or the call fails, returns the original text with
+    translated=False rather than pretending to translate.
+    """
+    if req.target_language not in SUPPORTED_LANGUAGES or req.target_language == "English":
+        return {"translated_text": req.text, "translated": False, "reason": "no translation needed"}
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return {"translated_text": req.text, "translated": False, "reason": "GEMINI_API_KEY not configured"}
+
+    try:
+        gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={api_key}"
+        payload = {
+            "contents": [{"parts": [{"text": (
+                f"Translate the following text to {req.target_language}, preserving markdown formatting "
+                f"(headings, bold, lists, links) and keeping any Act/Section legal citation names in their "
+                f"original form. Return ONLY the translated markdown, nothing else.\n\n{req.text}"
+            )}]}],
+        }
+        res = requests.post(gemini_url, headers={"Content-Type": "application/json"}, json=payload, timeout=15)
+        res.raise_for_status()
+        translated = res.json()["candidates"][0]["content"]["parts"][0]["text"]
+        return {"translated_text": translated, "translated": True}
+    except Exception as e:
+        print(f"[NAYAK] translate failed: {e}", flush=True)
+        return {"translated_text": req.text, "translated": False, "reason": "translation service unreachable"}
 
 
 @router.get("/search")

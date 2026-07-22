@@ -86,33 +86,44 @@ export default function HotspotsView() {
                   attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap'
                   url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                 />
-                {noise.map((f, i) => (
-                  <CircleMarker
-                    key={`n-${i}`}
-                    center={[f.geometry.coordinates[1], f.geometry.coordinates[0]]}
-                    radius={5}
-                    pathOptions={{ color: '#C9990F', weight: 1.5, fillColor: '#FFFFFF', fillOpacity: 0.9 }}
-                  >
-                    <Popup>
-                      <p className="font-mono text-[0.62rem] uppercase tracking-tag">Isolated incident</p>
-                      <p className="text-xs font-semibold">{f.properties.type}</p>
-                      <p className="text-xs">{f.properties.description}</p>
-                    </Popup>
-                  </CircleMarker>
-                ))}
+                {noise.map((f, i) => {
+                  const isSeizure = f.properties.is_seizure;
+                  return (
+                    <CircleMarker
+                      key={`n-${i}`}
+                      center={[f.geometry.coordinates[1], f.geometry.coordinates[0]]}
+                      radius={isSeizure ? 6 : 5}
+                      pathOptions={isSeizure
+                        ? { color: '#1D4ED8', weight: 2, fillColor: '#3B82F6', fillOpacity: 0.85 }
+                        : { color: '#C9990F', weight: 1.5, fillColor: '#FFFFFF', fillOpacity: 0.9 }}
+                    >
+                      <Popup>
+                        <p className="font-mono text-[0.62rem] uppercase tracking-tag">
+                          {isSeizure ? 'Counterfeit seizure' : 'Isolated incident'}
+                        </p>
+                        <p className="text-xs font-semibold">{f.properties.type}</p>
+                        <p className="text-xs">{f.properties.description}</p>
+                      </Popup>
+                    </CircleMarker>
+                  );
+                })}
                 {clusters.map((f) => {
                   const p = f.properties;
-                  const fill = THREAT_FILL[String(p.max_threat_level).toUpperCase()] || THREAT_FILL.LOW;
+                  const seizureDominant = p.is_seizure_dominant;
+                  const fill = seizureDominant ? '#1D4ED8' : (THREAT_FILL[String(p.max_threat_level).toUpperCase()] || THREAT_FILL.LOW);
                   return (
                     <CircleMarker
                       key={`c-${p.cluster_id}`}
                       center={[f.geometry.coordinates[1], f.geometry.coordinates[0]]}
                       radius={10 + Math.min(22, p.incident_count * 4)}
-                      pathOptions={{ color: fill, weight: 2, fillColor: fill, fillOpacity: 0.35 }}
+                      pathOptions={{ color: fill, weight: 2, fillColor: fill, fillOpacity: seizureDominant ? 0.45 : 0.35 }}
                     >
                       <Popup>
-                        <p className="font-mono text-[0.62rem] uppercase tracking-tag">Cluster #{p.cluster_id}</p>
+                        <p className="font-mono text-[0.62rem] uppercase tracking-tag">
+                          {seizureDominant ? 'Counterfeit seizure cluster' : `Cluster #${p.cluster_id}`}
+                        </p>
                         <p className="text-xs font-semibold">{p.incident_count} incidents · {p.dominant_type}</p>
+                        {p.seizure_count > 0 && <p className="text-xs">{p.seizure_count} counterfeit seizure(s) in this cluster</p>}
                         <p className="text-xs">Max threat: {p.max_threat_level}</p>
                         <p className="text-xs">{(p.location_names || []).join(', ')}</p>
                       </Popup>
@@ -124,6 +135,7 @@ export default function HotspotsView() {
             <p className="mt-3 flex flex-wrap gap-4 text-[0.68rem] text-ink-faint">
               <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-amber-900 align-middle" />filled = hotspot centroid (darker = higher threat)</span>
               <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full border-2 border-amber-500 bg-white align-middle" />hollow = isolated incident (DBSCAN noise)</span>
+              <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-blue-600 align-middle" />blue = counterfeit currency seizure point</span>
             </p>
           </Panel>
 

@@ -91,6 +91,13 @@ function hotspots(query) {
     { lat: 13.0173, lng: 77.5510, type: 'Assault', threat: 'LOW', name: 'Yeshwanthpur' },
   ];
 
+  const seizures = [
+    {
+      lat: 12.9750, lng: 77.6050, denomination: '500', verdict: 'LIKELY_COUNTERFEIT',
+      name: 'Shivajinagar money-changer stall',
+    },
+  ];
+
   const features = [
     ...clusters.map((c) => ({
       type: 'Feature',
@@ -100,6 +107,7 @@ function hotspots(query) {
         dominant_type: c.type, max_threat_level: c.threat,
         location_names: c.names,
         incident_ids: Array.from({ length: c.n }, (_, i) => `INC-${c.id}${i}`),
+        seizure_count: 0, is_seizure_dominant: false,
       },
     })),
     ...noise.map((m, i) => ({
@@ -108,7 +116,18 @@ function hotspots(query) {
       properties: {
         id: `INC-N${i}`, type: m.type, description: `${m.type} reported near ${m.name}`,
         threat_level: m.threat, timestamp: iso(daysAgo(i + 1)), location_name: m.name,
-        is_hotspot: false, cluster_id: null, incident_count: 1,
+        is_hotspot: false, cluster_id: null, incident_count: 1, is_seizure: false,
+      },
+    })),
+    ...seizures.map((s, i) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
+      properties: {
+        id: `CS-MOCK-${i}`, type: 'COUNTERFEIT_SEIZURE',
+        description: `1 note(s) seized (₹${s.denomination}) — ${s.verdict}`,
+        threat_level: 'HIGH', timestamp: iso(daysAgo(i + 2)), location_name: s.name,
+        is_hotspot: false, cluster_id: null, incident_count: 1, is_seizure: true,
+        denomination: s.denomination, verdict: s.verdict,
       },
     })),
   ];
@@ -118,7 +137,7 @@ function hotspots(query) {
     features,
     metadata: {
       algorithm: 'DBSCAN (haversine)', eps_km: epsKm, min_samples: minSamples,
-      total_incidents: clusters.reduce((s, c) => s + c.n, 0) + noise.length,
+      total_incidents: clusters.reduce((s, c) => s + c.n, 0) + noise.length + seizures.length,
       hotspot_clusters: clusters.length,
     },
   };

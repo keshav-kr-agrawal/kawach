@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { sendChat, getMessages, uploadMedia, linkReport, getAnonUserId } from '../../api/nayakService';
+import { sendChat, getMessages, uploadMedia, linkReport, getAnonUserId, prepareNcrbReport, translateText, SUPPORTED_LANGUAGES } from '../../api/nayakService';
 import { uploadMediaBlob } from '../../api/mediaService';
 import { createReport, newReportId, REPORT_SOURCES } from '../../api/reportService';
 import { routeReport } from '../../api/routingService';
@@ -114,8 +114,8 @@ const NAYAK_SERVICES = [
     label: 'National Cyber Crime (1930) Helper',
     icon: '🔍',
     badge: 'Helpline 1930',
-    type: 'query',
-    query: 'Prepare cyber fraud report payload formatted for the National Cyber Crime Portal (1930 helpline).'
+    type: 'ncrb',
+    accept: 'image/*,video/*'
   }
 ];
 
@@ -264,6 +264,32 @@ export default function AlertsChatView() {
   const [emDispatching, setEmDispatching] = useState(false);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [language, setLanguage] = useState(() => localStorage.getItem('nayak_language') || 'English');
+  const [translatingId, setTranslatingId] = useState(null);
+
+  const changeLanguage = (lang) => {
+    setLanguage(lang);
+    localStorage.setItem('nayak_language', lang);
+  };
+
+  const handleTranslateMessage = async (msg) => {
+    if (language === 'English') return;
+    if (msg.translatedText) {
+      // Toggle back to original on second click.
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, translatedText: null, translationFailed: false } : m)));
+      return;
+    }
+    setTranslatingId(msg.id);
+    try {
+      const res = await translateText(msg.text, language);
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, translatedText: res.translated_text, translationFailed: !res.translated } : m)));
+    } catch (err) {
+      console.error('[TRANSLATE FAILED]', err);
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, translationFailed: true } : m)));
+    } finally {
+      setTranslatingId(null);
+    }
+  };
   const messagesEndRef = useRef(null);
 
   const displayedServices = selectedCategory === 'ALL'
@@ -431,7 +457,7 @@ export default function AlertsChatView() {
     setBusy(true);
 
     try {
-      const res = await sendChat({ sessionId, message: query, lat: coords.lat, lng: coords.lng });
+      const res = await sendChat({ sessionId, message: query, lat: coords.lat, lng: coords.lng, lang: language });
       if (res?.session_id) {
         setSessionId(res.session_id);
         localStorage.setItem('nayak_session_id', res.session_id);
@@ -558,6 +584,33 @@ export default function AlertsChatView() {
       }
     } else if (service.type === 'query') {
       setInputText(service.query);
+    } else if (service.type === 'ncrb') {
+      handleNcrbReport();
+    }
+  };
+
+  const handleNcrbReport = async () => {
+    const lastUserMsg = [...messages].reverse().find((m) => m.sender === 'user');
+    const narrative = inputText.trim() || lastUserMsg?.text?.trim();
+    if (!narrative) {
+      pushBot('🔍 To prepare an NCRB (1930) complaint pack, first describe what happened — type it in the message box (or ask me about it), then tap this shortcut again.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const pack = await prepareNcrbReport({ narrative });
+      pushBot(
+        `### 🔍 National Cyber Crime Portal — Complaint Pack\n\n` +
+        `**Category:** ${pack.structured_fields.category}\n\n` +
+        `**Ready-to-paste description:**\n\n\`\`\`\n${pack.complaint_text}\n\`\`\`\n\n` +
+        `**Next step:** open [${pack.portal_url}](${pack.portal_url}) or call **${pack.helpline}**, then paste these details into the complaint form.\n\n` +
+        `> ${pack.disclaimer}`
+      );
+    } catch (err) {
+      console.error('[NCRB PACK FAILED]', err);
+      pushBot('⚠️ Could not reach the report-prep service. You can still file directly at cybercrime.gov.in or call 1930 — describe the incident, suspect phone/UPI/bank details, and the date.');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -594,13 +647,23 @@ export default function AlertsChatView() {
           </h2>
         </div>
 
-        <button
-          onClick={() => setEmergencyOpen(true)}
-          className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs uppercase tracking-wider font-sora animate-pulse shrink-0"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Emergency SOS
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <select
+            value={language}
+            onChange={(e) => changeLanguage(e.target.value)}
+            title="Reply language"
+            className="text-[10px] font-bold text-ink-soft border border-amber-400/30 rounded-lg px-1.5 py-1.5 bg-white uppercase tracking-wider font-mono focus:outline-none"
+          >
+            {SUPPORTED_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+          </select>
+          <button
+            onClick={() => setEmergencyOpen(true)}
+            className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs uppercase tracking-wider font-sora animate-pulse"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Emergency SOS
+          </button>
+        </div>
       </div>
 
       {/* Messages Scroll Area */}
@@ -664,7 +727,25 @@ export default function AlertsChatView() {
                       )}
                     </div>
                   ) : (
-                    <MarkdownMessage content={m.text} />
+                    <div>
+                      <MarkdownMessage content={m.translatedText || m.text} />
+                      {language !== 'English' && (
+                        <button
+                          onClick={() => handleTranslateMessage(m)}
+                          disabled={translatingId === m.id}
+                          className="mt-1 text-[9px] font-bold text-[#b08850] uppercase tracking-wider disabled:opacity-50"
+                        >
+                          {translatingId === m.id
+                            ? `🌐 Translating to ${language}...`
+                            : m.translatedText
+                              ? `Showing ${language} translation ↺ view original`
+                              : `🌐 Translate to ${language}`}
+                        </button>
+                      )}
+                      {m.translationFailed && (
+                        <p className="mt-1 text-[9px] text-red-500">Translation service unreachable — showing original text.</p>
+                      )}
+                    </div>
                   )}
 
                   {m.proposal && (

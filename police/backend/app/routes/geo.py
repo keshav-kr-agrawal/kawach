@@ -1,10 +1,14 @@
+import uuid
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import numpy as np
 import random
 from app.database import get_db
-from app.models import FIRRecord, PoliceStation, Location
+from app.models import FIRRecord, PoliceStation, Location, CurrencySeizure
 from app.auth import get_current_user_claims
 from sklearn.cluster import DBSCAN
 
@@ -94,10 +98,58 @@ def get_hexbins(db: Session = Depends(get_db), claims: dict = Depends(get_curren
 
 from app.neo4j_db import get_neo4j_db
 
+
+class SeizureCreateRequest(BaseModel):
+    lat: float
+    lng: float
+    verdict: str  # e.g. LIKELY_COUNTERFEIT, COUNTERFEIT — mirrors /classify-currency's verdict enum
+    denomination: Optional[str] = None
+    authenticity_score: Optional[float] = None
+    notes_count: int = 1
+    location_name: Optional[str] = None
+
+
+@router.post("/seizures")
+def log_seizure(
+    req: SeizureCreateRequest,
+    db: Session = Depends(get_db),
+    claims: dict = Depends(get_current_user_claims),
+):
+    """
+    Field-log a counterfeit currency seizure so it appears on the hotspot map
+    alongside crime/fraud clusters (ET PS: seizure points on the geospatial
+    layer). Typically called after a field officer runs a note through the
+    Classifier's real /classify-currency and confirms a counterfeit physically.
+    """
+    seizure = CurrencySeizure(
+        id=f"CS-{uuid.uuid4().hex[:8].upper()}",
+        lat=req.lat,
+        lng=req.lng,
+        denomination=req.denomination,
+        verdict=req.verdict,
+        authenticity_score=req.authenticity_score,
+        notes_count=req.notes_count,
+        logged_by=claims.get("sub", "field_officer"),
+        location_name=req.location_name,
+    )
+    db.add(seizure)
+    db.commit()
+    db.refresh(seizure)
+    return {
+        "id": seizure.id,
+        "lat": seizure.lat,
+        "lng": seizure.lng,
+        "denomination": seizure.denomination,
+        "verdict": seizure.verdict,
+        "logged_at": seizure.logged_at.isoformat(),
+    }
+
+
 @router.get("/hotspots")
 def detect_hotspots(
     eps_km: float = Query(1.5, ge=0.1, le=25.0, description="DBSCAN neighborhood radius in km"),
     min_samples: int = Query(2, ge=1, le=20, description="Min incidents to form a hotspot cluster"),
+    db_sql: Session = Depends(get_db),
     db = Depends(get_neo4j_db),
     claims: dict = Depends(get_current_user_claims)
 ):
@@ -108,6 +160,10 @@ def detect_hotspots(
     GeoJSON feature at the cluster centroid carrying its member incidents,
     dominant type, and max threat level. Unclustered incidents (DBSCAN noise)
     are returned as single-point features flagged is_hotspot=false.
+
+    Counterfeit currency seizure points (Postgres `currency_seizures`, logged
+    via POST /seizures) are merged in as their own incident type so they
+    cluster and render alongside crime hotspots on the same map.
     """
     result = db.run("MATCH (inc:Incident)-[:OCCURRED_AT]->(loc:Location) RETURN inc, loc")
 
@@ -128,6 +184,30 @@ def detect_hotspots(
             "location_name": loc.get("name"),
             "lat": lat,
             "lng": lng,
+            "is_seizure": False,
+        })
+
+    seizure_verdict_threat = {
+        "COUNTERFEIT": "CRITICAL",
+        "LIKELY_COUNTERFEIT": "HIGH",
+        "SUSPECT_FEATURES": "MEDIUM",
+    }
+    for s in db_sql.query(CurrencySeizure).all():
+        incidents.append({
+            "id": s.id,
+            "type": "COUNTERFEIT_SEIZURE",
+            "description": f"{s.notes_count} note(s) seized"
+                            + (f" (₹{s.denomination})" if s.denomination else "")
+                            + f" — {s.verdict}",
+            "threat_level": seizure_verdict_threat.get(s.verdict, "MEDIUM"),
+            "timestamp": s.logged_at.isoformat(),
+            "location_name": s.location_name,
+            "lat": s.lat,
+            "lng": s.lng,
+            "is_seizure": True,
+            "denomination": s.denomination,
+            "verdict": s.verdict,
+            "authenticity_score": s.authenticity_score,
         })
 
     features = []
@@ -150,7 +230,7 @@ def detect_hotspots(
                     features.append({
                         "type": "Feature",
                         "geometry": {"type": "Point", "coordinates": [m["lng"], m["lat"]]},
-                        "properties": {**{k: m[k] for k in ("id", "type", "description", "threat_level", "timestamp", "location_name")},
+                        "properties": {**{k: m[k] for k in ("id", "type", "description", "threat_level", "timestamp", "location_name", "is_seizure")},
                                        "is_hotspot": False, "cluster_id": None, "incident_count": 1},
                     })
                 continue
@@ -162,6 +242,7 @@ def detect_hotspots(
                 type_counts[m["type"]] = type_counts.get(m["type"], 0) + 1
             dominant_type = max(type_counts, key=type_counts.get)
             max_threat = max(members, key=lambda m: threat_rank.get(str(m["threat_level"]).upper(), 0))["threat_level"]
+            seizure_count = sum(1 for m in members if m.get("is_seizure"))
 
             features.append({
                 "type": "Feature",
@@ -174,6 +255,8 @@ def detect_hotspots(
                     "max_threat_level": max_threat,
                     "location_names": sorted({m["location_name"] for m in members if m["location_name"]}),
                     "incident_ids": [m["id"] for m in members],
+                    "seizure_count": seizure_count,
+                    "is_seizure_dominant": seizure_count > len(members) / 2,
                 },
             })
 

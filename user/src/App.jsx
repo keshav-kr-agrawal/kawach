@@ -325,7 +325,7 @@ function UserLayout({ userReports }) {
 
   // Mobile View
   return (
-    <div className="flex flex-col h-full h-[100dvh] min-h-[100dvh] w-full max-w-full overflow-hidden relative bg-white">
+    <div className="flex flex-col h-full w-full max-w-full overflow-hidden relative bg-white">
       {/* Scrollable Middle Content — takes exactly remaining space above BottomNav */}
       <main className="flex-1 min-h-0 w-full overflow-hidden relative bg-white">
         <AnimatePresence mode="wait">

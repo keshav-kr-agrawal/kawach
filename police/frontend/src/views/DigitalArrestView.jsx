@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { api } from '../api/client.js';
+import { api, postFile } from '../api/client.js';
 import { ViewFrame, Panel, ErrorNote, Idx } from '../ui/kit.jsx';
 import { WaveGlyph } from '../ui/glyphs.jsx';
 
@@ -86,6 +86,11 @@ export default function DigitalArrestView() {
       setSession(await api.post(`/digital-arrest/session/${session.id}/signal`, body));
     });
 
+  const signalFile = (kind, file) =>
+    run(async () => {
+      setSession(await postFile(`/digital-arrest/session/${session.id}/signal/${kind}`, file));
+    });
+
   return (
     <ViewFrame
       kicker="Text ·30 / voice ·20 / video ·20 / transaction ·30 + corroboration bonus"
@@ -158,25 +163,33 @@ export default function DigitalArrestView() {
                       value={amount} onChange={(e) => setAmount(e.target.value)}
                     />
                     <button className="btn-line" disabled={busy}>Flag transfer attempt</button>
-                    <div className="mt-2 flex gap-2">
-                      <button
-                        type="button" className="btn-line flex-1" disabled={busy}
-                        onClick={() => signal({ modality: 'voice', spoof_probability: 0.82 })}
-                      >
-                        Voice spoof ·82
-                      </button>
-                      <button
-                        type="button" className="btn-line flex-1" disabled={busy}
-                        onClick={() => signal({ modality: 'video', fake_probability: 0.77, faces_detected: 1 })}
-                      >
-                        Deepfake ·77
-                      </button>
-                    </div>
-                    <p className="text-[0.64rem] text-ink-faint">
-                      Voice/video buttons replay classifier verdicts as they would arrive from the
-                      citizen app during the call.
-                    </p>
                   </form>
+
+                  <label className="flex flex-col gap-2">
+                    <span className="tag">Call-frame screenshot (real deepfake check)</span>
+                    <input
+                      type="file" accept="image/*" disabled={busy}
+                      className="field text-xs"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) signalFile('video-frame', f); e.target.value = ''; }}
+                    />
+                    <p className="text-[0.64rem] text-ink-faint">
+                      Uploads a still from the video call to the Classifier's real MTCNN +
+                      dual-EfficientNet-B7 deepfake pipeline. No probability is invented client-side.
+                    </p>
+                  </label>
+
+                  <label className="flex flex-col gap-2">
+                    <span className="tag">Voice clip · 16-bit PCM WAV (acoustic heuristic)</span>
+                    <input
+                      type="file" accept="audio/wav,.wav" disabled={busy}
+                      className="field text-xs"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) signalFile('voice-clip', f); e.target.value = ''; }}
+                    />
+                    <p className="text-[0.64rem] text-ink-faint">
+                      Runs a classical DSP heuristic (spectral flatness, pitch jitter, envelope
+                      regularity) — honestly a proxy, not a trained voice-spoof model.
+                    </p>
+                  </label>
                 </div>
               </Panel>
 

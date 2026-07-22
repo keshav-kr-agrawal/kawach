@@ -14,12 +14,17 @@ multi-modality corroboration bonus, and behavioral signals reused from the
 Fraud Shield (call-burst anomaly, mule-network shape). No random numbers.
 """
 
+import io
+import os
 import re
 import uuid
+import wave
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+import numpy as np
+import requests
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -30,6 +35,8 @@ from app.routes.fraud_shield import call_burst_anomaly, mule_network_signal
 from app.models import Phone
 
 router = APIRouter()
+
+CLASSIFIER_URL = os.environ.get("CLASSIFIER_URL", "http://localhost:8001")
 
 ALERT_THRESHOLD = 70.0
 
@@ -144,6 +151,98 @@ def _fuse(session) -> float:
     return round(min(100.0, fused), 1)
 
 
+def analyze_voice_heuristic(wav_bytes: bytes) -> tuple:
+    """
+    Classical acoustic heuristic for voice-spoof likelihood — NOT a trained
+    model. As documented in CLAUDE.md's currency-detector precedent, no
+    trustworthy pretrained AI-voice/spoof-detection model is freely available
+    to drop in here, and training one needs a labeled corpus this project
+    doesn't have. Rather than fake a confident number, this combines three
+    classical DSP proxies known to separate live human speech from
+    synthetic/replayed audio, and returns a coarse 0-1 proxy plus the exact
+    numbers behind it:
+      - spectral flatness (vocoded/TTS voices skew unnaturally flat or
+        unnaturally tonal vs natural mid-range speech)
+      - pitch-period jitter via short-frame autocorrelation (natural speech
+        has continuous micro-jitter; many clones are suspiciously stable)
+      - amplitude-envelope regularity (robotic-cadence proxy)
+    Only accepts 16-bit PCM WAV (stdlib `wave` — no extra audio codec deps).
+    """
+    try:
+        with wave.open(io.BytesIO(wav_bytes), "rb") as wf:
+            n_channels = wf.getnchannels()
+            sampwidth = wf.getsampwidth()
+            framerate = wf.getframerate()
+            n_frames = wf.getnframes()
+            raw = wf.readframes(n_frames)
+    except Exception as e:
+        raise ValueError(f"Could not decode audio as 16-bit PCM WAV: {e}")
+
+    if sampwidth != 2:
+        raise ValueError("Only 16-bit PCM WAV is supported by the acoustic heuristic.")
+
+    samples = np.frombuffer(raw, dtype=np.int16).astype(np.float64)
+    if n_channels > 1:
+        samples = samples.reshape(-1, n_channels).mean(axis=1)
+    if samples.size < framerate * 0.5:
+        raise ValueError("Clip too short for reliable analysis (need >= 0.5s of audio).")
+
+    peak = np.max(np.abs(samples))
+    if peak < 1e-6:
+        raise ValueError("Clip is silent.")
+    samples = samples / peak
+
+    # Spectral flatness (Wiener entropy) over up to the first 5 seconds.
+    window = samples[: min(len(samples), int(framerate * 5))]
+    spectrum = np.abs(np.fft.rfft(window * np.hanning(len(window))))
+    spectrum = spectrum[spectrum > 1e-9]
+    flatness = float(np.exp(np.mean(np.log(spectrum))) / (np.mean(spectrum) + 1e-9)) if spectrum.size else 0.0
+
+    # Pitch-period jitter via short-frame autocorrelation (70-400 Hz search band).
+    frame_len = int(framerate * 0.03)
+    hop = max(1, frame_len // 2)
+    periods = []
+    for start in range(0, len(samples) - frame_len, hop):
+        frame = samples[start:start + frame_len]
+        if np.max(np.abs(frame)) < 0.02:
+            continue
+        corr = np.correlate(frame, frame, mode="full")[len(frame) - 1:]
+        min_lag, max_lag = int(framerate / 400), int(framerate / 70)
+        if max_lag >= len(corr) or corr[0] <= 0:
+            continue
+        segment = corr[min_lag:max_lag]
+        if segment.size == 0:
+            continue
+        peak_lag = min_lag + int(np.argmax(segment))
+        if corr[peak_lag] / corr[0] > 0.3:
+            periods.append(peak_lag / framerate)
+    jitter = float(np.std(np.diff(periods)) / (np.mean(periods) + 1e-9)) if len(periods) >= 4 else None
+
+    # Amplitude-envelope regularity.
+    env_frame = max(1, int(framerate * 0.02))
+    envelope = np.array([
+        np.sqrt(np.mean(samples[i:i + env_frame] ** 2))
+        for i in range(0, len(samples) - env_frame, env_frame)
+    ])
+    env_cv = float(np.std(envelope) / (np.mean(envelope) + 1e-9)) if envelope.size > 2 else None
+
+    signals = []
+    if jitter is not None:
+        signals.append(1.0 if jitter < 0.008 else (0.5 if jitter < 0.015 else 0.15))
+    if env_cv is not None:
+        signals.append(1.0 if env_cv < 0.15 else (0.5 if env_cv < 0.3 else 0.15))
+    signals.append(1.0 if (flatness > 0.55 or flatness < 0.05) else (0.5 if flatness > 0.4 else 0.15))
+
+    spoof_likelihood = round(float(np.mean(signals)), 3) if signals else 0.5
+    finding = (
+        f"Acoustic heuristic (classical DSP, not a trained model): spectral flatness "
+        f"{flatness:.2f}, pitch-jitter {'n/a' if jitter is None else f'{jitter:.3f}'}, "
+        f"envelope CV {'n/a' if env_cv is None else f'{env_cv:.2f}'} -> "
+        f"spoof-likelihood proxy {spoof_likelihood:.2f}"
+    )
+    return spoof_likelihood, finding
+
+
 @router.post("/session/start")
 def start_session(
     req: SessionStartRequest,
@@ -249,7 +348,12 @@ def ingest_signal(
             f"~{monthly} txns/month — anomaly strength {strength:.2f}"
         )
 
-    session["signals"].append({"at": now, "modality": req.modality, "strength": strength, "detail": detail})
+    return _apply_signal(session, session_id, req.modality, strength, detail, db, claims)
+
+
+def _apply_signal(session, session_id, modality, strength, detail, db, claims):
+    now = datetime.utcnow().isoformat()
+    session["signals"].append({"at": now, "modality": modality, "strength": strength, "detail": detail})
     session["timeline"].append({"at": now, "event": detail})
     session["risk_score"] = _fuse(session)
 
@@ -280,6 +384,72 @@ def ingest_signal(
         db.commit()
 
     return session
+
+
+@router.post("/session/{session_id}/signal/video-frame")
+async def ingest_video_frame(
+    session_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    claims: dict = Depends(get_current_user_claims),
+):
+    """
+    Real deepfake signal: forwards the uploaded call-frame/clip to the
+    Classifier microservice's real MTCNN + dual-EfficientNet-B7 pipeline
+    (`/classify`) instead of trusting a client-supplied fake_probability.
+    """
+    session = SESSIONS.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found — start one via /session/start")
+
+    blob = await file.read()
+    try:
+        r = requests.post(
+            f"{CLASSIFIER_URL}/classify",
+            files={"file": (file.filename or "frame.jpg", blob, file.content_type or "image/jpeg")},
+            timeout=120,
+        )
+        r.raise_for_status()
+        data = r.json()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Classifier unreachable — no fake signal fabricated: {e}")
+
+    fake_prob = float(data.get("fake_probability", 0.5))
+    faces = data.get("faces_detected", 0)
+    strength = max(0.0, min(1.0, fake_prob))
+    detail = (
+        f"Deepfake classifier (MTCNN+EfficientNet-B7) verdict {data.get('verdict')}: "
+        f"fake probability {strength:.2f} ({faces} face(s), {data.get('frames_analyzed', 0)} frame(s))"
+    )
+    return _apply_signal(session, session_id, "video", strength, detail, db, claims)
+
+
+@router.post("/session/{session_id}/signal/voice-clip")
+async def ingest_voice_clip(
+    session_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    claims: dict = Depends(get_current_user_claims),
+):
+    """
+    Real (heuristic) voice signal: runs the uploaded 16-bit PCM WAV clip
+    through `analyze_voice_heuristic` (classical DSP — spectral flatness,
+    pitch jitter, envelope regularity). No pretrained voice-spoof model is
+    freely available to drop in here, so this is honestly a heuristic proxy,
+    not a trained classifier — same honesty standard as the currency CNN's
+    documented no-pretrained-model finding.
+    """
+    session = SESSIONS.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found — start one via /session/start")
+
+    blob = await file.read()
+    try:
+        strength, detail = analyze_voice_heuristic(blob)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return _apply_signal(session, session_id, "voice", strength, detail, db, claims)
 
 
 @router.get("/session/{session_id}")

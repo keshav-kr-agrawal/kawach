@@ -307,6 +307,28 @@ class NayakUserUpload(Base):
     linked_report_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
+class CurrencySeizure(Base):
+    """
+    Field-logged counterfeit currency seizure — geo-tagged so it can render
+    on the same hotspot map as crime incidents (ET PS: 'counterfeit currency
+    seizure points' alongside fraud/cybercrime hotspots). Independent of the
+    Neo4j incident graph on purpose: seizures are officer-logged facts, not
+    graph-derived intelligence, so they live in Postgres like FIRs.
+    """
+    __tablename__ = 'currency_seizures'
+
+    id = Column(String, primary_key=True)
+    lat = Column(Float, nullable=False)
+    lng = Column(Float, nullable=False)
+    denomination = Column(String, nullable=True)
+    verdict = Column(String, nullable=False)  # mirrors Classifier's /classify-currency verdict enum
+    authenticity_score = Column(Float, nullable=True)
+    notes_count = Column(Integer, default=1)
+    logged_by = Column(String, nullable=True)
+    location_name = Column(String, nullable=True)
+    logged_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class NayakLawChunk(Base):
     __tablename__ = 'nayak_law_chunks'
     
