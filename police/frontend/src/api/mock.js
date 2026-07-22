@@ -19,7 +19,7 @@ const SUMMARY = {
   active_cases: 1287,
   conviction_rate: 64.2,
   avg_response_time_mins: 22,
-  top_crime_category: 'Cybercrime / Phishing',
+  top_crime_category: 'Digital Arrest / Impersonation Extortion',
   total_offenders: 1942,
 };
 
@@ -36,38 +36,43 @@ function trend() {
 }
 
 const CATEGORIES = [
-  { category: 'Cybercrime / Phishing', count: 1834 },
-  { category: 'Theft', count: 1512 },
-  { category: 'Assault', count: 989 },
-  { category: 'Burglary', count: 861 },
-  { category: 'Chain Snatching', count: 644 },
-  { category: 'Vehicle Theft', count: 590 },
-  { category: 'Fraud / Cheating', count: 553 },
+  { category: 'Digital Arrest / Impersonation Extortion', count: 1834 },
+  { category: 'UPI / Payment Fraud', count: 1512 },
+  { category: 'Counterfeit Currency (FICN)', count: 861 },
+  { category: 'Phishing / Vishing', count: 644 },
+  { category: 'Fraud Network / Money Mule', count: 590 },
+  { category: 'OTP & KYC-Update Scams', count: 553 },
+  { category: 'Voice-Clone / Deepfake Extortion', count: 401 },
 ];
 
 const DISTRICTS = [
-  { district_name: 'Bengaluru Urban', count: 2811, density: 21.4 },
-  { district_name: 'Mysuru', count: 1204, density: 17.8 },
-  { district_name: 'Belagavi', count: 986, density: 15.2 },
-  { district_name: 'Dakshina Kannada', count: 874, density: 14.6 },
-  { district_name: 'Tumakuru', count: 655, density: 11.9 },
+  { district_name: 'Bengaluru Urban', count: 2811, density: 'Digital Arrest hotspot' },
+  { district_name: 'Mysuru', count: 1204, density: 'UPI Fraud hotspot' },
+  { district_name: 'Belagavi', count: 986, density: 'Counterfeit Currency (border transit)' },
+  { district_name: 'Dakshina Kannada', count: 874, density: 'Money-Mule network activity' },
+  { district_name: 'Tumakuru', count: 655, density: 'Phishing / Vishing rising' },
 ];
 
 const ALERTS = () => [
   {
-    id: 'ALT-BLR-2214', district: 'Bengaluru Urban', type: 'Spike Alert',
-    message: '61.8% spike in Cybercrime / Phishing cases in the last 30 days.',
+    id: 'ALT-BLR-2214', district: 'Bengaluru Urban', type: 'Digital Arrest',
+    message: '14 live digital-arrest sessions monitored this week — 6 crossed the alert threshold and were flagged before any transfer completed.',
     severity: 'Critical', z_score: 3.31, timestamp: iso(hoursAgo(2)),
   },
   {
-    id: 'ALT-DK-1187', district: 'Dakshina Kannada', type: 'Cluster Alert',
-    message: 'Cluster of 11 chain-snatching cases inside a 1.5 km radius of Hampankatta.',
+    id: 'ALT-BGM-1187', district: 'Belagavi', type: 'Counterfeit Currency',
+    message: '9 counterfeit ₹500 notes intercepted at bank counters in the last 7 days — sharply above the district baseline.',
     severity: 'High', z_score: 2.24, timestamp: iso(hoursAgo(7)),
   },
   {
-    id: 'ALT-MYS-0932', district: 'Mysuru', type: 'Spike Alert',
-    message: '38.5% rise in vehicle theft around KR Circle vs the district baseline.',
+    id: 'ALT-DK-0932', district: 'Dakshina Kannada', type: 'Fraud Network',
+    message: 'Fraud graph flagged 3 new suspected money-mule accounts wired into the Silver Cobra Syndicate cluster.',
     severity: 'High', z_score: 1.96, timestamp: iso(hoursAgo(19)),
+  },
+  {
+    id: 'ALT-MYS-0561', district: 'Mysuru', type: 'UPI Fraud',
+    message: '41% rise in UPI/payment-fraud complaints over the last 90 days — the fastest-growing category statewide.',
+    severity: 'Medium', z_score: 1.62, timestamp: iso(hoursAgo(31)),
   },
 ];
 
