@@ -346,3 +346,26 @@ class NayakLawChunk(Base):
     tags = Column(JSONB, nullable=False)
     embedding = Column(JSONB, nullable=True)
 
+
+class IPSighting(Base):
+    """How many times KAWACH itself has looked up a given IP — the one
+    'reputation' signal no external API can supply, since it reflects this
+    department's own case history, not the wider internet's."""
+    __tablename__ = 'ip_sightings'
+
+    ip = Column(String, primary_key=True)
+    lookup_count = Column(Integer, default=1, nullable=False)
+    first_seen = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_seen = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class IPWatchlistEntry(Base):
+    __tablename__ = 'ip_watchlist'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ip = Column(String, nullable=False, index=True)
+    list_type = Column(String, nullable=False)  # 'watchlist' | 'blocklist'
+    note = Column(String, nullable=True)
+    added_by = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+

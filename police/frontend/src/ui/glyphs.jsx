@@ -43,6 +43,14 @@ export const MapGlyph = ({ className }) => (
   </G>
 );
 
+export const TraceGlyph = ({ className }) => (
+  <G className={className}>
+    <circle cx="12" cy="12" r="7.5" />
+    <circle cx="12" cy="12" r="1.4" />
+    <path d="M12 1.5 V5.5 M12 18.5 V22.5 M1.5 12 H5.5 M18.5 12 H22.5" />
+  </G>
+);
+
 export const GraphGlyph = ({ className }) => (
   <G className={className}>
     <circle cx="6" cy="6" r="2.4" />

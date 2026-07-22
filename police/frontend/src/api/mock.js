@@ -597,6 +597,122 @@ function terminalQuery(body) {
   };
 }
 
+/* ── IP tracing (mirrors routes/ip_tracing.py's fusion + scoring) ─────────── */
+
+const IP_SIGHTINGS = new Map();
+const IP_WATCHLIST = new Map();
+
+// Seed one entry so the "flagged infrastructure" panel isn't empty offline —
+// the same IP the offender graph synthesizes for Prakash Nayak's phone line,
+// so the two views tell one consistent story.
+IP_WATCHLIST.set('103.85.12.44', {
+  id: 1, ip: '103.85.12.44', list_type: 'watchlist',
+  note: 'Beneficiary line for OFF-004 (Prakash Nayak) — mule-flagged in fraud graph',
+  added_by: 'sho_jayanagar', created_at: iso(daysAgo(4)),
+});
+
+function hashIp(ip) {
+  let h = 0;
+  for (let i = 0; i < ip.length; i++) h = (h * 31 + ip.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+const GEO_POOL = [
+  { country: 'IN', city: 'Bengaluru', region: 'Karnataka', lat: 12.9716, lon: 77.5946 },
+  { country: 'IN', city: 'Mumbai', region: 'Maharashtra', lat: 19.076, lon: 72.8777 },
+  { country: 'SG', city: 'Singapore', region: 'Central Singapore', lat: 1.3521, lon: 103.8198 },
+  { country: 'HK', city: 'Hong Kong', region: 'Hong Kong Island', lat: 22.3193, lon: 114.1694 },
+  { country: 'DE', city: 'Frankfurt', region: 'Hesse', lat: 50.1109, lon: 8.6821 },
+  { country: 'US', city: 'Ashburn', region: 'Virginia', lat: 39.03, lon: -77.5 },
+];
+
+const ASN_POOL = [
+  { org: 'Bharti Airtel Ltd', type: 'isp' },
+  { org: 'Reliance Jio Infocomm Ltd', type: 'isp' },
+  { org: 'DigitalOcean, LLC', type: 'hosting' },
+  { org: 'Amazon.com, Inc. (AWS)', type: 'hosting' },
+  { org: 'Hetzner Online GmbH', type: 'hosting' },
+];
+
+function ipRiskProfile(ip) {
+  const h = hashIp(ip);
+  const isWatchlisted = IP_WATCHLIST.get(ip);
+  const geo = GEO_POOL[h % GEO_POOL.length];
+  const asn = ASN_POOL[(h >> 3) % ASN_POOL.length];
+  const isTor = (h % 11) === 0;
+  const isHosting = asn.type === 'hosting';
+
+  const sighting = IP_SIGHTINGS.get(ip) || { count: 0, first_seen: iso(now()) };
+  sighting.count += 1;
+  sighting.last_seen = iso(now());
+  IP_SIGHTINGS.set(ip, sighting);
+
+  const breakdown = [];
+  let score = 0;
+  if (isTor) {
+    score += 80;
+    breakdown.push({ indicator: 'IP is a known Tor exit node', points: 80, category: 'network_flags' });
+  }
+  if (isHosting) {
+    score += 20;
+    breakdown.push({ indicator: 'IP belongs to a hosting/cloud provider, not a residential ISP line', points: 20, category: 'network_flags' });
+  }
+  if (sighting.count >= 3) {
+    score += 20;
+    breakdown.push({ indicator: `This IP has surfaced in ${sighting.count} KAWACH lookups — repeat appearance across cases`, points: 20, category: 'internal' });
+  }
+  if (isWatchlisted?.list_type === 'blocklist') {
+    score += 30;
+    breakdown.push({ indicator: 'IP is already on this department’s blocklist', points: 30, category: 'internal' });
+  }
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  return {
+    ip,
+    geo: {
+      ...geo,
+      accuracy_km: 25, accuracy_label: 'High', geo_source: 'ip-api.com',
+    },
+    asn: { number: 10000 + (h % 50000), org: asn.org, type: asn.type },
+    network_flags: { is_tor: isTor, is_hosting: isHosting },
+    network_ownership: {
+      cidr: `${ip.split('.').slice(0, 3).join('.')}.0/24`,
+      abuse_contact: `abuse@${asn.org.toLowerCase().replace(/[^a-z]+/g, '') || 'network'}.example`,
+      allocation_date: iso(daysAgo(1200 + (h % 900))).slice(0, 10),
+      registration_country: geo.country,
+    },
+    reputation: {},
+    internal: {
+      kawach_lookup_count: sighting.count,
+      first_seen: sighting.first_seen,
+      last_seen: sighting.last_seen,
+    },
+    source_status: {
+      'ip-api': { status: 'ok', latency_ms: 180 + (h % 200) },
+      'tor-exit-list': { status: 'ok', latency_ms: 40 },
+      rdap: { status: 'ok', latency_ms: 900 + (h % 400) },
+      AbuseIPDB: { status: 'not_configured', latency_ms: 0 },
+      GreyNoise: { status: 'not_configured', latency_ms: 0 },
+    },
+    risk_score: score,
+    score_breakdown: breakdown,
+    confidence: 'high',
+    last_checked: iso(now()),
+    watchlist_entry: isWatchlisted
+      ? { list_type: isWatchlisted.list_type, note: isWatchlisted.note, added_by: isWatchlisted.added_by, created_at: isWatchlisted.created_at }
+      : null,
+  };
+}
+
+function ipAddToList(ip, body) {
+  const entry = {
+    id: IP_WATCHLIST.size + 1, ip, list_type: body.list_type,
+    note: body.note || null, added_by: 'officer', created_at: iso(now()),
+  };
+  IP_WATCHLIST.set(ip, entry);
+  return entry;
+}
+
 /* ── Router ────────────────────────────────────────────────────────────── */
 
 export async function mockRequest(path, method = 'GET', body) {
@@ -629,6 +745,8 @@ export async function mockRequest(path, method = 'GET', body) {
       return s;
     }
     if (p === '/reports') return [...DOSSIERS.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
+    if (p === '/ip-tracing/watchlist/all') return [...IP_WATCHLIST.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
+    if (p.startsWith('/ip-tracing/')) return ipRiskProfile(p.split('/').pop());
   }
 
   if (method === 'POST') {
@@ -644,6 +762,7 @@ export async function mockRequest(path, method = 'GET', body) {
     if (/^\/digital-arrest\/session\/[^/]+\/signal$/.test(p)) return daSignal(p.split('/')[3], body || {});
     if (p === '/reports/generate') return generateDossier(body || {});
     if (p === '/ai/query') return terminalQuery(body || {});
+    if (/^\/ip-tracing\/[^/]+\/list$/.test(p)) return ipAddToList(p.split('/')[2], body || {});
   }
 
   throw new Error(`No simulation available for ${method} ${p}`);

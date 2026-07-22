@@ -5,7 +5,7 @@ import {
 import {
   ShieldMark, DeckGlyph, MapGlyph, GraphGlyph, SirenGlyph, CaseGlyph,
   ProfileGlyph, RadarGlyph, RupeeGlyph, SealGlyph, TerminalGlyph, WaveGlyph,
-  MenuGlyph, CloseGlyph,
+  TraceGlyph, MenuGlyph, CloseGlyph,
 } from './ui/glyphs.jsx';
 import { getBackendStatus, subscribeBackendStatus } from './api/status.js';
 import LoginView from './views/LoginView.jsx';
@@ -20,6 +20,7 @@ import DigitalArrestView from './views/DigitalArrestView.jsx';
 import PredictiveView from './views/PredictiveView.jsx';
 import DossierView from './views/DossierView.jsx';
 import TerminalView from './views/TerminalView.jsx';
+import IpTracingView from './views/IpTracingView.jsx';
 
 /**
  * Navigation register — grouped by operational story, gated by role.
@@ -40,6 +41,7 @@ const NAV_GROUPS = [
     items: [
       { path: '/network', label: 'Fraud Network', Glyph: GraphGlyph, minRole: 'SP' },
       { path: '/offenders', label: 'Offender Registry', Glyph: ProfileGlyph },
+      { path: '/ip-tracing', label: 'IP Tracing', Glyph: TraceGlyph },
       { path: '/risk', label: 'District Risk', Glyph: RadarGlyph, minRole: 'SP' },
       { path: '/terminal', label: 'Case Terminal', Glyph: TerminalGlyph },
     ],
@@ -213,6 +215,7 @@ function Console({ user, onLogout }) {
               <Route path="/investigations" element={<InvestigationsView />} />
               <Route path="/network" element={<NetworkView />} />
               <Route path="/offenders" element={<OffendersView />} />
+              <Route path="/ip-tracing" element={<IpTracingView />} />
               <Route path="/risk" element={<PredictiveView />} />
               <Route path="/terminal" element={<TerminalView />} />
               <Route path="/fraud-shield" element={<FraudShieldView />} />
