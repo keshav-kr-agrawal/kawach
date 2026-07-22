@@ -143,20 +143,35 @@ The AI classifier is currently offline or unreachable. Your evidence has been se
   const riskText = v.score != null ? `${(100 - Number(v.score)).toFixed(1)}%` : null;
   const structuralFlag = v.verdict_basis === 'structural_red_flag';
 
-  // Split details into readable bullet points
+  // Split details into readable bullet points. Short trailing fragments (a
+  // semicolon-joined clause that became its own "sentence" once semicolons
+  // were normalized to periods above) get merged back into the previous
+  // point instead of becoming a disconnected one-line bullet — splitting
+  // every clause into its own bullet read as mechanical, fragmented "AI
+  // slop" rather than a clean findings list.
+  const MIN_STANDALONE_LEN = 45;
   const rawSentences = raw
     .split(/\.\s+/)
     .map(s => s.trim())
     .filter(s => s.length > 0 && !s.toLowerCase().startsWith('currency screening') && !s.toLowerCase().startsWith('analysis mode'));
 
-  const bullets = rawSentences.map(s => {
+  const mergedSentences = [];
+  for (const s of rawSentences) {
+    if (mergedSentences.length > 0 && s.length < MIN_STANDALONE_LEN) {
+      mergedSentences[mergedSentences.length - 1] += `, ${s.charAt(0).toLowerCase()}${s.slice(1)}`;
+    } else {
+      mergedSentences.push(s);
+    }
+  }
+
+  const bullets = mergedSentences.map(s => {
     let clean = s
       .replace(/LIKELY_COUNTERFEIT/gi, 'Likely Counterfeit')
       .replace(/LIKELY_GENUINE/gi, 'Likely Authentic')
       .replace(/cnn\+heuristic/gi, 'Computer Vision & RBI Rulebook')
       .replace(/\(-\d+%\s*change\)/gi, '')
       .replace(/shows NO ascending numeral growth/gi, 'shows non-ascending font height (genuine RBI notes have numerals growing in size from left to right)');
-    return `* ${clean.endsWith('.') ? clean : clean + '.'}`;
+    return `- ${clean.endsWith('.') ? clean : clean + '.'}`;
   });
 
   if (isSuspicious) {
@@ -226,29 +241,37 @@ function MarkdownMessage({ content }) {
           return <blockquote key={idx} className="border-l-3 border-[#E9BA26] bg-amber-50/80 p-2.5 rounded-r-xl my-1 text-xs italic text-ink">{line.slice(2)}</blockquote>;
         }
 
-        const parts = line.split(/(\*\*.*?\*\*)/g);
-        const renderedParts = parts.map((part, pIdx) => {
-          if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={pIdx} className="font-extrabold text-ink bg-amber-400/25 px-1 py-0.5 rounded text-[11px] font-sora">{part.slice(2, -2)}</strong>;
-          }
-          return part;
-        });
+        const renderInline = (text) => {
+          const parts = text.split(/(\*\*.*?\*\*)/g);
+          return parts.map((part, pIdx) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              return <strong key={pIdx} className="font-extrabold text-ink bg-amber-400/25 px-1 py-0.5 rounded text-[11px] font-sora">{part.slice(2, -2)}</strong>;
+            }
+            return part;
+          });
+        };
 
-        if (line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*')) {
+        // A real bullet marker is a single •/-/* followed by whitespace —
+        // NOT a double-asterisk bold line (**Label:** ...), which used to
+        // get misdetected as a bullet and rendered with a stray extra dot.
+        const bulletMatch = line.trim().match(/^(?:•|-|\*(?!\*))\s+(.*)$/);
+        if (bulletMatch) {
           return (
             <div key={idx} className="flex gap-2 items-start my-0.5 pl-1">
               <span className="text-[#b08850] font-bold text-xs">•</span>
-              <span className="flex-1 font-semibold">{renderedParts}</span>
+              <span className="flex-1 font-semibold">{renderInline(bulletMatch[1])}</span>
             </div>
           );
         }
+
+        const renderedParts = renderInline(line);
 
         const orderedMatch = line.trim().match(/^(\d+)\.\s+(.*)$/);
         if (orderedMatch) {
           return (
             <div key={idx} className="flex gap-2 items-start my-0.5 pl-1">
               <span className="text-[#b08850] font-bold text-xs shrink-0">{orderedMatch[1]}.</span>
-              <span className="flex-1 font-semibold">{orderedMatch[2]}</span>
+              <span className="flex-1 font-semibold">{renderInline(orderedMatch[2])}</span>
             </div>
           );
         }
