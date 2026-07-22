@@ -150,9 +150,11 @@ export default function IpTracingView() {
               <Panel title="Geolocation" tag={profile.geo?.geo_source || 'unresolved'}>
                 {profile.geo ? (
                   <dl className="space-y-1.5 text-sm">
-                    <div className="flex justify-between"><dt className="text-ink-faint">City</dt><dd>{profile.geo.city}</dd></div>
+                    <div className="flex justify-between"><dt className="text-ink-faint">City</dt><dd>{profile.geo.city}{profile.geo.district ? ` (${profile.geo.district})` : ''}</dd></div>
                     <div className="flex justify-between"><dt className="text-ink-faint">Region</dt><dd>{profile.geo.region || '—'}</dd></div>
                     <div className="flex justify-between"><dt className="text-ink-faint">Country</dt><dd>{profile.geo.country}</dd></div>
+                    <div className="flex justify-between"><dt className="text-ink-faint">Postal code</dt><dd className="font-mono text-xs">{profile.geo.zip || '—'}</dd></div>
+                    <div className="flex justify-between"><dt className="text-ink-faint">Timezone</dt><dd className="text-xs">{profile.geo.timezone || '—'}</dd></div>
                     <div className="flex justify-between"><dt className="text-ink-faint">Coordinates</dt><dd className="font-mono text-xs">{profile.geo.lat}, {profile.geo.lon}</dd></div>
                     <div className="flex justify-between"><dt className="text-ink-faint">Accuracy</dt><dd>{profile.geo.accuracy_label} (~{profile.geo.accuracy_km}km)</dd></div>
                   </dl>
@@ -163,6 +165,7 @@ export default function IpTracingView() {
                 <dl className="space-y-1.5 text-sm">
                   <div className="flex justify-between"><dt className="text-ink-faint">ASN</dt><dd className="font-mono text-xs">{profile.asn?.number ? `AS${profile.asn.number}` : '—'}</dd></div>
                   <div className="flex justify-between"><dt className="text-ink-faint">Organisation</dt><dd className="truncate">{profile.asn?.org || '—'}</dd></div>
+                  <div className="flex justify-between"><dt className="text-ink-faint">Reverse DNS</dt><dd className="truncate font-mono text-xs">{profile.network_ownership?.reverse_dns || '—'}</dd></div>
                   <div className="flex justify-between"><dt className="text-ink-faint">CIDR</dt><dd className="font-mono text-xs">{profile.network_ownership?.cidr || '—'}</dd></div>
                   <div className="flex justify-between"><dt className="text-ink-faint">Registered in</dt><dd>{profile.network_ownership?.registration_country || '—'}</dd></div>
                   <div className="flex justify-between"><dt className="text-ink-faint">Abuse contact</dt><dd className="truncate text-xs">{profile.network_ownership?.abuse_contact || '—'}</dd></div>
@@ -170,25 +173,52 @@ export default function IpTracingView() {
               </Panel>
             </div>
 
-            <Panel title="Network flags" tag="Tor / VPN / hosting">
+            <Panel title="Network flags" tag="Tor / proxy / hosting / mobile">
               <div className="flex flex-wrap gap-2">
                 <span className={`chip ${profile.network_flags?.is_tor ? 'chip-critical' : 'chip-quiet'}`}>
                   {profile.network_flags?.is_tor ? 'Tor exit node' : 'Not a Tor exit node'}
                 </span>
+                <span className={`chip ${profile.network_flags?.is_proxy ? 'chip-critical' : 'chip-quiet'}`}>
+                  {profile.network_flags?.is_proxy ? 'Known VPN / proxy' : 'Not a known proxy'}
+                </span>
                 <span className={`chip ${profile.network_flags?.is_hosting ? 'chip-medium' : 'chip-quiet'}`}>
                   {profile.network_flags?.is_hosting ? 'Hosting / cloud provider' : 'Residential / ISP line'}
+                </span>
+                <span className={`chip ${profile.network_flags?.is_mobile ? 'chip-medium' : 'chip-quiet'}`}>
+                  {profile.network_flags?.is_mobile ? 'Mobile carrier network' : 'Not a mobile carrier'}
                 </span>
               </div>
             </Panel>
           </div>
 
           <div className="flex flex-col gap-6">
+            {profile.case_match?.matched && (
+              <Panel title="KAWACH case match" tag="linked offender found">
+                <div className="rounded-ledger border border-amber-500 bg-amber-50 p-3">
+                  <p className="font-display text-base font-medium text-ink">{profile.case_match.offender_name}</p>
+                  <p className="tag mt-0.5">{profile.case_match.offender_id} · risk {profile.case_match.risk_score}%</p>
+                  <dl className="mt-2 space-y-1 text-xs">
+                    <div className="flex justify-between"><dt className="text-ink-faint">Syndicate</dt><dd>{profile.case_match.gangs?.join(', ') || 'None on record'}</dd></div>
+                    <div className="flex justify-between"><dt className="text-ink-faint">Phone</dt><dd className="font-mono">{profile.case_match.phone_number}</dd></div>
+                    <div className="flex justify-between"><dt className="text-ink-faint">Device IMEI</dt><dd className="font-mono">{profile.case_match.device_imei || '—'}</dd></div>
+                    <div className="flex justify-between"><dt className="text-ink-faint">Cell tower</dt><dd className="font-mono">{profile.case_match.cell_tower_id || '—'}</dd></div>
+                  </dl>
+                </div>
+              </Panel>
+            )}
+
             <Panel title="KAWACH telemetry" tag="this department's own history">
               <dl className="space-y-1.5 text-sm">
                 <div className="flex justify-between"><dt className="text-ink-faint">Lookups on record</dt><dd className="font-mono">{profile.internal?.kawach_lookup_count}</dd></div>
                 <div className="flex justify-between"><dt className="text-ink-faint">First seen</dt><dd className="text-xs">{new Date(profile.internal?.first_seen).toLocaleString('en-IN')}</dd></div>
                 <div className="flex justify-between"><dt className="text-ink-faint">Last seen</dt><dd className="text-xs">{new Date(profile.internal?.last_seen).toLocaleString('en-IN')}</dd></div>
               </dl>
+              {!profile.case_match?.matched && (
+                <p className="mt-3 text-xs text-ink-faint">
+                  No link to a KAWACH case file — this IP hasn't appeared in this department's own records.
+                  A real subscriber name would require a legal request to the ISP; no lookup service can provide that.
+                </p>
+              )}
             </Panel>
 
             <Panel title="Source status" tag="what actually responded">

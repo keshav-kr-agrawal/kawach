@@ -618,21 +618,31 @@ function hashIp(ip) {
 }
 
 const GEO_POOL = [
-  { country: 'IN', city: 'Bengaluru', region: 'Karnataka', lat: 12.9716, lon: 77.5946 },
-  { country: 'IN', city: 'Mumbai', region: 'Maharashtra', lat: 19.076, lon: 72.8777 },
-  { country: 'SG', city: 'Singapore', region: 'Central Singapore', lat: 1.3521, lon: 103.8198 },
-  { country: 'HK', city: 'Hong Kong', region: 'Hong Kong Island', lat: 22.3193, lon: 114.1694 },
-  { country: 'DE', city: 'Frankfurt', region: 'Hesse', lat: 50.1109, lon: 8.6821 },
-  { country: 'US', city: 'Ashburn', region: 'Virginia', lat: 39.03, lon: -77.5 },
+  { country: 'IN', city: 'Bengaluru', district: 'Bengaluru Urban', region: 'Karnataka', zip: '560001', timezone: 'Asia/Kolkata', lat: 12.9716, lon: 77.5946 },
+  { country: 'IN', city: 'Mumbai', district: 'Mumbai City', region: 'Maharashtra', zip: '400001', timezone: 'Asia/Kolkata', lat: 19.076, lon: 72.8777 },
+  { country: 'SG', city: 'Singapore', district: null, region: 'Central Singapore', zip: '018956', timezone: 'Asia/Singapore', lat: 1.3521, lon: 103.8198 },
+  { country: 'HK', city: 'Hong Kong', district: null, region: 'Hong Kong Island', zip: null, timezone: 'Asia/Hong_Kong', lat: 22.3193, lon: 114.1694 },
+  { country: 'DE', city: 'Frankfurt', district: null, region: 'Hesse', zip: '60306', timezone: 'Europe/Berlin', lat: 50.1109, lon: 8.6821 },
+  { country: 'US', city: 'Ashburn', district: null, region: 'Virginia', zip: '20149', timezone: 'America/New_York', lat: 39.03, lon: -77.5 },
 ];
 
 const ASN_POOL = [
-  { org: 'Bharti Airtel Ltd', type: 'isp' },
-  { org: 'Reliance Jio Infocomm Ltd', type: 'isp' },
-  { org: 'DigitalOcean, LLC', type: 'hosting' },
-  { org: 'Amazon.com, Inc. (AWS)', type: 'hosting' },
-  { org: 'Hetzner Online GmbH', type: 'hosting' },
+  { org: 'Bharti Airtel Ltd', asname: 'AIRTEL-IN', type: 'isp', reverse: 'airtel-broadband.in', mobile: true },
+  { org: 'Reliance Jio Infocomm Ltd', asname: 'RELIANCEJIO-IN', type: 'isp', reverse: 'jionet.in', mobile: true },
+  { org: 'DigitalOcean, LLC', asname: 'DIGITALOCEAN-ASN', type: 'hosting', reverse: 'droplet.digitalocean.com', mobile: false },
+  { org: 'Amazon.com, Inc. (AWS)', asname: 'AMAZON-AES', type: 'hosting', reverse: 'compute.amazonaws.com', mobile: false },
+  { org: 'Hetzner Online GmbH', asname: 'HETZNER-AS', type: 'hosting', reverse: 'static.hetzner.com', mobile: false },
 ];
+
+// Mirrors network.py's demo IP synthesis (103.85.12.{hash(cdr.id)%254+1}) so
+// the offline mock tells the same "Prakash Nayak" story as the live backend.
+const CASE_MATCH_IP = '103.85.12.44';
+const CASE_MATCH = {
+  matched: true, offender_id: 'OFF-004', offender_name: 'Prakash Nayak',
+  risk_score: 22, gangs: [], phone_number: '99002 88400',
+  device_imei: '358910042271', cell_tower_id: 'BLR-441',
+  cdr_timestamp: iso(daysAgo(6)),
+};
 
 function ipRiskProfile(ip) {
   const h = hashIp(ip);
@@ -640,7 +650,10 @@ function ipRiskProfile(ip) {
   const geo = GEO_POOL[h % GEO_POOL.length];
   const asn = ASN_POOL[(h >> 3) % ASN_POOL.length];
   const isTor = (h % 11) === 0;
+  const isProxy = !isTor && (h % 13) === 0;
   const isHosting = asn.type === 'hosting';
+  const isMobile = asn.mobile && (h % 3) !== 0;
+  const caseMatch = ip === CASE_MATCH_IP ? CASE_MATCH : null;
 
   const sighting = IP_SIGHTINGS.get(ip) || { count: 0, first_seen: iso(now()) };
   sighting.count += 1;
@@ -652,6 +665,10 @@ function ipRiskProfile(ip) {
   if (isTor) {
     score += 80;
     breakdown.push({ indicator: 'IP is a known Tor exit node', points: 80, category: 'network_flags' });
+  }
+  if (isProxy) {
+    score += 40;
+    breakdown.push({ indicator: 'IP is a known VPN/proxy/anonymizer (ip-api security flag)', points: 40, category: 'network_flags' });
   }
   if (isHosting) {
     score += 20;
@@ -665,6 +682,10 @@ function ipRiskProfile(ip) {
     score += 30;
     breakdown.push({ indicator: 'IP is already on this department’s blocklist', points: 30, category: 'internal' });
   }
+  if (caseMatch) {
+    score += 50;
+    breakdown.push({ indicator: `IP is linked to registered offender ${caseMatch.offender_name} (${caseMatch.offender_id}) in KAWACH's own case records`, points: 50, category: 'internal' });
+  }
   score = Math.max(0, Math.min(100, Math.round(score)));
 
   return {
@@ -673,10 +694,11 @@ function ipRiskProfile(ip) {
       ...geo,
       accuracy_km: 25, accuracy_label: 'High', geo_source: 'ip-api.com',
     },
-    asn: { number: 10000 + (h % 50000), org: asn.org, type: asn.type },
-    network_flags: { is_tor: isTor, is_hosting: isHosting },
+    asn: { number: 10000 + (h % 50000), org: asn.org, asname: asn.asname, type: asn.type },
+    network_flags: { is_tor: isTor, is_proxy: isProxy, is_hosting: isHosting, is_mobile: isMobile },
     network_ownership: {
       cidr: `${ip.split('.').slice(0, 3).join('.')}.0/24`,
+      reverse_dns: `${ip.split('.').reverse().join('-')}.${asn.reverse}`,
       abuse_contact: `abuse@${asn.org.toLowerCase().replace(/[^a-z]+/g, '') || 'network'}.example`,
       allocation_date: iso(daysAgo(1200 + (h % 900))).slice(0, 10),
       registration_country: geo.country,
@@ -687,6 +709,7 @@ function ipRiskProfile(ip) {
       first_seen: sighting.first_seen,
       last_seen: sighting.last_seen,
     },
+    case_match: caseMatch,
     source_status: {
       'ip-api': { status: 'ok', latency_ms: 180 + (h % 200) },
       'tor-exit-list': { status: 'ok', latency_ms: 40 },

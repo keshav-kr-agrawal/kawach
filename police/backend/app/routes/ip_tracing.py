@@ -36,19 +36,21 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_user_claims
 from app.database import get_db
-from app.models import AuditLog, IPSighting, IPWatchlistEntry
+from app.models import AuditLog, IPSighting, IPWatchlistEntry, Phone, TelecomCDR
 
 router = APIRouter()
 
 # ── Scoring weights (mirrors CyberShield-AI's scoringWeights.json) ─────────
 WEIGHTS = {
     "tor_exit": 80,
+    "proxy": 40,
     "hosting_provider": 20,
     "abuseipdb_score_multiplier": 0.5,
     "greynoise_malicious": 80,
     "greynoise_benign": -20,
     "internal_telemetry_threshold": 3,
     "internal_telemetry_penalty": 20,
+    "case_match_offender": 50,
 }
 
 HOSTING_KEYWORDS = [
@@ -105,12 +107,20 @@ def _mark(status_map: dict, name: str, start: float, ok: bool, error: Optional[s
 
 
 def _enrich_geo_asn(ip: str, status_map: dict):
+    """ip-api's free tier includes more than plain geolocation: `mobile`,
+    `proxy`, and `hosting` are native security flags (no key needed), and
+    `reverse` is a free reverse-DNS/PTR lookup — a hostname like
+    `123.45.67.89.static.somehost.com` or `vps-1234.ovh.net` often tells you
+    more about the line than the ASN org name alone."""
     start = time.time()
     try:
         resp = requests.get(
             f"http://ip-api.com/json/{ip}",
             params={
-                "fields": "status,message,country,countryCode,region,regionName,city,zip,lat,lon,isp,org,as,query",
+                "fields": (
+                    "status,message,country,countryCode,region,regionName,city,district,"
+                    "zip,lat,lon,timezone,isp,org,as,asname,reverse,mobile,proxy,hosting,query"
+                ),
                 "lang": "en",
             },
             timeout=5,
@@ -124,7 +134,10 @@ def _enrich_geo_asn(ip: str, status_map: dict):
         geo = {
             "country": data.get("countryCode") or data.get("country") or "Unknown",
             "city": data.get("city") or "Unknown",
+            "district": data.get("district") or None,
             "region": data.get("regionName"),
+            "zip": data.get("zip") or None,
+            "timezone": data.get("timezone") or None,
             "lat": data.get("lat") or 0,
             "lon": data.get("lon") or 0,
             "accuracy_km": accuracy_km,
@@ -139,13 +152,20 @@ def _enrich_geo_asn(ip: str, status_map: dict):
             m = re.match(r"^AS(\d+)", data.get("as") or "", re.I)
             if m:
                 number = int(m.group(1))
-            asn = {"number": number, "org": org}
+            asn = {"number": number, "org": org, "asname": data.get("asname") or None}
+
+        native_flags = {
+            "is_mobile": bool(data.get("mobile")),
+            "is_proxy": bool(data.get("proxy")),
+            "is_hosting_native": bool(data.get("hosting")),
+        }
+        reverse_dns = data.get("reverse") or None
 
         _mark(status_map, "ip-api", start, True)
-        return geo, asn
+        return geo, asn, native_flags, reverse_dns
     except Exception as e:
         _mark(status_map, "ip-api", start, False, str(e))
-        return None, None
+        return None, None, {}, None
 
 
 def _enrich_tor(ip: str, status_map: dict) -> bool:
@@ -270,6 +290,43 @@ def _classify_asn(asn: Optional[dict]) -> Optional[dict]:
     return asn
 
 
+def _internal_case_match(db: Session, ip: str) -> Optional[dict]:
+    """
+    No external API — free or paid — can ever turn a bare IP into a person's
+    name; that mapping lives only in the ISP's private subscriber records and
+    legally requires a subpoena. What we CAN do honestly is check whether
+    this IP has shown up in KAWACH's own case data: network.py synthesizes a
+    demo IP per TelecomCDR row as f"103.85.12.{hash(record.id) % 254 + 1}" to
+    represent "device logged in from" in the offender graph. Mirror that
+    exact formula here so a traced IP that matches one of our own case
+    records surfaces the linked offender — the same "is this already in our
+    database" signal fraud_shield.py uses for phone numbers.
+    """
+    if not ip.startswith("103.85.12."):
+        return None  # not one of our synthesized demo IPs — nothing to match
+
+    for record in db.query(TelecomCDR).all():
+        synthesized = f"103.85.12.{hash(record.id) % 254 + 1}"
+        if synthesized != ip:
+            continue
+        phone = db.query(Phone).filter(Phone.phone_number == record.phone_number).first()
+        if not phone or not phone.owner:
+            continue
+        owner = phone.owner
+        return {
+            "matched": True,
+            "offender_id": owner.id,
+            "offender_name": owner.name,
+            "risk_score": owner.risk_score,
+            "gangs": [g.name for g in owner.gangs],
+            "phone_number": record.phone_number,
+            "device_imei": record.imei,
+            "cell_tower_id": record.cell_tower_id,
+            "cdr_timestamp": record.timestamp.isoformat() if record.timestamp else None,
+        }
+    return None
+
+
 def _internal_telemetry(db: Session, ip: str) -> dict:
     row = db.query(IPSighting).filter(IPSighting.ip == ip).first()
     now = datetime.utcnow()
@@ -298,6 +355,12 @@ def _score(entity: dict) -> dict:
         breakdown.append({
             "indicator": "IP is a known Tor exit node",
             "points": WEIGHTS["tor_exit"], "category": "network_flags",
+        })
+    if flags.get("is_proxy"):
+        score += WEIGHTS["proxy"]
+        breakdown.append({
+            "indicator": "IP is a known VPN/proxy/anonymizer (ip-api security flag)",
+            "points": WEIGHTS["proxy"], "category": "network_flags",
         })
     if flags.get("is_hosting"):
         score += WEIGHTS["hosting_provider"]
@@ -333,6 +396,14 @@ def _score(entity: dict) -> dict:
         breakdown.append({
             "indicator": f"This IP has surfaced in {internal['kawach_lookup_count']} KAWACH lookups — repeat appearance across cases",
             "points": WEIGHTS["internal_telemetry_penalty"], "category": "internal",
+        })
+
+    case_match = entity.get("case_match")
+    if case_match and case_match.get("matched"):
+        score += WEIGHTS["case_match_offender"]
+        breakdown.append({
+            "indicator": f"IP is linked to registered offender {case_match['offender_name']} ({case_match['offender_id']}) in KAWACH's own case records",
+            "points": WEIGHTS["case_match_offender"], "category": "internal",
         })
 
     score = max(0, min(100, round(score)))
@@ -387,24 +458,32 @@ def get_risk_profile(ip: str, db: Session = Depends(get_db), claims: dict = Depe
         raise HTTPException(status_code=400, detail="Invalid IP address format")
 
     status_map: dict = {}
-    geo, asn = _enrich_geo_asn(ip, status_map)
+    geo, asn, native_flags, reverse_dns = _enrich_geo_asn(ip, status_map)
     is_tor = _enrich_tor(ip, status_map)
     rdap = _enrich_rdap(ip, status_map)
     reputation = _enrich_reputation(ip, status_map)
     internal = _internal_telemetry(db, ip)
+    case_match = _internal_case_match(db, ip)
 
     asn = _classify_asn(asn)
 
-    network_flags = {"is_tor": is_tor}
+    network_flags = {
+        "is_tor": is_tor,
+        "is_proxy": native_flags.get("is_proxy", False),
+        "is_mobile": native_flags.get("is_mobile", False),
+    }
     network_ownership = None
     if rdap:
         network_flags["is_hosting"] = rdap["is_hosting"]
         network_ownership = {k: v for k, v in rdap.items() if k != "is_hosting"}
-    # RDAP (registry lookup) can time out on some hosts; the ASN org string
-    # from ip-api is a second, independent way to catch a hosting/cloud IP,
-    # so OR it in rather than losing the flag whenever RDAP is slow.
-    if asn and asn.get("type") == "hosting":
+    # RDAP (registry lookup) can time out on some hosts; ip-api's native
+    # `hosting` flag and the ASN org string are two independent ways to
+    # still catch a hosting/cloud IP when RDAP is slow — OR them in rather
+    # than losing the flag.
+    if native_flags.get("is_hosting_native") or (asn and asn.get("type") == "hosting"):
         network_flags["is_hosting"] = True
+    if reverse_dns:
+        network_ownership = {**(network_ownership or {}), "reverse_dns": reverse_dns}
 
     entity = {
         "ip": ip,
@@ -414,6 +493,7 @@ def get_risk_profile(ip: str, db: Session = Depends(get_db), claims: dict = Depe
         "network_ownership": network_ownership,
         "reputation": reputation,
         "internal": internal,
+        "case_match": case_match,
         "source_status": status_map,
         "last_checked": datetime.utcnow().isoformat(),
     }
