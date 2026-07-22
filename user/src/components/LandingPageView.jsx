@@ -60,7 +60,7 @@ export default function LandingPageView({ onEnterCitizen }) {
       {/* topbar */}
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-amber-200 bg-paper-warm/90 px-5 py-4 backdrop-blur md:px-12">
         <div className="flex items-center gap-3">
-          <ShieldMark className="h-8 w-7 text-amber-700" />
+          <img src="/kawach.png" alt="KAWACH Logo" className="h-9 w-9 object-contain" />
           <div>
             <p className="font-display text-lg font-semibold tracking-wide">KAWACH</p>
             <p className="hidden font-mono text-[0.6rem] uppercase tracking-wide2 text-ink-faint sm:block">Public Safety Grid</p>
@@ -105,7 +105,7 @@ export default function LandingPageView({ onEnterCitizen }) {
         <BandHead num="S·02">Two surfaces. <em className="font-light italic text-amber-700">Pick your side of the shield.</em></BandHead>
         <div className="grid gap-6 md:grid-cols-2 max-w-5xl">
           <button onClick={onEnterCitizen} className={CARD}>
-            <ShieldMark className="h-11 w-10 text-amber-700" />
+            <img src="/kawach.png" alt="KAWACH Logo" className="h-11 w-11 object-contain" />
             <h3 className="font-display text-2xl font-semibold">Citizen App</h3>
             <p className="flex-1 text-sm text-ink-soft leading-relaxed">
               Report hazards, verify suspect currency notes &amp; digital-arrest calls with Nayak — the

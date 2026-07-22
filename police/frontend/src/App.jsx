@@ -120,7 +120,7 @@ function SideNav({ user, onLogout, open, onClose }) {
       >
         <div className="flex items-center justify-between border-b border-amber-100 px-6 py-5">
           <div className="flex items-center gap-3">
-            <ShieldMark className="h-8 w-7 text-amber-700" />
+            <img src="/kawach.png" alt="KAWACH Logo" className="h-8 w-8 object-contain" />
             <div>
               <p className="font-display text-lg font-semibold tracking-wide text-ink">KAWACH</p>
               <p className="tag">Command Console</p>

@@ -70,7 +70,7 @@ export default function LoginView({ onLogin }) {
         <div className="pointer-events-none absolute -bottom-40 -left-20 h-96 w-96 rounded-full bg-amber-500/10 blur-3xl" />
 
         <div className="flex items-center gap-3">
-          <ShieldMark className="h-9 w-8 text-amber-300" />
+          <img src="/kawach.png" alt="KAWACH Logo" className="h-9 w-9 object-contain" />
           <div>
             <p className="font-display text-xl font-semibold tracking-wide">KAWACH</p>
             <p className="font-mono text-[0.62rem] uppercase tracking-wide2 text-amber-300">
@@ -127,7 +127,7 @@ export default function LoginView({ onLogin }) {
           className="w-full max-w-sm"
         >
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <ShieldMark className="h-8 w-7 text-amber-700" />
+            <img src="/kawach.png" alt="KAWACH Logo" className="h-8 w-8 object-contain" />
             <p className="font-display text-lg font-semibold">KAWACH Command</p>
           </div>
 

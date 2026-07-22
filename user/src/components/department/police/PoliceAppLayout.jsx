@@ -65,7 +65,7 @@ export default function PoliceAppLayout({ user, onLogout, children }) {
       }`}>
         <div className="p-5 flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center space-x-3">
-            <Shield className="w-7 h-7 text-blue-500" />
+            <img src="/kawach.png" alt="KAWACH Logo" className="w-8 h-8 object-contain" />
             <span className="text-xl font-black text-blue-500 font-outfit uppercase tracking-wider">KAWACH</span>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800">
@@ -123,7 +123,7 @@ export default function PoliceAppLayout({ user, onLogout, children }) {
       {/* Desktop Sidebar (Permanent) */}
       <aside className="hidden md:flex w-64 bg-slate-900 border-r border-slate-800 flex-col z-20 shadow-lg h-full shrink-0">
         <div className="p-6 flex items-center space-x-3 border-b border-slate-850">
-          <Shield className="w-8 h-8 text-blue-500" />
+          <img src="/kawach.png" alt="KAWACH Logo" className="w-8 h-8 object-contain" />
           <span className="text-xl font-black text-blue-500 font-outfit uppercase tracking-wider">KAWACH</span>
         </div>
 
