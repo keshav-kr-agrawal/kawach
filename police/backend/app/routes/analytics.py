@@ -191,14 +191,24 @@ def detect_crime_patterns(db: Session = Depends(get_db)):
         })
 
     # ── PAT-003: Strongest socio-economic correlate of crime volume ──────────
+    # Precompute once instead of per SocioEconomicIndicator row — with 5
+    # years x 31 districts that was 155 rows x 2 queries each (District
+    # lookup + a full FIRRecord join/count repeated identically per year),
+    # ~310 avoidable round-trips to a remote DB.
     indicators = db.query(SocioEconomicIndicator).all()
+    districts_by_id = {d.id: d for d in db.query(District).all()}
+    crime_counts_by_district = dict(
+        db.query(PoliceStation.district_id, func.count(FIRRecord.id))
+        .join(FIRRecord, FIRRecord.police_station_id == PoliceStation.id)
+        .group_by(PoliceStation.district_id)
+        .all()
+    )
     rows = []
     for ind in indicators:
-        dist = db.query(District).filter(District.id == ind.district_id).first()
+        dist = districts_by_id.get(ind.district_id)
         if not dist or not dist.population:
             continue
-        crime_count = db.query(FIRRecord).join(PoliceStation)\
-            .filter(PoliceStation.district_id == ind.district_id).count()
+        crime_count = crime_counts_by_district.get(ind.district_id, 0)
         rows.append({
             "poverty_rate": ind.poverty_rate,
             "unemployment_rate": dist.unemployment_rate,

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
 import networkx as nx
 from app.database import get_db
@@ -8,21 +8,56 @@ from app.auth import get_current_user_claims
 
 router = APIRouter()
 
+# The final render is capped at 120 nodes anyway (see below) — for an
+# unscoped DGP query over the whole state's offender roster, pre-limiting to
+# the top N by risk_score avoids doing 5x per-offender relationship lookups
+# (gangs/vehicles/phones/accounts/associates) across every offender in the
+# state before throwing most of the result away. SP/SHO/Constable queries are
+# already bounded by district/station/assignment, so they're left as-is.
+DGP_OFFENDER_SCAN_LIMIT = 300
+
 @router.get("/graph")
 def get_network_graph(min_weight: int = 1, db: Session = Depends(get_db), claims: dict = Depends(get_current_user_claims)):
     role = claims.get("role")
-    
-    # 1. Gather filtered list of Offenders based on role boundaries
-    offenders_query = db.query(Offender)
+
+    # 1. Gather filtered list of Offenders based on role boundaries.
+    # Eager-load every to-many relationship this route walks (gangs,
+    # vehicles, phones, accounts, associates) via selectinload — each is
+    # ONE extra batched query total instead of one query per offender per
+    # relationship, which is what made this endpoint effectively hang once
+    # the offender table held real volume (2000 offenders x 5 relationships
+    # == thousands of individual round-trips to a remote DB).
+    offenders_query = db.query(Offender).options(
+        selectinload(Offender.gangs),
+        selectinload(Offender.vehicles),
+        selectinload(Offender.phones),
+        selectinload(Offender.accounts),
+        selectinload(Offender.associates),
+    )
     if role == "SP":
         offenders_query = offenders_query.join(FIRRecord, Offender.firs).join(PoliceStation).filter(PoliceStation.district_id == claims.get("district_id"))
     elif role == "SHO":
         offenders_query = offenders_query.join(FIRRecord, Offender.firs).filter(FIRRecord.police_station_id == claims.get("station_id"))
     elif role == "Constable":
         offenders_query = offenders_query.join(FIRRecord, Offender.firs).filter(FIRRecord.assigned_officer_id == claims.get("username"))
-        
+    else:
+        offenders_query = offenders_query.order_by(Offender.risk_score.desc()).limit(DGP_OFFENDER_SCAN_LIMIT)
+
     offenders = offenders_query.distinct().all()
     offender_ids = {o.id for o in offenders}
+
+    # Batch the "device IMEI / IP seen for this phone" lookup that used to
+    # run once per phone (up to ~1500 separate queries) into one query for
+    # every phone number in scope, grouped in Python afterward.
+    all_phone_numbers = [ph.phone_number for o in offenders for ph in o.phones]
+    cdr_by_phone: dict = {}
+    if all_phone_numbers:
+        for record in (
+            db.query(TelecomCDR)
+            .filter(TelecomCDR.phone_number.in_(all_phone_numbers))
+            .all()
+        ):
+            cdr_by_phone.setdefault(record.phone_number, []).append(record)
     
     nodes_res = []
     links_res = []
@@ -93,8 +128,8 @@ def get_network_graph(min_weight: int = 1, db: Session = Depends(get_db), claims
                 "type": "Owned"
             })
             
-            # Query TelecomCDR logs for this phone to extract Device IMEI and Cell pings (IP Address representation)
-            cdr_records = db.query(TelecomCDR).filter(TelecomCDR.phone_number == ph.phone_number).limit(2).all()
+            # Device IMEI and cell pings (IP Address representation) — from the batched lookup above
+            cdr_records = cdr_by_phone.get(ph.phone_number, [])[:2]
             for record in cdr_records:
                 if record.imei:
                     imei_node_id = f"imei_{record.imei}"

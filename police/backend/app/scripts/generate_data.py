@@ -1,3 +1,4 @@
+import os
 import random
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
@@ -63,10 +64,18 @@ CRIME_TYPES_IPC = [
 def seed_database():
     db = SessionLocal()
     try:
-        # Recreate tables
-        Base.metadata.drop_all(bind=engine)
-        Base.metadata.create_all(bind=engine)
-        print("Schema initialized.")
+        # SEED_MODE=additive: for a database that already holds live data
+        # (e.g. production, where nayak_sessions/messages/uploads are real
+        # and must survive) — only create missing tables, never drop.
+        # Default ("reset") keeps the original destructive local-dev
+        # behavior: wipe and recreate everything.
+        if os.getenv("SEED_MODE", "reset") == "additive":
+            Base.metadata.create_all(bind=engine)
+            print("Schema ensured (additive mode — existing tables/data untouched).")
+        else:
+            Base.metadata.drop_all(bind=engine)
+            Base.metadata.create_all(bind=engine)
+            print("Schema initialized.")
         
         # 1. Seed Districts
         districts_objects = []
@@ -126,8 +135,15 @@ def seed_database():
             {"username": "officer", "password": "officer123", "role": "SHO", "dist": blr_dist.id, "stat": blr_station.id}
         ]
 
+        existing_usernames = {row.username for row in db.query(User.username).all()}
+
         users_objects = {}
         for u in users_to_seed:
+            if u["username"] in existing_usernames:
+                # Already present (e.g. inserted ahead of a production
+                # additive seed) — don't touch it, just keep the reference.
+                users_objects[u["username"]] = db.query(User).filter(User.username == u["username"]).first()
+                continue
             user = User(
                 username=u["username"],
                 hashed_password=get_password_hash(u["password"]),
