@@ -95,13 +95,13 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
 
   const getPageMeta = () => {
     const path = location.pathname;
-    if (path.startsWith('/user/map')) return { title: 'SENTINEL MAP', subtitle: 'PII-Free Safety Grid' };
-    if (path.startsWith('/user/feed')) return { title: 'INCIDENT FEED', subtitle: 'Peer-to-Peer Safety Broadcasts' };
-    if (path.startsWith('/user/services')) return { title: 'CIVIC DIRECTORY', subtitle: 'Verified Helplines & Emergency Contacts' };
-    if (path.startsWith('/user/chat')) return { title: 'NAYAK AI COUNSEL', subtitle: 'Law-Backed Counsel & Threat Verification' };
-    if (path.startsWith('/user/camera')) return { title: 'SECURE CAPTURE', subtitle: 'Anonymous Evidence Recording' };
+    if (path.startsWith('/user/map')) return { title: 'SENTINEL GHOST MAP', subtitle: 'PII-Free Safety Grid' };
+    if (path.startsWith('/user/feed')) return { title: 'LOCAL INCIDENT FEED', subtitle: 'Peer-to-Peer Safety Broadcasts' };
+    if (path.startsWith('/user/services')) return { title: 'CIVIC DIRECTORY', subtitle: 'Verified Helplines & Contacts' };
+    if (path.startsWith('/user/nayak') || path.startsWith('/user/chat') || path.startsWith('/nayak')) return { title: 'NAYAK AI COUNSEL', subtitle: 'Law-Backed Threat Counsel' };
+    if (path.startsWith('/user/camera')) return { title: 'SECURE CAPTURE', subtitle: 'Anonymous Incident Camera' };
     if (path.startsWith('/user/library')) return { title: 'CITIZEN LAW LIBRARY', subtitle: 'Know Your Legal Rights' };
-    if (path.startsWith('/user/profile')) return { title: 'CITIZEN PROFILE', subtitle: 'Privacy & Report History' };
+    if (path.startsWith('/user/profile')) return { title: 'CITIZEN PROFILE', subtitle: 'Sentinel Privacy & History' };
     return { title: 'KAWACH SENTINEL', subtitle: 'Public Threat Intelligence' };
   };
 
@@ -109,21 +109,23 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
   const isProfileOrLibrary = location.pathname.includes('/profile') || location.pathname.includes('/library');
 
   return (
-    <div className="glass-panel flex-none" style={{
+    <header className="glass-panel flex-none select-none" style={{
       width: '100%',
-      padding: '8px 14px',
-      borderBottom: '1px solid rgba(255, 217, 0, 0.2)',
+      padding: '8px 12px',
+      borderBottom: '1px solid rgba(255, 217, 0, 0.25)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
       backgroundColor: '#ffffff',
       zIndex: 1000,
       position: 'relative',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      gap: '8px'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
         {!isProfileOrLibrary ? (
           <button
+            type="button"
             onClick={() => {
               if (onOpenProfile) onOpenProfile();
               else navigate('/user/profile');
@@ -139,7 +141,8 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
               justifyContent: 'center',
               cursor: 'pointer',
               boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-              outline: 'none'
+              outline: 'none',
+              flexShrink: 0
             }}
             title="Open User Profile"
           >
@@ -147,6 +150,7 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
           </button>
         ) : (
           <button
+            type="button"
             onClick={() => navigate(-1)}
             style={{
               width: '32px',
@@ -158,7 +162,8 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: '#333333'
+              color: '#333333',
+              flexShrink: 0
             }}
             title="Go Back"
           >
@@ -166,26 +171,49 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
           </button>
         )}
 
-        <div>
-          <h3 style={{ margin: 0, fontSize: '11px', fontWeight: '900', fontFamily: 'Sora, sans-serif', color: '#09090b', letterSpacing: '0.02em' }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <h3 style={{
+            margin: 0,
+            fontSize: '11px',
+            fontWeight: '900',
+            fontFamily: 'Sora, sans-serif',
+            color: '#09090b',
+            letterSpacing: '0.02em',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
             {title}
           </h3>
-          <p style={{ margin: 0, fontSize: '9px', color: '#64748B', fontWeight: '600', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+          <p style={{
+            margin: 0,
+            fontSize: '9px',
+            color: '#64748B',
+            fontWeight: '600',
+            fontFamily: 'Plus Jakarta Sans, sans-serif',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
             {subtitle}
           </p>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
         {!isProfileOrLibrary && (
           <button
-            onClick={onOpenLibrary}
+            type="button"
+            onClick={() => {
+              if (onOpenLibrary) onOpenLibrary();
+              else navigate('/user/library');
+            }}
             style={{
-              width: '32px',
-              height: '32px',
+              width: '30px',
+              height: '30px',
               borderRadius: '10px',
               backgroundColor: '#fffbeb',
-              border: '1px solid rgba(255, 217, 0, 0.4)',
+              border: '1px solid rgba(255, 217, 0, 0.5)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -199,22 +227,23 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
         )}
 
         <div style={{
-          backgroundColor: 'rgba(255, 217, 0, 0.15)',
+          backgroundColor: 'rgba(255, 217, 0, 0.18)',
           color: '#000000',
-          padding: '4px 8px',
-          borderRadius: '10px',
+          padding: '4px 7px',
+          borderRadius: '8px',
           fontSize: '9px',
           fontWeight: '800',
           display: 'flex',
           alignItems: 'center',
           gap: '3px',
-          border: '1px solid rgba(255, 217, 0, 0.4)'
+          border: '1px solid rgba(255, 217, 0, 0.5)',
+          fontFamily: 'Sora, sans-serif'
         }}>
           <span style={{ display: 'inline-block', width: '5px', height: '5px', backgroundColor: '#ff3b30', borderRadius: '50%' }} />
           <span>LIVE</span>
         </div>
       </div>
-    </div>
+    </header>
   );
 }
 
@@ -326,6 +355,12 @@ function UserLayout({ userReports }) {
   // Mobile View
   return (
     <div className="flex flex-col h-full w-full max-w-full overflow-hidden relative bg-white">
+      {/* Top Header Bar with Brand, Profile, Library & Live Status */}
+      <TopBar 
+        onOpenProfile={() => navigate('/user/profile')}
+        onOpenLibrary={() => navigate('/user/library')}
+      />
+
       {/* Scrollable Middle Content — takes exactly remaining space above BottomNav */}
       <main className="flex-1 min-h-0 w-full overflow-hidden relative bg-white">
         <AnimatePresence mode="wait">

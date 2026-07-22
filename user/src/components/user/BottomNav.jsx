@@ -77,20 +77,20 @@ export default function BottomNav() {
 
   return (
     <div className="flex-none w-full relative z-40 select-none" style={{
-      height: 'calc(48px + env(safe-area-inset-bottom, 0px))',
+      height: 'calc(58px + env(safe-area-inset-bottom, 0px))',
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       background: '#E9BA26', // Sophisticated Safety Yellow (#E9BA26)
-      boxShadow: '0 -2px 12px rgba(0, 0, 0, 0.06)',
-      borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-      overflow: 'visible'
+      boxShadow: '0 -2px 12px rgba(0, 0, 0, 0.08)',
+      borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+      boxSizing: 'border-box'
     }}>
       <div style={{
         position: 'relative',
         width: '100%',
-        height: '48px',
+        height: '58px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-around',
-        overflow: 'visible'
+        justifyContent: 'space-around'
       }}>
         {/* Animated Sliding White Background Circle */}
         {activeIndex !== -1 && (
@@ -98,15 +98,15 @@ export default function BottomNav() {
             className="nav-sliding-circle"
             style={{
               position: 'absolute',
-              width: '34px',
-              height: '34px',
+              width: '32px',
+              height: '32px',
               borderRadius: '50%',
               backgroundColor: '#ffffff', // White sliding indicator circle
               top: '4px',
-              left: `calc(${activeIndex * 20}% + (20% - 34px) / 2)`,
+              left: `calc(${activeIndex * 20}% + (20% - 32px) / 2)`,
               transition: 'left 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
               zIndex: 1,
-              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06)',
+              boxShadow: '0 3px 10px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06)',
               pointerEvents: 'none'
             }}
           />
@@ -119,6 +119,7 @@ export default function BottomNav() {
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => navigate(tab.path)}
               style={{
                 background: 'none',
@@ -126,7 +127,7 @@ export default function BottomNav() {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'flex-start',
+                justifyContent: 'center',
                 flex: 1,
                 height: '100%',
                 cursor: 'pointer',
@@ -134,17 +135,19 @@ export default function BottomNav() {
                 zIndex: 2,
                 WebkitTapHighlightColor: 'transparent',
                 outline: 'none',
-                paddingTop: '4px'
+                paddingTop: '2px',
+                paddingBottom: '2px',
+                boxSizing: 'border-box'
               }}
             >
               <div style={{
-                transform: isActive ? 'translateY(-2px) scale(1.1)' : 'translateY(0) scale(1)',
-                transition: 'transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '34px',
-                height: '34px',
+                width: '32px',
+                height: '32px',
                 borderRadius: '50%',
                 backgroundColor: 'transparent'
               }}>
@@ -153,15 +156,16 @@ export default function BottomNav() {
               
               {/* Label inside the yellow bar */}
               <span style={{
-                fontSize: '8px',
-                marginTop: '-2px',
-                fontWeight: isActive ? '800' : '600',
-                opacity: isActive ? 1 : 0.65,
+                fontSize: '9px',
+                lineHeight: '1.2',
+                marginTop: '1px',
+                fontWeight: isActive ? '800' : '700',
+                opacity: isActive ? 1 : 0.75,
                 fontFamily: 'Sora, sans-serif',
                 letterSpacing: '0.01em',
                 color: '#09090b',
-                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                transform: isActive ? 'translateY(-1px) scale(1.04)' : 'translateY(0) scale(1)'
+                whiteSpace: 'nowrap',
+                transition: 'all 0.3s ease'
               }}>
                 {tab.label}
               </span>

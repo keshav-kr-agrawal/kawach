@@ -37,7 +37,7 @@ function FloatingMapControls({ gpsCoords, onRecenterClick }) {
       style={{
         position: 'absolute',
         right: '16px',
-        bottom: '90px',
+        bottom: '76px',
         zIndex: 1000,
         display: 'flex',
         flexDirection: 'column',

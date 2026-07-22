@@ -604,13 +604,13 @@ export default function AlertsChatView() {
         </div>
       )}
 
-      {/* Header — Restored with top notch safety margin */}
-      <div className="px-4 pt-4 pb-3 bg-white border-b border-amber-400/20 flex items-center justify-between flex-none md:px-6 md:pt-6 md:pb-3">
+      {/* Sub-Header / Control Bar */}
+      <div className="px-4 pt-3 pb-2.5 bg-white border-b border-amber-400/20 flex items-center justify-between flex-none md:px-6 md:pt-4 md:pb-3">
         <div>
           <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
-            LAW-BACKED LEGAL &amp; THREAT COUNSEL
+            LAW-BACKED THREAT COUNSEL
           </span>
-          <h2 className="text-lg font-black text-ink font-sora md:text-xl">
+          <h2 className="text-base font-black text-ink font-sora md:text-lg">
             Nayak <span className="font-serif italic font-normal text-[#b08850] pr-1">AI Counsel</span>
           </h2>
         </div>
@@ -620,15 +620,16 @@ export default function AlertsChatView() {
             value={language}
             onChange={(e) => changeLanguage(e.target.value)}
             title="Reply language"
-            className="w-14 md:w-auto text-[9px] md:text-[10px] font-bold text-ink-soft border border-amber-400/30 rounded-lg px-1 md:px-1.5 py-1.5 bg-white uppercase tracking-wider font-mono focus:outline-none"
+            className="min-w-[72px] text-[10px] font-bold text-ink-soft border border-amber-400/40 rounded-lg px-2 py-1 bg-white uppercase tracking-wider font-mono focus:outline-none cursor-pointer"
           >
             {SUPPORTED_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
           <button
+            type="button"
             onClick={() => setEmergencyOpen(true)}
-            className="px-2.5 md:px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs uppercase tracking-wider font-sora animate-pulse shrink-0"
+            className="px-2.5 md:px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs uppercase tracking-wider font-sora animate-pulse shrink-0"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span className="hidden sm:inline">Emergency </span>SOS
           </button>
         </div>
