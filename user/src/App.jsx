@@ -92,6 +92,7 @@ const ALL_FLASHCARDS = [
 function TopBar({ onOpenProfile, onOpenLibrary }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [alertsOpen, setAlertsOpen] = useState(false);
 
   const getPageMeta = () => {
     const path = location.pathname;
@@ -109,141 +110,265 @@ function TopBar({ onOpenProfile, onOpenLibrary }) {
   const isProfileOrLibrary = location.pathname.includes('/profile') || location.pathname.includes('/library');
 
   return (
-    <header className="glass-panel flex-none select-none" style={{
-      width: '100%',
-      padding: '8px 12px',
-      borderBottom: '1px solid rgba(255, 217, 0, 0.25)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: '#ffffff',
-      zIndex: 1000,
-      position: 'relative',
-      boxSizing: 'border-box',
-      gap: '8px'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
-        {!isProfileOrLibrary ? (
-          <button
-            type="button"
-            onClick={() => {
-              if (onOpenProfile) onOpenProfile();
-              else navigate('/user/profile');
-            }}
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              backgroundColor: '#E9BA26',
-              border: '1.5px solid #000000',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-              outline: 'none',
-              flexShrink: 0
-            }}
-            title="Open User Profile"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2.5" className="w-4 h-4"><path d="M20 21v-2a4 4 0 0 4-4H8a4 4 0 0 4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '10px',
-              backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#333333',
-              flexShrink: 0
-            }}
-            title="Go Back"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          </button>
-        )}
+    <>
+      <header className="glass-panel flex-none select-none" style={{
+        width: '100%',
+        padding: '8px 12px',
+        borderBottom: '1px solid rgba(255, 217, 0, 0.25)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#ffffff',
+        zIndex: 1000,
+        position: 'relative',
+        boxSizing: 'border-box',
+        gap: '8px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+          {!isProfileOrLibrary ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenProfile) onOpenProfile();
+                else navigate('/user/profile');
+              }}
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                backgroundColor: '#E9BA26',
+                border: '1.5px solid #000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                outline: 'none',
+                flexShrink: 0
+              }}
+              title="Open User Profile"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2.5" className="w-4 h-4"><path d="M20 21v-2a4 4 0 0 4-4H8a4 4 0 0 4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '10px',
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#333333',
+                flexShrink: 0
+              }}
+              title="Go Back"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            </button>
+          )}
 
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <h3 style={{
-            margin: 0,
-            fontSize: '11px',
-            fontWeight: '900',
-            fontFamily: 'Sora, sans-serif',
-            color: '#09090b',
-            letterSpacing: '0.02em',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}>
-            {title}
-          </h3>
-          <p style={{
-            margin: 0,
-            fontSize: '9px',
-            color: '#64748B',
-            fontWeight: '600',
-            fontFamily: 'Plus Jakarta Sans, sans-serif',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}>
-            {subtitle}
-          </p>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <h3 style={{
+              margin: 0,
+              fontSize: '11px',
+              fontWeight: '900',
+              fontFamily: 'Sora, sans-serif',
+              color: '#09090b',
+              letterSpacing: '0.02em',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {title}
+            </h3>
+            <p style={{
+              margin: 0,
+              fontSize: '9px',
+              color: '#64748B',
+              fontWeight: '600',
+              fontFamily: 'Plus Jakarta Sans, sans-serif',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {subtitle}
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-        {!isProfileOrLibrary && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {/* Notification Bell Icon Button for Proximity Alerts */}
           <button
             type="button"
-            onClick={() => {
-              if (onOpenLibrary) onOpenLibrary();
-              else navigate('/user/library');
-            }}
+            onClick={() => setAlertsOpen(true)}
             style={{
               width: '30px',
               height: '30px',
               borderRadius: '10px',
               backgroundColor: '#fffbeb',
-              border: '1px solid rgba(255, 217, 0, 0.5)',
+              border: '1px solid rgba(255, 217, 0, 0.6)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: '#b08850'
+              color: '#b08850',
+              position: 'relative'
             }}
-            title="Open Legal Library"
+            title="View Main Proximity Alerts"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span style={{
+              position: 'absolute',
+              top: '-3px',
+              right: '-3px',
+              width: '13px',
+              height: '13px',
+              backgroundColor: '#ff3b30',
+              color: '#ffffff',
+              borderRadius: '50%',
+              fontSize: '8px',
+              fontWeight: '900',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid #ffffff'
+            }}>
+              3
+            </span>
           </button>
-        )}
 
-        <div style={{
-          backgroundColor: 'rgba(255, 217, 0, 0.18)',
-          color: '#000000',
-          padding: '4px 7px',
-          borderRadius: '8px',
-          fontSize: '9px',
-          fontWeight: '800',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '3px',
-          border: '1px solid rgba(255, 217, 0, 0.5)',
-          fontFamily: 'Sora, sans-serif'
-        }}>
-          <span style={{ display: 'inline-block', width: '5px', height: '5px', backgroundColor: '#ff3b30', borderRadius: '50%' }} />
-          <span>LIVE</span>
+          {!isProfileOrLibrary && (
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenLibrary) onOpenLibrary();
+                else navigate('/user/library');
+              }}
+              style={{
+                width: '30px',
+                height: '30px',
+                borderRadius: '10px',
+                backgroundColor: '#fffbeb',
+                border: '1px solid rgba(255, 217, 0, 0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#b08850'
+              }}
+              title="Open Legal Library"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </button>
+          )}
+
+          <div style={{
+            backgroundColor: 'rgba(255, 217, 0, 0.18)',
+            color: '#000000',
+            padding: '4px 7px',
+            borderRadius: '8px',
+            fontSize: '9px',
+            fontWeight: '800',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+            border: '1px solid rgba(255, 217, 0, 0.5)',
+            fontFamily: 'Sora, sans-serif'
+          }}>
+            <span style={{ display: 'inline-block', width: '5px', height: '5px', backgroundColor: '#ff3b30', borderRadius: '50%' }} />
+            <span>LIVE</span>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Main Proximity Alerts Popup Modal */}
+      {alertsOpen && (
+        <div className="fixed inset-0 z-50 bg-amber-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-[#E9BA26] rounded-3xl p-5 w-full max-w-md space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-amber-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-red-100 text-red-600 rounded-xl font-black text-sm">🔔</span>
+                <div>
+                  <h3 className="font-black text-ink text-sm font-sora uppercase tracking-wider">
+                    Main Proximity Alerts
+                  </h3>
+                  <span className="text-[9px] font-bold text-amber-700 font-mono">
+                    2km Ward Sphere • Real-Time Safety Feed
+                  </span>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setAlertsOpen(false)} 
+                className="w-7 h-7 rounded-lg bg-amber-50 text-ink-soft hover:text-ink font-bold flex items-center justify-center border border-amber-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="p-3.5 bg-red-50/90 border border-red-200 rounded-2xl flex flex-col gap-1 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded-md font-mono">
+                    🔴 CRITICAL • 250m AWAY
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-500 font-mono">3m ago</span>
+                </div>
+                <h4 className="font-black text-ink text-xs font-sora mt-1">Armed Robbery Logged</h4>
+                <p className="text-ink-soft text-[10px] font-semibold leading-relaxed">
+                  Citizen recorded footage uploaded. Police patrol vehicle dispatched to Koramangala 5th Block.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-amber-50/90 border border-amber-200 rounded-2xl flex flex-col gap-1 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md font-mono">
+                    ⚠️ HAZARD • 600m AWAY
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-500 font-mono">12m ago</span>
+                </div>
+                <h4 className="font-black text-ink text-xs font-sora mt-1">Waterlogging &amp; Fallen Tree</h4>
+                <p className="text-ink-soft text-[10px] font-semibold leading-relaxed">
+                  Hosur Road underpass blocked. Traffic divert active towards Silk Board flyover.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-blue-50/90 border border-blue-200 rounded-2xl flex flex-col gap-1 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md font-mono">
+                    🛡️ FRAUD ALERT • 1.2km AWAY
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-500 font-mono">28m ago</span>
+                </div>
+                <h4 className="font-black text-ink text-xs font-sora mt-1">Digital Arrest WhatsApp Scam</h4>
+                <p className="text-ink-soft text-[10px] font-semibold leading-relaxed">
+                  Fake CBI video call extortion reported in ward. Disconnect immediately; do not transfer money.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-amber-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setAlertsOpen(false);
+                  navigate('/user/map');
+                }}
+                className="w-full py-2.5 bg-[#E9BA26] hover:bg-amber-400 text-ink font-black rounded-xl text-xs flex items-center justify-center gap-2 border border-amber-950/10 uppercase tracking-wider font-sora shadow-xs"
+              >
+                🗺️ View Incident Locations on Safety Map
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
