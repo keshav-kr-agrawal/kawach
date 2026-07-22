@@ -56,7 +56,7 @@ export default function LandingPageView({ onEnterCitizen }) {
   });
 
   return (
-    <div className="min-h-screen bg-paper-warm font-ui text-ink">
+    <div className="min-h-screen w-full bg-paper-warm font-ui text-ink overflow-y-auto">
       {/* topbar */}
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-amber-200 bg-paper-warm/90 px-5 py-4 backdrop-blur md:px-12">
         <div className="flex items-center gap-3">

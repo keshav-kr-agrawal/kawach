@@ -659,6 +659,14 @@ export default function App() {
     }
   });
 
+  useEffect(() => {
+    if (location.pathname.startsWith('/user') || location.pathname.startsWith('/police')) {
+      document.body.classList.add('in-app');
+    } else {
+      document.body.classList.remove('in-app');
+    }
+  }, [location.pathname]);
+
   const handleOfficialLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
