@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
 import networkx as nx
 from app.database import get_db
-from app.models import Offender, FIRRecord, PoliceStation, Gang, Vehicle, Phone, Account, Call, Location, Visit, TelecomCDR
+from app.models import Offender, FIRRecord, PoliceStation, Gang, Vehicle, Phone, Account, Call, Location, Visit, TelecomCDR, fir_accused
 from app.auth import get_current_user_claims
 
 router = APIRouter()
@@ -227,18 +227,20 @@ def get_network_graph(min_weight: int = 1, db: Session = Depends(get_db), claims
                 "details": f"{call.duration_seconds} sec on {call.timestamp.strftime('%Y-%m-%d')}"
             })
             
-    # Add locations visited
+    # Add locations visited — the Locations table is tiny (a handful of
+    # rows), so fetch it once instead of lazy-loading v.location per visit.
+    locations_by_id = {loc.id: loc for loc in db.query(Location).all()}
     visits = db.query(Visit).filter(Visit.offender_id.in_(offender_ids)).all()
     for v in visits:
         loc_node_id = f"loc_{v.location_id}"
-        # Add Location node if not already added
-        if not any(n["id"] == loc_node_id for n in nodes_res):
+        loc = locations_by_id.get(v.location_id)
+        if loc and not any(n["id"] == loc_node_id for n in nodes_res):
             nodes_res.append({
                 "id": loc_node_id,
-                "label": v.location.name,
+                "label": loc.name,
                 "type": "Location",
-                "lat": v.location.lat,
-                "lng": v.location.lng
+                "lat": loc.lat,
+                "lng": loc.lng
             })
         links_res.append({
             "source": v.offender_id,
@@ -246,18 +248,31 @@ def get_network_graph(min_weight: int = 1, db: Session = Depends(get_db), claims
             "type": "Visited"
         })
 
-    # Co-accused in FIRs
-    firs_query = db.query(FIRRecord)
+    # Co-accused in FIRs — a single query over the junction table, scoped
+    # to offenders already in this graph, instead of loading every FIRRecord
+    # in role scope (up to all 10,500) and lazy-accessing `.accused` per row
+    # (one query per FIR). That was the actual hang: for an unscoped DGP
+    # query this fetched and lazy-expanded ALL FIRs regardless of the
+    # offender scan limit above.
+    co_accused_query = (
+        db.query(fir_accused.c.fir_id, fir_accused.c.offender_id, FIRRecord.crime_type)
+        .join(FIRRecord, FIRRecord.id == fir_accused.c.fir_id)
+        .filter(fir_accused.c.offender_id.in_(offender_ids))
+    )
     if role == "SP":
-        firs_query = firs_query.join(PoliceStation).filter(PoliceStation.district_id == claims.get("district_id"))
+        co_accused_query = co_accused_query.join(PoliceStation, PoliceStation.id == FIRRecord.police_station_id).filter(PoliceStation.district_id == claims.get("district_id"))
     elif role == "SHO":
-        firs_query = firs_query.filter(FIRRecord.police_station_id == claims.get("station_id"))
+        co_accused_query = co_accused_query.filter(FIRRecord.police_station_id == claims.get("station_id"))
     elif role == "Constable":
-        firs_query = firs_query.filter(FIRRecord.assigned_officer_id == claims.get("username"))
-        
-    firs = firs_query.all()
-    for f in firs:
-        accused_ids = [a.id for a in f.accused if a.id in offender_ids]
+        co_accused_query = co_accused_query.filter(FIRRecord.assigned_officer_id == claims.get("username"))
+
+    fir_accused_map: dict = {}
+    for fir_id, offender_id, crime_type in co_accused_query.all():
+        fir_accused_map.setdefault(fir_id, {"crime_type": crime_type, "offender_ids": []})
+        fir_accused_map[fir_id]["offender_ids"].append(offender_id)
+
+    for fir_id, entry in fir_accused_map.items():
+        accused_ids = entry["offender_ids"]
         if len(accused_ids) > 1:
             for i in range(len(accused_ids)):
                 for j in range(i + 1, len(accused_ids)):
@@ -265,7 +280,7 @@ def get_network_graph(min_weight: int = 1, db: Session = Depends(get_db), claims
                         "source": accused_ids[i],
                         "target": accused_ids[j],
                         "type": "Arrested With",
-                        "details": f"FIR: {f.id} ({f.crime_type})"
+                        "details": f"FIR: {fir_id} ({entry['crime_type']})"
                     })
 
     # Limit nodes to 120 max for optimal rendering performance
