@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { VIDEO_STATUS } from '../../api/videoService';
 import { routeReport } from '../../api/routingService';
-import { supabase } from '../../supabaseClient';
+import { uploadMediaBlob } from '../../api/mediaService';
 
 export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
   const [hasCameraAccess, setHasCameraAccess] = useState(false);
@@ -180,24 +180,17 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
 
     setUploading(true);
     try {
-      const fileExt = 'mp4';
-      const fileName = `clip_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `citizen_clips/${fileName}`;
+      const fileName = `clip_${Date.now()}_${Math.random().toString(36).substring(7)}.mp4`;
 
-      let publicUrl = videoUrl;
-      try {
-        const { data, error } = await supabase.storage
-          .from('citizen-reports')
-          .upload(filePath, recordedBlob, { contentType: 'video/mp4' });
-
-        if (!error && data) {
-          const { data: pubData } = supabase.storage.from('citizen-reports').getPublicUrl(filePath);
-          if (pubData?.publicUrl) {
-            publicUrl = pubData.publicUrl;
-          }
-        }
-      } catch (e) {
-        console.warn('Supabase storage upload skipped, using active live video blob URL.', e);
+      // Cloudinary-first (Supabase Storage fallback) — same real upload path
+      // as the Nayak chat flow. A local blob: URL only exists in this tab and
+      // vanishes once it closes, so it must never be submitted as the
+      // report's videoUrl — reels from other devices/sessions would 404 on
+      // it forever, which was exactly what was happening before this fix.
+      const publicUrl = await uploadMediaBlob(recordedBlob, { folder: 'citizen-clips', filename: fileName });
+      if (!publicUrl) {
+        alert('Could not upload your video to storage right now. Please check your connection and try again — nothing was submitted.');
+        return;
       }
 
       const localUuid = localStorage.getItem('kawach_uploader_uuid') || `anon_${Date.now()}`;
@@ -241,9 +234,6 @@ export default function SecureCameraView({ onUploadComplete, gpsCoords }) {
       {/* Header — Restored with top notch safety padding */}
       <div className="px-4 pt-6 pb-3 bg-white border-b border-amber-400/20 flex-none flex items-center justify-between z-20 md:px-6 md:pt-8 md:pb-4">
         <div>
-          <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
-            ANONYMOUS EVIDENCE RECORDING
-          </span>
           <h2 className="text-xl font-black text-ink font-sora">
             Secure <span className="font-serif italic font-normal text-[#b08850] pr-1">Capture</span>
           </h2>

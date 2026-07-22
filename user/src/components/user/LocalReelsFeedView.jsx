@@ -182,9 +182,6 @@ export default function LocalReelsFeedView({ userReports = [], onReportVideo }) 
       {/* Editorial Header */}
       <div className="px-4 pt-4 pb-3 bg-white border-b border-amber-400/20 flex-none flex items-center justify-between z-20 md:px-6 md:pt-6 md:pb-3">
         <div>
-          <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
-            REAL CITIZEN INCIDENT BROADCASTS
-          </span>
           <h2 className="text-lg font-black text-ink font-sora md:text-xl">
             Incident <span className="font-serif italic font-normal text-[#b08850] pr-1">Feed</span>
           </h2>

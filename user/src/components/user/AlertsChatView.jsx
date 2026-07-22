@@ -704,15 +704,12 @@ export default function AlertsChatView() {
       {/* Header — Restored with top notch safety margin */}
       <div className="px-4 pt-4 pb-3 bg-white border-b border-amber-400/20 flex items-center justify-between flex-none md:px-6 md:pt-6 md:pb-3">
         <div>
-          <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block font-mono">
-            LAW-BACKED LEGAL &amp; THREAT COUNSEL
-          </span>
           <h2 className="text-lg font-black text-ink font-sora md:text-xl">
             Nayak <span className="font-serif italic font-normal text-[#b08850] pr-1">AI Counsel</span>
           </h2>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 mt-1.5">
           <select
             value={language}
             onChange={(e) => changeLanguage(e.target.value)}

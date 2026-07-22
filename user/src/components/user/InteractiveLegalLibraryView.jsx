@@ -113,15 +113,9 @@ export default function InteractiveLegalLibraryView({ onBack, onToggleBookmark, 
       
       {/* Editorial Header — Restored with top notch safety padding */}
       <div className="px-4 pt-6 pb-3 bg-white border-b border-amber-400/20 md:px-6 md:pt-8 md:pb-4">
-        <span className="text-[9px] font-bold text-[#b08850] uppercase tracking-widest block mb-0.5 font-mono">
-          BHARATIYA NYAYA SANHITA (BNS) CITATIONS
-        </span>
         <h2 className="text-xl font-black text-ink font-sora md:text-2xl">
           Citizen <span className="font-serif italic font-normal text-[#b08850] pr-1">Law Library</span>
         </h2>
-        <p className="text-ink-soft text-xs font-semibold mt-1 leading-relaxed hidden sm:block">
-          Know your constitutional rights in 60 seconds. Flashcard scenarios and verified legal codes.
-        </p>
       </div>
 
       <div className="p-5 space-y-8">
