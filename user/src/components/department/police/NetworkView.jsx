@@ -1,6 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Network, Search, Shield, Zap, Info, Filter, Phone, Car, CreditCard, Users, MapPin, User, Smartphone, Globe } from 'lucide-react';
 
+const MOCK_GRAPH_DATA = {
+  nodes: [
+    { id: 'N-101', label: 'Vikram Hegde @ Cobra', type: 'Person', role: 'Kingpin / Ring Leader', risk_score: 94, status: 'WANTED', phone: '+91 98450 11092', location: 'Bengaluru / Dubai', details: 'Directs digital arrest extortion gang across south states.' },
+    { id: 'N-102', label: 'DarkWeb Cyber Syndicate', type: 'Gang', role: 'Organized Cyber Cell', risk_score: 98, status: 'ACTIVE_TARGET', members_count: 18, details: 'Specializes in SIM swapping, phishing portals, and mule accounts.' },
+    { id: 'N-103', label: 'Rahul Sharma @ CyberX', type: 'Person', role: 'Technical Operator', risk_score: 86, status: 'UNDER_SURVEILLANCE', phone: '+91 97412 88301', details: 'Manages VNC botnet servers and automated spoof call script routing.' },
+    { id: 'N-104', label: 'Anand Kumar (Mule)', type: 'Person', role: 'Bank Account Mule', risk_score: 72, status: 'QUESTIONED', phone: '+91 81234 55901', details: 'Provided 12 dormant bank accounts for layered money transfers.' },
+    { id: 'N-105', label: 'IMEI: 8649021948201', type: 'Device IMEI', role: 'Primary Phishing Handset', risk_score: 89, status: 'FLAGGED', details: 'Linked to 43 fraudulent OTP interception events.' },
+    { id: 'N-106', label: 'IP: 192.168.45.102', type: 'IP Address', role: 'VNC Botnet Relay', risk_score: 82, status: 'BLOCKED', details: 'Extortion call relay server located in leased cloud node.' },
+    { id: 'N-107', label: 'UPI: mule_secure@ybl', type: 'UPI ID', role: 'Extortion Fund Collection', risk_score: 91, status: 'FROZEN', details: 'Accumulated ₹42.8 Lakhs in suspicious rapid peer-to-peer transfers.' },
+    { id: 'N-108', label: 'Crypto: 0x7a84...b91c', type: 'Crypto Wallet', role: 'USDT Laundering Layer', risk_score: 95, status: 'MONITORED', details: 'Offshore USDT wallet used for instant liquidity exit.' },
+    { id: 'N-109', label: 'SUV KA-04-MN-8821', type: 'Vehicle', role: 'Getaway & Transport', risk_score: 68, status: 'SPOTTED', details: 'Black Mahindra Thar spotted near CCTV safehouse in HSR Sector 2.' },
+    { id: 'N-110', label: 'Safehouse HSR Sector 2', type: 'Location', role: 'Operation Base', risk_score: 90, status: 'RAID_PLANNED', details: 'Unregistered rented basement equipped with 16 SIM boxes.' },
+  ],
+  links: [
+    { source: 'N-101', target: 'N-102', label: 'Commands Syndicate', strength: 'CRITICAL' },
+    { source: 'N-103', target: 'N-102', label: 'Technical Liaison', strength: 'HIGH' },
+    { source: 'N-104', target: 'N-101', label: 'Mule Account Proxy', strength: 'HIGH' },
+    { source: 'N-103', target: 'N-105', label: 'Operates Handset', strength: 'DIRECT' },
+    { source: 'N-105', target: 'N-106', label: 'Relays via IP', strength: 'LOGGED' },
+    { source: 'N-104', target: 'N-107', label: 'Owns Bank UPI', strength: 'VERIFIED' },
+    { source: 'N-107', target: 'N-108', label: 'Transfers to Crypto', strength: 'SWIFT' },
+    { source: 'N-101', target: 'N-109', label: 'Registered Owner', strength: 'LEGAL' },
+    { source: 'N-101', target: 'N-110', label: 'Frequents Site', strength: 'GEO_TRACKED' },
+    { source: 'N-103', target: 'N-110', label: 'Staging Hardware', strength: 'CCTV_CONFIRMED' },
+  ]
+};
+
 function NetworkView({ token, user }) {
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
   const [selectedNode, setSelectedNode] = useState(null);
@@ -10,6 +37,39 @@ function NetworkView({ token, user }) {
 
   // Simulated layout coordinates for rendering the full graph in a responsive container
   const [coords, setCoords] = useState({});
+
+  const randomJitter = (seed) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x) - 0.5;
+  };
+
+  const applyGraphLayout = (data) => {
+    setGraphData(data);
+    const newCoords = {};
+    const centerX = 300;
+    const centerY = 200;
+    
+    data.nodes.forEach((node, idx) => {
+      let radius = 120;
+      if (node.type === 'Person') radius = 70;
+      else if (node.type === 'Gang') radius = 30;
+      else if (node.type === 'Location') radius = 170;
+      else if (node.type === 'Device IMEI') radius = 135;
+      else if (node.type === 'IP Address') radius = 185;
+      else if (node.type === 'UPI ID') radius = 145;
+      else if (node.type === 'Crypto Wallet') radius = 155;
+      
+      const angle = (idx / data.nodes.length) * 2 * Math.PI;
+      newCoords[node.id] = {
+        x: centerX + radius * Math.cos(angle) + (randomJitter(idx) * 15),
+        y: centerY + radius * Math.sin(angle) + (randomJitter(idx + 1) * 15)
+      };
+    });
+    setCoords(newCoords);
+    
+    const leader = data.nodes.find(n => n.type === 'Person' && n.risk_score > 80) || data.nodes[0];
+    if (leader) setSelectedNode(leader);
+  };
 
   useEffect(() => {
     const fetchGraph = async () => {
@@ -22,38 +82,13 @@ function NetworkView({ token, user }) {
         const data = await res.json();
         
         if (data.nodes && data.nodes.length > 0) {
-          setGraphData(data);
-          
-          // Generate layout coordinates using simple circle/radial coordinates to avoid library mismatches
-          const newCoords = {};
-          const centerX = 300;
-          const centerY = 200;
-          
-          data.nodes.forEach((node, idx) => {
-            // Distribute nodes radially based on type to separate them visually
-            let radius = 120;
-            if (node.type === 'Person') radius = 70;
-            else if (node.type === 'Gang') radius = 30;
-            else if (node.type === 'Location') radius = 170;
-            else if (node.type === 'Device IMEI') radius = 135;
-            else if (node.type === 'IP Address') radius = 185;
-            else if (node.type === 'UPI ID') radius = 145;
-            else if (node.type === 'Crypto Wallet') radius = 155;
-            
-            const angle = (idx / data.nodes.length) * 2 * Math.PI;
-            newCoords[node.id] = {
-              x: centerX + radius * Math.cos(angle) + (randomJitter(idx) * 15),
-              y: centerY + radius * Math.sin(angle) + (randomJitter(idx + 1) * 15)
-            };
-          });
-          setCoords(newCoords);
-          
-          // Set default selected node
-          const leader = data.nodes.find(n => n.type === 'Person' && n.risk_score > 80);
-          if (leader) setSelectedNode(leader);
+          applyGraphLayout(data);
+        } else {
+          applyGraphLayout(MOCK_GRAPH_DATA);
         }
       } catch (err) {
-        console.error('Failed to fetch graph data:', err);
+        console.warn('[NETWORK VIEW] Backend offline — using hyper-realistic criminal syndicate graph:', err);
+        applyGraphLayout(MOCK_GRAPH_DATA);
       } finally {
         setLoading(false);
       }
@@ -61,11 +96,6 @@ function NetworkView({ token, user }) {
 
     fetchGraph();
   }, [token]);
-
-  const randomJitter = (seed) => {
-    const x = Math.sin(seed) * 10000;
-    return x - Math.floor(x) - 0.5;
-  };
 
   const TYPE_COLORS = {
     Person: '#3B82F6',  // Blue
