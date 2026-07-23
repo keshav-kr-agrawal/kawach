@@ -1,5 +1,14 @@
 # Complete the police console backend — seed the missing case data
 
+## Progress
+- ✅ Step 1 — additive seed mode added (`SEED_MODE=additive`), username-collision guard added.
+- ✅ Step 2 — ran against production. Verified before/after: all live tables (`nayak_*`, `citizen_reports`, `users`, `audit_logs`, `ip_sightings`) byte-for-byte unchanged in row count; target tables populated (2000 offenders, 10500 FIRs, 135 stations, 31 districts, 1517 phones, 1220 accounts, etc).
+- ✅ Bonus finding (not in original plan): real data volume immediately exposed severe N+1 query bugs in `/network/graph` (10,500+ individual round-trips — was hanging indefinitely / crashing the Render worker with a 502) and `/analytics/patterns` (155 repeated queries). Both fixed — verified warm-instance timings: network/graph 4.1s (was: infinite hang → 502), patterns 2.7s (was: 58s). See commits `69ad9cb` and `c2d3569`.
+- ✅ Verified with a real `dgp` token against the live Render backend: `/dashboard/summary` (10500 FIRs, 2000 offenders), `/investigations` (150), `/offenders/repeat` (100), `/analytics/predict` (31 districts), `/network/graph` (120 nodes/44 links/84 communities), `/analytics/patterns`, `/ip-tracing/103.85.12.4` (real case-match hit: OFF-0778).
+- ⏳ Step 3 (Nayak legal RAG) — not started.
+- ⏳ Remaining step-4 checks — Fraud Shield phone match, Case Terminal, Live Arrest Monitor pre-check signal, and an actual browser click-through — not yet done.
+
+
 ## Context
 
 Audited every route the police console calls (`#/live-monitor` and others) plus the live Render/Supabase Postgres directly. Finding: the backend code is **not fake** — dashboard, investigations, offenders, network graph, predictive risk, alerts, case terminal, fraud shield, reports, and IP tracing all run real SQL queries against real tables (matches CLAUDE.md's documented "real, not heuristic" status). The problem: **the production database has zero rows in every case-data table.**

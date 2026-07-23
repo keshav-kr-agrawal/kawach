@@ -7,8 +7,14 @@ from app.database import Base, engine, SessionLocal
 from app.models import NayakLawChunk
 from app.scripts.seed_nayak import LAW_CHUNKS, generate_embedding
 
-# Standardized rulebook path
-RULEBOOK_DIR = "/Users/keshav/zoho/standardized_rulebook"
+# Standardized rulebook path — the full ~3,974-chunk source corpus isn't
+# committed to this repo (only ever existed on a teammate's machine at
+# /Users/keshav/zoho/standardized_rulebook). Allow overriding via env var;
+# if neither that nor the hardcoded fallback exists, the bulk-import step
+# below is skipped gracefully instead of crashing — the 10 curated core
+# safety chunks (BNS/IT Act/RBI/etc, in seed_nayak.py's LAW_CHUNKS) still
+# get seeded regardless, since that part is real and self-contained.
+RULEBOOK_DIR = os.getenv("RULEBOOK_DIR", "/Users/keshav/zoho/standardized_rulebook")
 
 # Normalize text helper to map files to custom seeded safety chunks
 def get_safety_chunk_override(act_title, sec_num):
@@ -75,10 +81,17 @@ def main():
         db.commit()
         print("[RULEBOOK-SEEDER] Core safety chunks seeded successfully.")
         
-        # 2. Iterate through standardized rulebook directory
-        print(f"[RULEBOOK-SEEDER] Scanning directory: {RULEBOOK_DIR}")
+        # 2. Iterate through standardized rulebook directory, if present
         all_chunks_to_insert = []
-        
+
+        if not os.path.isdir(RULEBOOK_DIR):
+            print(f"[RULEBOOK-SEEDER] {RULEBOOK_DIR} not found on this machine — skipping bulk "
+                  f"import. The {len(seeded_ids)} core safety chunks above are still seeded; "
+                  f"set RULEBOOK_DIR to the full source corpus to add the rest.")
+            print(f"[RULEBOOK-SEEDER] Seeding completed! Total chunks in database: {len(seeded_ids)}")
+            return
+
+        print(f"[RULEBOOK-SEEDER] Scanning directory: {RULEBOOK_DIR}")
         for filename in sorted(os.listdir(RULEBOOK_DIR)):
             if not filename.endswith(".json") or filename == "verify_integrity.json":
                 continue
