@@ -566,15 +566,16 @@ function UserLayout({ userReports }) {
 
 function RequireCitizenAuth({ token, isLoadingSession, children }) {
   const navigate = useNavigate();
+  const location = useLocation();
   useEffect(() => {
     if (!isLoadingSession && !token) {
-      const currentPath = window.location.pathname;
+      const currentPath = location.pathname;
       if (currentPath && currentPath !== '/' && currentPath !== '/user/login') {
         sessionStorage.setItem('redirect_path', currentPath);
       }
       navigate('/');
     }
-  }, [token, isLoadingSession, navigate]);
+  }, [token, isLoadingSession, navigate, location]);
 
   if (isLoadingSession) {
     return (
