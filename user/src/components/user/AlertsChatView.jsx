@@ -575,7 +575,8 @@ export default function AlertsChatView() {
         mediaUrl: realUrl, 
         mediaType, 
         sessionId: activeSess, 
-        captureMode: isImg && selectedMode === 'currency' ? currentCapMode : undefined 
+        captureMode: isImg && selectedMode === 'currency' ? currentCapMode : undefined,
+        mode: selectedMode
       });
       const v = mediaRes.verdict || {};
 

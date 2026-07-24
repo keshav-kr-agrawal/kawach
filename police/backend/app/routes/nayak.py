@@ -80,6 +80,7 @@ class MediaUploadRequest(BaseModel):
     media_type: str  # 'image', 'video', 'audio', 'link', 'text'
     session_id: Optional[str] = None
     capture_mode: Optional[str] = "visible"
+    mode: Optional[str] = None  # e.g. 'currency', 'scam_call', 'scam_message', etc.
 
 # Helper dependency to resolve user ID
 def get_nayak_user_id(x_user_id: Optional[str] = Header(None)) -> str:
@@ -927,19 +928,20 @@ def _analyze_voice_call_with_groq(blob: bytes, filename: str) -> Optional[dict]:
     return None
 
 
-def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str = "visible") -> dict:
+def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str = "visible", mode: Optional[str] = None) -> dict:
     """
     Fetch the media and run it through the real Classifier microservice / Groq Whisper:
-    video/audio -> Groq Whisper & Voice Scam LLM analysis -> deepfake / heuristic fallback,
-    image -> /classify-currency (counterfeit screening).
+    - video/audio or mode=='scam_call' -> Groq Whisper & Voice Scam LLM analysis -> deepfake / heuristic fallback
+    - image AND mode=='currency' -> /classify-currency (counterfeit screening) ONLY
+    - non-currency image/media -> General evidence storage
     """
     try:
         media_res = requests.get(media_url, timeout=30)
         media_res.raise_for_status()
         blob = media_res.content
 
-        # For audio or video (scam calls), first try Groq Whisper + LLM transcript analysis
-        if media_type in ("audio", "video"):
+        # 1. For audio/video OR when mode is explicitly 'scam_call' or 'live_call_mic': run Groq Whisper + LLM
+        if media_type in ("audio", "video") or mode in ("scam_call", "live_call_mic"):
             groq_verdict = _analyze_voice_call_with_groq(blob, f"file.{media_type}")
             if groq_verdict:
                 return groq_verdict
@@ -967,60 +969,58 @@ def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str 
             }
 
         if media_type == "image":
-            r = requests.post(
-                f"{CLASSIFIER_URL}/classify-currency?capture_mode={capture_mode}",
-                files={"file": ("nayak_note.jpg", blob, "image/jpeg")},
-                timeout=60,
-            )
-            r.raise_for_status()
-            data = r.json()
-            verdict = data.get("verdict")
-            # v2 pipeline verdicts (see plan/currency_pipeline_v2_plan.md):
-            # only real/fake verdicts map to a boolean — gate exits
-            # (NOT_A_CURRENCY_NOTE / INSUFFICIENT_QUALITY) and INCONCLUSIVE
-            # stay None so the chat never renders them as "flagged suspicious".
-            if verdict in ("LIKELY_GENUINE", "GENUINE_FEATURES"):
-                is_auth = True
-            elif verdict in ("LIKELY_COUNTERFEIT", "SUSPECT_FEATURES"):
-                is_auth = False
+            # STRICT GUARD: Only run counterfeit currency model if mode is explicitly 'currency'!
+            if mode == "currency":
+                r = requests.post(
+                    f"{CLASSIFIER_URL}/classify-currency?capture_mode={capture_mode}",
+                    files={"file": ("nayak_note.jpg", blob, "image/jpeg")},
+                    timeout=60,
+                )
+                r.raise_for_status()
+                data = r.json()
+                verdict = data.get("verdict")
+                if verdict in ("LIKELY_GENUINE", "GENUINE_FEATURES"):
+                    is_auth = True
+                elif verdict in ("LIKELY_COUNTERFEIT", "SUSPECT_FEATURES"):
+                    is_auth = False
+                else:
+                    is_auth = None
+                fake_prob = data.get("fake_probability")
+                auth_score = data.get("authenticity_score")
+                if auth_score is None and fake_prob is not None:
+                    auth_score = round((1.0 - fake_prob) * 100, 1)
+                findings = "; ".join(
+                    c["finding"] for c in data.get("security_checks", [])[:2] if c.get("score") is not None
+                )
+                details = f"Currency screening ({data.get('model_mode')}): {verdict}. {findings}".strip()
+                if data.get("guidance"):
+                    details += f" {data['guidance']}"
+                return {
+                    "is_authenticated": is_auth,
+                    "score": auth_score,
+                    "verdict_basis": data.get("verdict_basis"),
+                    "verdict": verdict,
+                    "confidence": data.get("confidence"),
+                    "model_mode": data.get("model_mode"),
+                    "details": details,
+                    "source": "classifier:/classify-currency",
+                }
             else:
-                is_auth = None
-            fake_prob = data.get("fake_probability")
-            # Prefer the verdict-coherent authenticity_score (v2.2) over the
-            # raw advisory CNN probability — the raw number routinely
-            # contradicted the rule-based verdict and confused users.
-            auth_score = data.get("authenticity_score")
-            if auth_score is None and fake_prob is not None:
-                auth_score = round((1.0 - fake_prob) * 100, 1)
-            # For structural red flags the number isn't what decided — surface
-            # the flag reason directly; the score becomes supporting context.
-            findings = "; ".join(
-                c["finding"] for c in data.get("security_checks", [])[:2] if c.get("score") is not None
-            )
-            details = f"Currency screening ({data.get('model_mode')}): {verdict}. {findings}".strip()
-            if data.get("guidance"):
-                details += f" {data['guidance']}"
-            return {
-                "is_authenticated": is_auth,
-                "score": auth_score,
-                "verdict_basis": data.get("verdict_basis"),
-                "verdict": verdict,
-                "confidence": data.get("confidence"),
-                "model_mode": data.get("model_mode"),
-                "details": details,
-                "source": "classifier:/classify-currency",
-            }
+                # Non-currency image upload (e.g. general incident photo or screenshot)
+                return {
+                    "is_authenticated": None,
+                    "score": None,
+                    "verdict": "EVIDENCE_STORED",
+                    "details": f"Photo evidence stored for incident filing ({mode or 'general'}).",
+                    "source": "general_image"
+                }
 
         if media_type == "audio":
             wav_bytes = blob
             decode_note = ""
             try:
-                # Fast path: already a real WAV (stdlib `wave`, no extra deps).
                 strength, finding = analyze_voice_heuristic(wav_bytes)
             except ValueError:
-                # Likely mp3/other compressed audio — try transcoding via
-                # pydub (needs an ffmpeg binary on the host). No fabricated
-                # verdict if that's unavailable; say so honestly instead.
                 try:
                     from pydub import AudioSegment
                     import io as _io
@@ -1036,9 +1036,8 @@ def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str 
                         "score": None,
                         "verdict": "PENDING_ANALYSIS",
                         "details": (
-                            "Could not decode this audio format on this server (no ffmpeg available for "
-                            "compressed audio). Upload a 16-bit PCM WAV file, or describe the call in text instead. "
-                            "No verdict was fabricated."
+                            "Could not decode this audio format on this server. "
+                            "Upload a 16-bit PCM WAV file or describe the call in text."
                         ),
                         "source": "audio_decode_unavailable",
                     }
@@ -1063,7 +1062,7 @@ def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str 
             "is_authenticated": None,
             "score": None,
             "verdict": "PENDING_ANALYSIS",
-            "details": "Classifier service unreachable — media stored, analysis pending. No verdict fabricated.",
+            "details": "Classifier service unreachable — media stored, analysis pending.",
             "source": "unreachable",
         }
 
@@ -1077,7 +1076,7 @@ def handle_nayak_upload(
     upload_id = str(uuid.uuid4())
 
     if req.media_type in ("video", "image", "audio"):
-        verdict = _classify_media_for_real(req.media_url, req.media_type, req.capture_mode or "visible")
+        verdict = _classify_media_for_real(req.media_url, req.media_type, req.capture_mode or "visible", mode=req.mode)
     else:
         verdict = {"is_authenticated": None, "score": None,
                    "details": "Stored. Text/link/audio content is analyzed in-chat, not at upload.",
