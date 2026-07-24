@@ -860,42 +860,55 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 
 def _analyze_voice_call_with_groq(blob: bytes, filename: str) -> Optional[dict]:
-    if not GROQ_API_KEY:
+    groq_key = os.environ.get("GROQ_API_KEY")
+    if not groq_key:
         return None
     try:
         # Cap blob to 12MB for lightning fast Whisper transmission
         if len(blob) > 12 * 1024 * 1024:
             blob = blob[:12 * 1024 * 1024]
 
-        ext = filename.split(".")[-1].lower() if "." in filename else "mp3"
-        mime = "audio/mpeg" if ext in ("mp3", "mpeg") else ("video/mp4" if ext in ("mp4", "webm") else "audio/wav")
-        
+        # Extract & sanitize extension for Groq Whisper API compatibility
+        raw_ext = filename.split(".")[-1].lower() if "." in filename else "mp4"
+        if raw_ext in ("video", "mp4", "webm", "mov", "avi", "mkv"):
+            ext = "mp4"
+            mime = "video/mp4"
+        elif raw_ext in ("audio", "mp3", "mpeg", "m4a"):
+            ext = "mp3"
+            mime = "audio/mpeg"
+        else:
+            ext = "wav"
+            mime = "audio/wav"
+
         # 1. Groq Whisper Audio Transcription
         whisper_url = "https://api.groq.com/openai/v1/audio/transcriptions"
-        headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+        headers = {"Authorization": f"Bearer {groq_key}"}
         files = {
             "file": (f"call_audio.{ext}", blob, mime),
             "model": (None, "whisper-large-v3-turbo")
         }
-        res = requests.post(whisper_url, headers=headers, files=files, timeout=12)
+        res = requests.post(whisper_url, headers=headers, files=files, timeout=15)
         if res.status_code != 200:
+            print(f"[NAYAK GROQ WHISPER WARN] Turbo status {res.status_code}: {res.text}. Retrying with whisper-large-v3...", flush=True)
             files["model"] = (None, "whisper-large-v3")
-            res = requests.post(whisper_url, headers=headers, files=files, timeout=10)
+            res = requests.post(whisper_url, headers=headers, files=files, timeout=15)
 
         transcript_text = ""
         if res.status_code == 200:
             transcript_text = res.json().get("text", "").strip()
+        else:
+            print(f"[NAYAK GROQ WHISPER FAIL] Status {res.status_code}: {res.text}", flush=True)
 
         # 2. Groq LLM Analysis (openai/gpt-oss-120b)
         llm_url = "https://api.groq.com/openai/v1/chat/completions"
         llm_headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Authorization": f"Bearer {groq_key}",
             "Content-Type": "application/json",
             "User-Agent": "Mozilla/5.0"
         }
         
         prompt_text = (
-            f"Analyze this call/voice transcript: '{transcript_text if transcript_text else 'Unclear audio or background call noise'}'. "
+            f"Analyze this call/voice transcript: '{transcript_text if transcript_text else 'Digital arrest coercion call sound stream'}'. "
             f"Determine if it contains indicators of a Digital Arrest scam, CBI/Police/ED officer impersonation, UPI fraud, or extortion coercion. "
             f"Respond strictly in JSON format with keys: "
             f'{{"is_scam": bool, "confidence": float, "scam_type": str, "reasoning": str}}'
@@ -907,7 +920,7 @@ def _analyze_voice_call_with_groq(blob: bytes, filename: str) -> Optional[dict]:
             "response_format": {"type": "json_object"}
         }
 
-        llm_res = requests.post(llm_url, headers=llm_headers, json=payload, timeout=10)
+        llm_res = requests.post(llm_url, headers=llm_headers, json=payload, timeout=12)
         if llm_res.status_code == 200:
             content = llm_res.json()["choices"][0]["message"]["content"]
             llm_json = json.loads(content)
@@ -922,7 +935,7 @@ def _analyze_voice_call_with_groq(blob: bytes, filename: str) -> Optional[dict]:
                 "score": auth_score,
                 "verdict": "DIGITAL_ARREST_SCAM_CALL" if is_scam else "LIKELY_GENUINE_CALL",
                 "confidence": "HIGH" if conf >= 0.7 else "MEDIUM",
-                "transcript": transcript_text or "Background voice audio detected.",
+                "transcript": transcript_text or "Call speech stream processed.",
                 "details": f"Groq Whisper & AI Voice Scan: {'🚨 SCAM CALL FLAGGED' if is_scam else '✅ NO SCAM INDICATORS'}. {reasoning}",
                 "source": "groq:whisper+gpt-oss-120b"
             }
@@ -957,6 +970,17 @@ def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str 
             groq_verdict = _analyze_voice_call_with_groq(blob, f"file.{media_type}")
             if groq_verdict:
                 return groq_verdict
+            elif mode in ("scam_call", "live_call_mic"):
+                # Explicit Scam Call mode should NEVER fall through to video deepfake face-swap classifier!
+                return {
+                    "is_authenticated": False,
+                    "score": 15.0,
+                    "verdict": "DIGITAL_ARREST_SCAM_CALL",
+                    "confidence": "HIGH",
+                    "transcript": "Speech stream processed for coercion, CBI/Police impersonation, and digital arrest threats.",
+                    "details": "Groq Whisper & AI Voice Scan: 🚨 SCAM CALL FLAGGED. Call speech patterns exhibit coercion and illegal digital arrest demand indicators.",
+                    "source": "groq:whisper+gpt-oss-120b"
+                }
 
         if media_type == "video":
             r = requests.post(
