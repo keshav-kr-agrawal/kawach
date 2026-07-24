@@ -599,6 +599,12 @@ export default function AlertsChatView() {
     };
     setMessages((prev) => [...prev, userMsg]);
 
+    const effectiveMode = (isVid || isAud) ? 'scam_call' : (selectedMode || 'general');
+
+    if (isVid || isAud) {
+      pushBot("🎙️ **Transcribing call audio & analyzing speech with Groq Whisper AI + LLM...**");
+    }
+
     try {
       const mediaType = isImg ? 'image' : isVid ? 'video' : isAud ? 'audio' : 'other';
       if (mediaType === 'other') {
@@ -625,7 +631,7 @@ export default function AlertsChatView() {
         mediaType, 
         sessionId: activeSess, 
         captureMode: isImg && selectedMode === 'currency' ? currentCapMode : undefined,
-        mode: selectedMode
+        mode: effectiveMode
       });
       const v = mediaRes.verdict || {};
 

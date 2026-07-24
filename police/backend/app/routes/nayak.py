@@ -980,7 +980,7 @@ def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str 
             groq_verdict = _analyze_voice_call_with_groq(blob, f"file.{media_type}")
             if groq_verdict:
                 return groq_verdict
-            # Direct fallback guarantee for audio/video media: NEVER fall through to deepfake face-swap container!
+            # Guaranteed fallback for audio/video media: NEVER hit deepfake face-swap classifier!
             return {
                 "is_authenticated": False,
                 "score": 15.0,
@@ -989,28 +989,6 @@ def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str 
                 "transcript": "Call speech stream processed for coercion, CBI/Police impersonation, and digital arrest threats.",
                 "details": "Groq Whisper & AI Voice Scan: 🚨 SCAM CALL FLAGGED. Speech patterns exhibit coercion and illegal digital arrest demand indicators.",
                 "source": "groq:whisper+gpt-oss-120b"
-            }
-
-        if media_type == "video":
-            r = requests.post(
-                f"{CLASSIFIER_URL}/classify",
-                files={"file": ("nayak_upload.mp4", blob, "video/mp4")},
-                timeout=12,
-            )
-            r.raise_for_status()
-            data = r.json()
-            return {
-                "is_authenticated": data.get("verdict") == "AUTHENTIC",
-                "score": round((1.0 - data.get("fake_probability", 0.5)) * 100, 1),
-                "verdict": data.get("verdict"),
-                "confidence": data.get("confidence_level"),
-                "trust_score": data.get("trust_score"),
-                "details": (
-                    f"Deepfake forensics: {data.get('verdict')} "
-                    f"(fake probability {data.get('fake_probability', 0):.2f}, "
-                    f"{data.get('faces_detected', 0)} face(s) across {data.get('frames_analyzed', 0)} frames)."
-                ),
-                "source": "classifier:/classify",
             }
 
         if media_type == "image":
