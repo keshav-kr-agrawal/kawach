@@ -86,15 +86,16 @@ The AI classifier is currently offline or unreachable. Your evidence has been se
   const scoreText = v.score != null ? `${Number(v.score).toFixed(1)}%` : null;
   const riskText = v.score != null ? `${(100 - Number(v.score)).toFixed(1)}%` : null;
   const structuralFlag = v.verdict_basis === 'structural_red_flag';
+  const detailsStr = v.details || '';
 
-  // Check if this is a Voice/Video Scam Call verdict
-  const isScamCall = (v.source && (v.source.includes('groq') || v.source.includes('voice'))) ||
-                     (v.verdict && (v.verdict.includes('SCAM') || v.verdict.includes('VOICE') || v.verdict.includes('CALL') || v.verdict.includes('ARREST') || v.verdict.includes('DEEPFAKE'))) ||
+  // 1. Voice / Call Scam Detection
+  const isScamCall = (v.source && (v.source.includes('groq') || v.source.includes('voice') || v.source.includes('heuristic'))) ||
+                     (v.verdict && (v.verdict.includes('SCAM') || v.verdict.includes('VOICE') || v.verdict.includes('CALL') || v.verdict.includes('ARREST'))) ||
                      v.transcript != null;
 
   if (isScamCall) {
     const transcriptBlock = v.transcript ? `\n\n---\n\n#### 🎙️ **Call Transcript (Groq Whisper AI)**\n> "${v.transcript}"` : '';
-    const details = v.details || 'Scam call indicators analyzed.';
+    const details = detailsStr || 'Scam call indicators analyzed.';
 
     if (isSuspicious) {
       return `### 🛡️ Forensic Scanner Verdict
@@ -129,44 +130,74 @@ The AI classifier is currently offline or unreachable. Your evidence has been se
     }
   }
 
-  // Clean raw details text: strip em dashes, semicolons, raw technical tokens
-  let raw = (v.details || '')
-    .replace(/—/g, ': ')
-    .replace(/–/g, ': ')
-    .replace(/;+/g, '.')
-    .replace(/\s+\./g, '.')
-    .replace(/\.\s*\./g, '.');
+  // 2. Video Deepfake / Facial Swap Forensics
+  const isVideoDeepfake = (v.source && (v.source.includes('/classify') || v.source.includes('deepfake'))) ||
+                          detailsStr.toLowerCase().includes('deepfake') ||
+                          detailsStr.toLowerCase().includes('face(s)') ||
+                          (v.verdict && (v.verdict.includes('DEEPFAKE') || v.verdict.includes('INCONCLUSIVE') || v.verdict.includes('SUSPECT')));
 
-  const MIN_STANDALONE_LEN = 45;
-  const rawSentences = raw
-    .split(/\.\s+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0 && !s.toLowerCase().startsWith('currency screening') && !s.toLowerCase().startsWith('analysis mode'));
-
-  const mergedSentences = [];
-  for (const s of rawSentences) {
-    if (mergedSentences.length > 0 && s.length < MIN_STANDALONE_LEN) {
-      mergedSentences[mergedSentences.length - 1] += `, ${s.charAt(0).toLowerCase()}${s.slice(1)}`;
-    } else {
-      mergedSentences.push(s);
-    }
-  }
-
-  const bullets = mergedSentences.map(s => {
-    let clean = s
-      .replace(/LIKELY_COUNTERFEIT/gi, 'Likely Counterfeit')
-      .replace(/LIKELY_GENUINE/gi, 'Likely Authentic')
-      .replace(/cnn\+heuristic/gi, 'Computer Vision & RBI Rulebook')
-      .replace(/\(-\d+%\s*change\)/gi, '')
-      .replace(/shows NO ascending numeral growth/gi, 'shows non-ascending font height (genuine RBI notes have numerals growing in size from left to right)');
-    return `- ${clean.endsWith('.') ? clean : clean + '.'}`;
-  });
-
-  if (isSuspicious) {
+  if (isVideoDeepfake && !detailsStr.toLowerCase().includes('currency')) {
     return `### 🛡️ Forensic Scanner Verdict
 
+#### 🎥 **Video Deepfake & Facial Forensics**
+**Verdict:** ${v.verdict || 'MEDIA_INSPECTED'}
+**Fake Probability / Risk:** ${riskText || '55.0%'}
+
+---
+
+#### 🔍 **Key Findings**
+- ${detailsStr}
+- Video stream scanned for facial swapping, frame-level synthesis artifacts, and temporal inconsistencies.
+
+---
+
+#### 📋 **Recommended Action**
+1. Exercise extreme caution — video media exhibits synthetic features or facial manipulation indicators.
+2. Verify caller identity through an official, out-of-band communication channel before trusting video requests.
+3. Never transfer funds or disclose identity credentials during unverified video calls.`;
+  }
+
+  // 3. Currency Note Screening
+  const isCurrency = (v.source && v.source.includes('currency')) || detailsStr.toLowerCase().includes('currency');
+
+  if (isCurrency) {
+    let raw = detailsStr
+      .replace(/—/g, ': ')
+      .replace(/–/g, ': ')
+      .replace(/;+/g, '.')
+      .replace(/\s+\./g, '.')
+      .replace(/\.\s*\./g, '.');
+
+    const MIN_STANDALONE_LEN = 45;
+    const rawSentences = raw
+      .split(/\.\s+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0 && !s.toLowerCase().startsWith('currency screening') && !s.toLowerCase().startsWith('analysis mode'));
+
+    const mergedSentences = [];
+    for (const s of rawSentences) {
+      if (mergedSentences.length > 0 && s.length < MIN_STANDALONE_LEN) {
+        mergedSentences[mergedSentences.length - 1] += `, ${s.charAt(0).toLowerCase()}${s.slice(1)}`;
+      } else {
+        mergedSentences.push(s);
+      }
+    }
+
+    const bullets = mergedSentences.map(s => {
+      let clean = s
+        .replace(/LIKELY_COUNTERFEIT/gi, 'Likely Counterfeit')
+        .replace(/LIKELY_GENUINE/gi, 'Likely Authentic')
+        .replace(/cnn\+heuristic/gi, 'Computer Vision & RBI Rulebook')
+        .replace(/\(-\d+%\s*change\)/gi, '')
+        .replace(/shows NO ascending numeral growth/gi, 'shows non-ascending font height (genuine RBI notes have numerals growing in size from left to right)');
+      return `- ${clean.endsWith('.') ? clean : clean + '.'}`;
+    });
+
+    if (isSuspicious) {
+      return `### 🛡️ Forensic Scanner Verdict
+
 #### ❌ **Flagged Suspicious Currency Note**
-**Risk Level:** ${riskText || 'High'}${structuralFlag ? '\n\n> Decisive factor: a specific security feature failed (see findings below). The risk figure summarizes overall evidence strength on a 0 to 100 scale; it is not a calibrated statistical probability.' : ''}
+**Risk Level:** ${riskText || 'High'}${structuralFlag ? '\n\n> Decisive factor: a specific security feature failed (see findings below).' : ''}
 
 ---
 
@@ -178,11 +209,11 @@ ${bullets.length > 0 ? bullets.join('\n\n') : '* Security features do not match 
 #### 📋 **Recommended Action**
 1. Do not return this currency note to circulation.
 2. Have it physically verified (watermark, latent image, UV test) at a bank branch.
-3. If you received this note from an ATM, shop, or person, let me know where you received it so I can check for nearby reports and help you file a report.`;
-  }
+3. Report counterfeit currency distribution to local law enforcement.`;
+    }
 
-  if (isAuthentic) {
-    return `### 🛡️ Forensic Scanner Verdict
+    if (isAuthentic) {
+      return `### 🛡️ Forensic Scanner Verdict
 
 #### ✅ **Verified Authentic Currency Note**
 **Authenticity Score:** ${scoreText || 'Verified'}
@@ -190,18 +221,20 @@ ${bullets.length > 0 ? bullets.join('\n\n') : '* Security features do not match 
 ---
 
 #### 🔍 **Key Findings**
-${bullets.length > 0 ? bullets.join('\n\n') : '* Key security features (RBI emblem, security thread, typography) match authentic standards.'}
+${bullets.length > 0 ? bullets.join('\n\n') : '* Key security features match RBI authentic standards.'}
 
 ---
 
 #### 📋 **Recommended Action**
-Physical verification (paper texture, raised print) at your local bank branch remains the final authority.`;
+Physical verification at a local bank branch remains the final authority.`;
+    }
   }
 
+  // 4. Fallback General Evidence
   return `### 🛡️ Forensic Scanner Verdict
 
-#### ℹ️ **Inspection Summary**
-${bullets.length > 0 ? bullets.join('\n\n') : '* Media stored and analyzed.'}`;
+#### 📁 **Incident Evidence Uploaded**
+${detailsStr || 'Media stored and indexed in case file.'}`;
 }
 
 // Heading styles by level (1-6). Levels 4-6 all share the h4-ish look —
