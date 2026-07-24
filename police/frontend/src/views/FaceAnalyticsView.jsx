@@ -84,6 +84,15 @@ function FaceAnalyticsView({ token, user }) {
   };
 
   return (
+    <div className="space-y-4">
+      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-2.5 text-xs">
+        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+        <p className="text-amber-900/90 leading-relaxed">
+          <strong>Simulated demo mode:</strong> no trained face-matching model is wired in yet — results below are fixed
+          demo profiles, not live registry matches. Per the master plan's Module 17 guardrails (legal authorization,
+          confidence thresholds, human verification), this stays advisory-only even once a real model is added.
+        </p>
+      </div>
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-auto lg:h-[calc(100vh-12rem)]">
       {/* Target Upload/Selector Pane */}
       <div className="lg:col-span-2 flex flex-col space-y-6 h-full">
@@ -250,6 +259,7 @@ function FaceAnalyticsView({ token, user }) {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

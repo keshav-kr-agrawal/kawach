@@ -53,6 +53,29 @@ const DISTRICTS = [
   { district_name: 'Tumakuru', count: 655, density: 'Phishing / Vishing rising' },
 ];
 
+const DISTRICT_PERF = () => ({
+  clearance_data: [
+    { name: 'Bengaluru Urban', rate: 68.4, sample_size: 2811 },
+    { name: 'Mysuru', rate: 71.2, sample_size: 1204 },
+    { name: 'Belagavi', rate: 61.8, sample_size: 986 },
+    { name: 'Dakshina Kannada', rate: 74.5, sample_size: 874 },
+    { name: 'Tumakuru', rate: 66.9, sample_size: 655 },
+  ],
+  cycle_time_data: [
+    { name: 'Bengaluru Urban', avg_days: 14.2, sample_size: 1922 },
+    { name: 'Mysuru', avg_days: 16.8, sample_size: 858 },
+    { name: 'Belagavi', avg_days: 19.1, sample_size: 609 },
+    { name: 'Dakshina Kannada', avg_days: 13.6, sample_size: 651 },
+    { name: 'Tumakuru', avg_days: 17.4, sample_size: 438 },
+  ],
+  kpis: {
+    overall_clearance_rate: '68.9%',
+    avg_investigation_cycle_days: 15.8,
+    sla_met_rate: '77.3%',
+  },
+  sample_size: 6530,
+});
+
 const ALERTS = () => [
   {
     id: 'ALT-BLR-2214', district: 'Bengaluru Urban', type: 'Digital Arrest',
@@ -761,6 +784,7 @@ export async function mockRequest(path, method = 'GET', body) {
     if (p.startsWith('/offenders/')) return offenderProfile(p.split('/').pop());
     if (p === '/analytics/predict') return PREDICT;
     if (p === '/analytics/patterns') return PATTERNS;
+    if (p === '/analytics/district') return DISTRICT_PERF();
     if (p === '/digital-arrest/sessions') return [...DA_SESSIONS.values()].sort((a, b) => b.started_at.localeCompare(a.started_at));
     if (p.startsWith('/digital-arrest/session/')) {
       const s = DA_SESSIONS.get(p.split('/').pop());

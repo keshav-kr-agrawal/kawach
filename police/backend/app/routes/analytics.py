@@ -264,28 +264,72 @@ def detect_crime_patterns(db: Session = Depends(get_db)):
     return patterns
 
 @router.get("/district")
-def get_district_performance():
+def get_district_performance(db: Session = Depends(get_db)):
+    """
+    District performance metrics computed from real FIRRecord rows —
+    clearance rate and investigation cycle time are both derived from each
+    FIR's actual status/timeline fields (replaces the previously hardcoded
+    Bangalore-area mock numbers). FIR volume itself still comes from the
+    seed DB — see generate_data.py's documented signal-injection gap.
+    """
+    firs = db.query(FIRRecord).join(PoliceStation).join(District).all()
+    if not firs:
+        return {"clearance_data": [], "cycle_time_data": [], "kpis": {}, "sample_size": 0}
+
+    by_district: Dict[str, Dict[str, Any]] = {}
+    total_cleared = 0
+    total_sla_met = 0
+    total_sla_resolved = 0
+    all_cycle_days = []
+
+    for fir in firs:
+        dist_name = fir.station.district.name if fir.station and fir.station.district else "Unknown"
+        entry = by_district.setdefault(dist_name, {"total": 0, "cleared": 0, "cycle_days": []})
+        entry["total"] += 1
+        is_cleared = fir.status in ("Charge Sheeted", "Closed")
+
+        last_event = None
+        if fir.timeline:
+            try:
+                last_event = max(datetime.fromisoformat(t["date"]) for t in fir.timeline)
+            except (KeyError, ValueError, TypeError):
+                last_event = None
+
+        if is_cleared:
+            entry["cleared"] += 1
+            total_cleared += 1
+            if last_event:
+                days = (last_event - fir.date_filed).total_seconds() / 86400
+                if days >= 0:
+                    entry["cycle_days"].append(days)
+                    all_cycle_days.append(days)
+
+        if fir.status != "Investigation" and fir.sla_deadline:
+            total_sla_resolved += 1
+            if last_event and last_event <= fir.sla_deadline:
+                total_sla_met += 1
+
+    clearance_data = []
+    cycle_time_data = []
+    for name, e in sorted(by_district.items(), key=lambda kv: kv[1]["total"], reverse=True)[:10]:
+        rate = round((e["cleared"] / e["total"]) * 100, 1) if e["total"] else 0
+        clearance_data.append({"name": name, "rate": rate, "sample_size": e["total"]})
+        if e["cycle_days"]:
+            avg_days = round(sum(e["cycle_days"]) / len(e["cycle_days"]), 1)
+            cycle_time_data.append({"name": name, "avg_days": avg_days, "sample_size": len(e["cycle_days"])})
+
+    total = len(firs)
+    overall_clearance = round((total_cleared / total) * 100, 1) if total else 0
+    overall_cycle = round(sum(all_cycle_days) / len(all_cycle_days), 1) if all_cycle_days else None
+    sla_met_rate = round((total_sla_met / total_sla_resolved) * 100, 1) if total_sla_resolved else None
+
     return {
-        "clearance_data": [
-            { "name": "Koramangala", "rate": 78 },
-            { "name": "Indiranagar", "rate": 84 },
-            { "name": "Jayanagar", "rate": 72 },
-            { "name": "Whitefield", "rate": 65 },
-            { "name": "HSR Layout", "rate": 81 },
-            { "name": "Malleshwaram", "rate": 75 }
-        ],
-        "response_time_data": [
-            { "day": "Day 1", "time": 24.5 },
-            { "day": "Day 5", "time": 22.1 },
-            { "day": "Day 10", "time": 19.8 },
-            { "day": "Day 15", "time": 23.4 },
-            { "day": "Day 20", "time": 18.2 },
-            { "day": "Day 25", "time": 15.6 },
-            { "day": "Day 30", "time": 14.2 }
-        ],
+        "clearance_data": clearance_data,
+        "cycle_time_data": cycle_time_data,
         "kpis": {
-            "conviction_rate": "71.4%",
-            "patrol_effectiveness": "86.8%",
-            "resource_utilization": "92.1%"
-        }
+            "overall_clearance_rate": f"{overall_clearance}%",
+            "avg_investigation_cycle_days": overall_cycle,
+            "sla_met_rate": f"{sla_met_rate}%" if sla_met_rate is not None else "N/A",
+        },
+        "sample_size": total,
     }

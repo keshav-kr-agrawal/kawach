@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Database, Search, Users, ShieldAlert, PhoneCall, Landmark, FileText, UserMinus, Eye } from 'lucide-react';
+import { API_BASE } from '../api/client.js';
 
 function IngestionExplorerView({ token, user }) {
   const [activeTab, setActiveTab] = useState('missing'); // 'missing', 'bodies', 'cdr', 'rbi'
@@ -36,7 +37,7 @@ function IngestionExplorerView({ token, user }) {
   const fetchMissing = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/ingestion/missing-persons', { headers });
+      const res = await fetch(`${API_BASE}/api/ingestion/missing-persons`, { headers });
       const data = await res.json();
       setMissingPersons(Array.isArray(data) && data.length > 0 ? data : MOCK_MISSING);
     } catch (e) {
@@ -50,7 +51,7 @@ function IngestionExplorerView({ token, user }) {
   const fetchBodies = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/ingestion/unidentified-bodies', { headers });
+      const res = await fetch(`${API_BASE}/api/ingestion/unidentified-bodies`, { headers });
       const data = await res.json();
       setUnidentifiedBodies(Array.isArray(data) && data.length > 0 ? data : MOCK_BODIES);
     } catch (e) {
@@ -64,7 +65,7 @@ function IngestionExplorerView({ token, user }) {
   const fetchCdrs = async (query = '') => {
     setLoading(true);
     try {
-      const url = `http://localhost:8000/api/ingestion/cdrs${query ? `?phone=${query}` : ''}`;
+      const url = `${API_BASE}/api/ingestion/cdrs${query ? `?phone=${query}` : ''}`;
       const res = await fetch(url, { headers });
       const data = await res.json();
       setCdrs(Array.isArray(data) && data.length > 0 ? data : MOCK_CDRS);
@@ -79,7 +80,7 @@ function IngestionExplorerView({ token, user }) {
   const fetchRbi = async (query = '') => {
     setLoading(true);
     try {
-      const url = `http://localhost:8000/api/ingestion/rbi-registry${query ? `?account=${query}` : ''}`;
+      const url = `${API_BASE}/api/ingestion/rbi-registry${query ? `?account=${query}` : ''}`;
       const res = await fetch(url, { headers });
       const data = await res.json();
       setRbiRegistry(Array.isArray(data) && data.length > 0 ? data : MOCK_RBI);

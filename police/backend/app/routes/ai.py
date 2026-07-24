@@ -5,11 +5,68 @@ from app.models import FIRRecord, Offender, Vehicle, Phone, Call, AuditLog, Gang
 from app.auth import get_current_user_claims
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
+import os
 import re
+import requests
 
 from app.neo4j_db import get_neo4j_db
+from app.routes.nayak_rag import retrieve_law_chunks
 
 router = APIRouter()
+
+# Same model + honest-fallback pattern as routes/nayak.py — override via
+# GEMINI_MODEL env var. No separate model choice for the police copilot.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-lite-latest")
+
+
+def _gemini_synthesize(query: str, graph_context: str, law_chunks: list) -> Optional[str]:
+    """Single-shot Gemini call for freeform officer queries the regex fast-paths
+    don't cover — mirrors nayak.py's run_classify_text/run_check_link pattern
+    (plain request/response, not the multi-turn tool-calling agent loop nayak
+    uses, since the copilot doesn't need to execute tools mid-conversation).
+    Returns None if no API key or the call fails — caller must have an honest
+    fallback ready."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return None
+
+    law_context = "\n\n".join(
+        f"[{c['act']} {c['section']} — {c['title']}]\n{c['official_text']}\nGuidance: {c['citizen_explanation']}"
+        for c in law_chunks
+    ) or "No matching statute retrieved."
+
+    prompt = f"""You are the KAWACH AI Investigation Copilot for Karnataka Police officers.
+Answer the officer's query below using ONLY the case/graph context and legal citations provided —
+do not invent FIR numbers, offender names, or statistics that aren't in the context.
+
+#### Graph-RAG Context (Neo4j)
+{graph_context or 'No graph matches.'}
+
+#### Retrieved Legal Citations (BNS/BNSS/BSA/IT Act/RBI, vector-RAG)
+{law_context}
+
+#### Officer Query
+{query}
+
+Respond with a concise, well-structured answer (use markdown headers/bullets where useful).
+End with a one-line disclaimer that this is AI-assisted synthesis, advisory only, and requires
+human officer verification before any action — no automated guilt/arrest inference."""
+
+    try:
+        gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={api_key}"
+        res = requests.post(
+            gemini_url,
+            headers={"Content-Type": "application/json"},
+            json={"contents": [{"parts": [{"text": prompt}]}]},
+            timeout=12,
+        )
+        if res.status_code == 200:
+            return res.json()["candidates"][0]["content"]["parts"][0]["text"]
+        print(f"[AI COPILOT] Gemini HTTP {res.status_code}: {res.text[:300]}", flush=True)
+    except Exception as e:
+        print(f"[AI COPILOT] Gemini call error: {type(e).__name__}: {e}", flush=True)
+    return None
 
 class ChatRequest(BaseModel):
     message: str
@@ -178,15 +235,48 @@ def process_copilot_query(
         else:
             return {"response": rag_header + f"Vehicle plate **{plate}** was not found in our database records.", "citations": []}
 
-    # 4. Fallback options & help instructions
+    # 4. Freeform fallback — no exact FIR/offender/vehicle match found, so this
+    # isn't a deterministic lookup anymore. Retrieve BNS/BNSS/BSA/IT Act/RBI
+    # law citations via the same vector-RAG pipeline nayak_rag.py uses for the
+    # citizen assistant (embedding similarity if GEMINI_API_KEY is set, keyword
+    # search otherwise), then let Gemini synthesize an answer grounded in that
+    # retrieval plus the graph-RAG context gathered above. If no API key is
+    # configured, degrade honestly to the retrieved citations instead of
+    # letting an LLM hallucinate one.
+    law_chunks = retrieve_law_chunks(msg, db, top_k=3)
+
+    gemini_answer = _gemini_synthesize(msg, graph_context, law_chunks)
+    if gemini_answer:
+        citations = [f"[{c['act']} {c['section']}] {c['title']}" for c in law_chunks]
+        return {"response": rag_header + gemini_answer, "citations": citations}
+
+    if law_chunks:
+        cites = "\n\n".join(
+            f"**{c['act']} {c['section']} — {c['title']}**\n{c['citizen_explanation']}\n"
+            f"*Recommended action:* {c['recommended_action']}"
+            for c in law_chunks
+        )
+        response_text = f"""### Legal Reference Match (Keyword-RAG — no Gemini key configured)
+No exact FIR/offender/vehicle ID was found in your query. Closest matching statutes from the BNS/BNSS/BSA/IT Act/RBI knowledge base:
+
+{cites}
+
+---
+*System Compliance: Fully compliant with the Digital Personal Data Protection (DPDP) Act, carrying strict disclaimers preventing automated individual profiling.*"""
+        citations = [f"[{c['act']} {c['section']}] {c['title']}" for c in law_chunks]
+        return {"response": rag_header + response_text, "citations": citations}
+
+    # 5. No FIR/offender/vehicle match, no law-chunk match, and no Gemini key
+    # — the honest last resort is the help text, not a fabricated answer.
     response_text = """### KAWACH AI Copilot Support
-I can synthesize crime records, map suspect associate lines, locate vehicles, and construct investigation case summaries from the Data Lake.
+I can synthesize crime records, map suspect associate lines, locate vehicles, construct investigation case summaries, and cite BNS/BNSS/BSA/IT Act/RBI statutes from the Data Lake.
 
 **Example queries you can run:**
 - *Summarize case FIR-2024-00001*
 - *Analyze profile Ramesh Kumar*
 - *Who owns vehicle KA-15-XY-0020?*
 - *Find associates of OFF-0010*
+- *What section covers UPI fraud impersonation?*
 
 ---
 *System Compliance: Fully compliant with the Digital Personal Data Protection (DPDP) Act, carrying strict disclaimers preventing automated individual profiling.*"""

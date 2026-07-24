@@ -1,49 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Award, ShieldAlert, BarChart3, Clock, TrendingUp, Users, CheckCircle, RefreshCw } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { api } from '../api/client.js';
 
 function DistrictAnalyticsView({ token, user }) {
   const [loading, setLoading] = useState(true);
   const [clearanceData, setClearanceData] = useState([]);
-  const [responseTimeData, setResponseTimeData] = useState([]);
+  const [cycleTimeData, setCycleTimeData] = useState([]);
+  const [sampleSize, setSampleSize] = useState(0);
   const [kpis, setKpis] = useState({
-    conviction_rate: "71.4%",
-    patrol_effectiveness: "86.8%",
-    resource_utilization: "92.1%"
+    overall_clearance_rate: '—',
+    avg_investigation_cycle_days: null,
+    sla_met_rate: '—'
   });
 
   const fetchMetrics = async () => {
-    try {
-      setLoading(true);
-      const headers = { 'Authorization': `Bearer ${token}` };
-      const res = await fetch('http://localhost:8000/api/analytics/district', { headers });
-      const data = await res.json();
-      setClearanceData(data.clearance_data);
-      setResponseTimeData(data.response_time_data);
-      setKpis(data.kpis);
-    } catch (err) {
-      console.error("Failed to fetch analytics metrics:", err);
-      // Fallback
-      setClearanceData([
-        { name: 'Koramangala', rate: 78 },
-        { name: 'Indiranagar', rate: 84 },
-        { name: 'Jayanagar', rate: 72 },
-        { name: 'Whitefield', rate: 65 },
-        { name: 'HSR Layout', rate: 81 },
-        { name: 'Malleshwaram', rate: 75 }
-      ]);
-      setResponseTimeData([
-        { day: 'Day 1', time: 24.5 },
-        { day: 'Day 5', time: 22.1 },
-        { day: 'Day 10', time: 19.8 },
-        { day: 'Day 15', time: 23.4 },
-        { day: 'Day 20', time: 18.2 },
-        { day: 'Day 25', time: 15.6 },
-        { day: 'Day 30', time: 14.2 }
-      ]);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    const data = await api.get('/analytics/district');
+    setClearanceData(data.clearance_data || []);
+    setCycleTimeData(data.cycle_time_data || []);
+    setKpis(data.kpis || {});
+    setSampleSize(data.sample_size || 0);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -66,18 +44,18 @@ function DistrictAnalyticsView({ token, user }) {
           <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Pillar 15: District Performance Analytics</span>
           <h4 className="text-xs font-bold text-blue-700 mt-1">SHO & SP Command KPI Workspace</h4>
         </div>
-        <div className="text-[10px] font-bold text-slate-500 uppercase">Operational Cleared</div>
+        <div className="text-[10px] font-bold text-slate-500 uppercase">n={sampleSize} FIRs</div>
       </div>
 
       {/* KPI Cards Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Conviction Rate */}
+        {/* Clearance rate */}
         <div className="glass-panel p-5 rounded-2xl flex items-center justify-between shadow-sm">
           <div className="space-y-1">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">State Conviction Rate</span>
-            <h3 className="text-2xl font-extrabold text-slate-900">{kpis.conviction_rate}</h3>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Overall Clearance Rate</span>
+            <h3 className="text-2xl font-extrabold text-slate-900">{kpis.overall_clearance_rate}</h3>
             <p className="text-[9px] text-emerald-600 font-bold flex items-center space-x-1">
-              <span>+3.2% vs previous quarter</span>
+              <span>Charge-sheeted + closed / total FIRs</span>
             </p>
           </div>
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
@@ -85,13 +63,13 @@ function DistrictAnalyticsView({ token, user }) {
           </div>
         </div>
 
-        {/* Patrol Effectiveness */}
+        {/* Avg investigation cycle time */}
         <div className="glass-panel p-5 rounded-2xl flex items-center justify-between shadow-sm">
           <div className="space-y-1">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Patrol Effectiveness Index</span>
-            <h3 className="text-2xl font-extrabold text-slate-900">{kpis.patrol_effectiveness}</h3>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Avg Investigation Cycle Time</span>
+            <h3 className="text-2xl font-extrabold text-slate-900">{kpis.avg_investigation_cycle_days != null ? `${kpis.avg_investigation_cycle_days}d` : 'N/A'}</h3>
             <p className="text-[9px] text-blue-600 font-bold flex items-center space-x-1">
-              <span>Optimized beat distribution</span>
+              <span>Filed → last timeline event, cleared cases only</span>
             </p>
           </div>
           <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
@@ -99,13 +77,13 @@ function DistrictAnalyticsView({ token, user }) {
           </div>
         </div>
 
-        {/* Resource Utilization */}
+        {/* SLA met rate */}
         <div className="glass-panel p-5 rounded-2xl flex items-center justify-between shadow-sm">
           <div className="space-y-1">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Resource Utilization</span>
-            <h3 className="text-2xl font-extrabold text-slate-900">{kpis.resource_utilization}</h3>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">SLA Met Rate</span>
+            <h3 className="text-2xl font-extrabold text-slate-900">{kpis.sla_met_rate}</h3>
             <p className="text-[9px] text-slate-500 font-bold flex items-center space-x-1">
-              <span>patrol cars active in district zones</span>
+              <span>Resolved before priority-tier sla_deadline</span>
             </p>
           </div>
           <div className="p-3 bg-slate-100 text-slate-600 rounded-xl">
@@ -120,7 +98,7 @@ function DistrictAnalyticsView({ token, user }) {
         <div className="glass-panel p-6 rounded-2xl">
           <div className="flex items-center space-x-2.5 mb-5">
             <BarChart3 className="w-4.5 h-4.5 text-blue-600" />
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Clearance Rate by Police Station</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Clearance Rate by District</h4>
           </div>
 
           <div className="h-64 w-full">
@@ -136,22 +114,22 @@ function DistrictAnalyticsView({ token, user }) {
           </div>
         </div>
 
-        {/* Response time line chart */}
+        {/* Investigation cycle time by district */}
         <div className="glass-panel p-6 rounded-2xl">
           <div className="flex items-center space-x-2.5 mb-5">
             <Clock className="w-4.5 h-4.5 text-blue-600" />
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Average Response Time (Last 30 Days)</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Avg Investigation Cycle Time by District</h4>
           </div>
 
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={responseTimeData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+              <BarChart data={cycleTimeData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="day" stroke="#94a3b8" fontSize={9} tickLine={false} />
+                <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} />
                 <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} />
                 <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '11px' }} />
-                <Line type="monotone" dataKey="time" name="Avg Response Time (mins)" stroke="#10B981" strokeWidth={2.5} activeDot={{ r: 6 }} />
-              </LineChart>
+                <Bar dataKey="avg_days" name="Avg Cycle Time (days)" fill="#10B981" radius={[4, 4, 0, 0]} barSize={22} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -161,9 +139,9 @@ function DistrictAnalyticsView({ token, user }) {
       <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-start space-x-3 text-xs">
         <ShieldAlert className="w-4.5 h-4.5 text-blue-500 shrink-0 mt-0.5" />
         <div>
-          <h6 className="font-bold text-blue-950 uppercase tracking-wider text-[10px]">Data Disclaimer & SLA Targets</h6>
+          <h6 className="font-bold text-blue-950 uppercase tracking-wider text-[10px]">Data Disclaimer</h6>
           <p className="text-blue-900/80 mt-1 leading-relaxed text-[11px]">
-            Response speed goals are locked at under 15 minutes for urban clusters and under 25 minutes for rural patrols. Underperforming stations are highlighted on the DGP command sync weekly scorecard.
+            All metrics above are computed directly from FIRRecord status/timeline rows — no conviction, patrol-GPS, or court-outcome table exists in the schema yet, so those figures are intentionally not shown rather than fabricated.
           </p>
         </div>
       </div>

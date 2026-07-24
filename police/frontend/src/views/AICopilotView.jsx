@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, ShieldAlert, Sparkles, MessageSquare, Terminal, HelpCircle, Mic, Download, Check } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { API_BASE } from '../api/client.js';
 
 function AICopilotView({ token, user }) {
   const [messages, setMessages] = useState([
@@ -97,7 +98,7 @@ function AICopilotView({ token, user }) {
     }
 
     try {
-      const res = await fetch('http://localhost:8000/api/ai/query', {
+      const res = await fetch(`${API_BASE}/api/ai/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

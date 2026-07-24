@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, Info, Activity } from 'lucide-react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Label } from 'recharts';
+import { API_BASE } from '../api/client.js';
 
 function SocioEconomicView({ token, user }) {
   const [correlation, setCorrelation] = useState(null);
@@ -23,7 +24,7 @@ function SocioEconomicView({ token, user }) {
     const fetchCorrelation = async () => {
       try {
         setLoading(true);
-        const res = await fetch('http://localhost:8000/api/analytics/correlation');
+        const res = await fetch(`${API_BASE}/api/analytics/correlation`);
         const data = await res.json();
         if (Object.keys(data).length > 0) {
           setCorrelation(data);
