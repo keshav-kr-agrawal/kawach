@@ -422,21 +422,39 @@ export default function AlertsChatView() {
               const fullText = currentText.trim();
               setLiveTranscript(fullText);
 
-              // Calculate Live Risk Percentage (0% - 100%)
+              // Multi-Agent Weighted Threat Detection Matrix
               const textLower = fullText.toLowerCase();
-              let score = 18;
-              const keywords = [
-                'cbi', 'police', 'aadhaar', 'money laundering', 'digital arrest', 
-                'arrest', 'skype', 'transfer', 'urgent', 'verify', 'account', 
-                'rbi', 'officer', 'mumbai', 'jail', 'laundering', 'court', 'penalty'
-              ];
-              let matches = 0;
-              keywords.forEach((k) => { if (textLower.includes(k)) matches++; });
+              let score = 15;
 
-              if (matches >= 1) score = 48;
-              if (matches >= 2) score = 72;
-              if (matches >= 3) score = 88;
-              if (matches >= 5) score = 96;
+              const financialKws = [
+                'otp', 'bank', 'account', 'money', 'cash', 'transfer', 'pay', 'lakh', 
+                'rupees', 'crore', 'card', 'cvv', 'pin', 'property', 'fund', 'balance', 
+                'deposit', 'upi', 'gpay', 'phonepe', 'paytm', 'give', 'send', 'share'
+              ];
+              const coercionKws = [
+                'cbi', 'police', 'aadhaar', 'digital arrest', 'arrest', 'jail', 'court', 
+                'crime', 'warrant', 'customs', 'ed', 'mumbai', 'cybercell', 'investigation', 
+                'narcotics', 'illegal', 'seized', 'officer', 'penalty'
+              ];
+              const urgencyKws = [
+                'urgent', 'immediately', 'right now', "don't tell", 'stay on call', 
+                'skype', 'verification', 'fine', 'freeze', 'penalty'
+              ];
+
+              let finHits = 0;
+              let coerHits = 0;
+              let urgHits = 0;
+
+              financialKws.forEach((k) => { if (textLower.includes(k)) finHits++; });
+              coercionKws.forEach((k) => { if (textLower.includes(k)) coerHits++; });
+              urgencyKws.forEach((k) => { if (textLower.includes(k)) urgHits++; });
+
+              const totalHits = finHits + coerHits + urgHits;
+
+              if (totalHits >= 1) score = 48;
+              if (totalHits >= 2) score = 75;
+              if (totalHits >= 3 || (finHits >= 1 && coerHits >= 1)) score = 88;
+              if (totalHits >= 4 || (finHits >= 2 && coerHits >= 1)) score = 96;
 
               setLiveRiskScore(score);
 
@@ -444,7 +462,7 @@ export default function AlertsChatView() {
               if (score >= 70 && !autoDispatched) {
                 setAutoDispatched(true);
                 pushBot(
-                  '🚨 **AUTOMATIC DISPATCH TRIGGERED!** Risk level crossed 70% (Digital Arrest Scam Pattern Detected Live). Emergency priority dossier dispatched to District Police Command Console.',
+                  '🚨 **AUTOMATIC EMERGENCY DISPATCH TRIGGERED!** Real-time risk level crossed 70% (OTP & Extortion Scam Pattern Detected Live). High-priority incident dossier dispatched to District Police Command Console.',
                   { isScamAlert: true }
                 );
               }
@@ -1195,90 +1213,92 @@ export default function AlertsChatView() {
         })}
 
         {busy && (
-          <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-700/60 rounded-2xl p-3.5 text-slate-200 opacity-90 shadow-xl space-y-3 mb-3 animate-fadeIn">
-            {/* Collapsible Thinking Trace Header */}
-            <div 
-              onClick={() => setShowThinkingTrace(!showThinkingTrace)}
-              className="flex items-center justify-between border-b border-slate-800 pb-2 cursor-pointer select-none"
-            >
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-                <span className="font-sora font-black text-xs text-amber-400 uppercase tracking-wider">
-                  🧠 NAYAK AGENTIC THINKING TRACE
-                </span>
-                <span className="px-1.5 py-0.5 bg-slate-800 text-slate-300 rounded text-[9px] font-mono font-bold">
-                  4 Subagents Active
-                </span>
-              </div>
-              <button type="button" className="text-slate-400 hover:text-white font-mono text-xs">
-                {showThinkingTrace ? '▲ Hide Trace' : '▼ View Trace'}
-              </button>
-            </div>
-
-            {/* Graphical Pipeline Flow Nodes */}
-            {showThinkingTrace && (
-              <div className="space-y-2 pt-1 font-mono text-[10px]">
-                {/* Node 1: Router */}
-                <div className="bg-slate-950/80 rounded-xl p-2 border border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="p-1 bg-blue-500/20 text-blue-400 rounded font-bold">⚡ Node 1</span>
-                    <div>
-                      <div className="font-bold text-slate-200">Nayak-Orchestrator-Agent</div>
-                      <div className="text-slate-400 text-[9px]">Analyzing intent, mode ({selectedMode || 'general'}) &amp; spatial coords</div>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded font-bold animate-pulse">
-                    ROUTING
+          <div className="flex justify-start my-2">
+            <div className="bg-amber-500/10 border-2 border-[#E9BA26]/40 rounded-3xl p-4 text-slate-900 shadow-md space-y-3 max-w-lg w-full animate-fadeIn backdrop-blur-xs">
+              {/* Integrated Nayak Thinking Header */}
+              <div 
+                onClick={() => setShowThinkingTrace(!showThinkingTrace)}
+                className="flex items-center justify-between border-b border-amber-400/30 pb-2.5 cursor-pointer select-none"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 border-2 border-[#E9BA26] border-t-transparent rounded-full animate-spin" />
+                  <span className="font-sora font-black text-xs text-amber-950 uppercase tracking-wider">
+                    🧠 Nayak AI Reasoning &amp; Subagent Pipeline
+                  </span>
+                  <span className="px-2 py-0.5 bg-[#E9BA26] text-amber-950 rounded-full text-[9px] font-mono font-black uppercase">
+                    4 Subagents Active
                   </span>
                 </div>
+                <button type="button" className="text-amber-900 hover:text-black font-mono text-xs font-bold">
+                  {showThinkingTrace ? '▲ Hide Trace' : '▼ View Trace'}
+                </button>
+              </div>
 
-                <div className="flex justify-center text-slate-500 font-bold text-xs py-0.5">↓</div>
-
-                {/* Node 2: Subagent Execution Matrix */}
-                <div className="bg-slate-950/80 rounded-xl p-2 border border-slate-800 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="p-1 bg-amber-500/20 text-amber-400 rounded font-bold">🤖 Node 2</span>
-                    <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded font-bold animate-pulse">
-                      PARALLEL AGENTS
+              {/* Graphical Flowchart Subagent Matrix (Strictly White & Yellow Theme) */}
+              {showThinkingTrace && (
+                <div className="space-y-2 pt-1 font-mono text-[10px]">
+                  {/* Node 1: Router */}
+                  <div className="bg-white rounded-2xl p-2.5 border border-amber-400/30 flex items-center justify-between shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded-lg font-black">⚡ Step 1</span>
+                      <div>
+                        <div className="font-black text-amber-950 font-sora text-[11px]">Nayak-Orchestrator-Agent</div>
+                        <div className="text-slate-600 text-[9px] font-sans font-semibold">Routing intent &amp; mode: <span className="font-bold text-amber-900">{selectedMode || 'general'}</span></div>
+                      </div>
+                    </div>
+                    <span className="px-2 py-1 bg-[#E9BA26] text-amber-950 rounded-lg font-black text-[9px] uppercase tracking-wider animate-pulse">
+                      ROUTING
                     </span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
-                    <div className="bg-slate-900 p-1.5 rounded border border-slate-800 text-[9px]">
-                      <span className="text-amber-400 font-bold">🎙️ Voice Scam Subagent:</span>
-                      <div className="text-slate-400">Groq Whisper + gpt-oss-120b</div>
+
+                  <div className="flex justify-center text-amber-700 font-black text-xs">↓</div>
+
+                  {/* Node 2: Subagent Execution Matrix */}
+                  <div className="bg-white rounded-2xl p-2.5 border border-amber-400/30 space-y-2 shadow-xs">
+                    <div className="flex items-center justify-between border-b border-amber-100 pb-1.5">
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded-lg font-black">🤖 Step 2</span>
+                      <span className="px-2 py-0.5 bg-amber-400/20 text-amber-950 border border-amber-400/40 rounded-lg font-black text-[9px] uppercase tracking-wider">
+                        PARALLEL SUBAGENTS
+                      </span>
                     </div>
-                    <div className="bg-slate-900 p-1.5 rounded border border-slate-800 text-[9px]">
-                      <span className="text-amber-400 font-bold">💵 Banknote Forensic:</span>
-                      <div className="text-slate-400">PyTorch EfficientNet-B0 + EasyOCR</div>
-                    </div>
-                    <div className="bg-slate-900 p-1.5 rounded border border-slate-800 text-[9px]">
-                      <span className="text-amber-400 font-bold">⚖️ Legal RAG Counsel:</span>
-                      <div className="text-slate-400">Gemini 2.5 Flash (3,974 Law Chunks)</div>
-                    </div>
-                    <div className="bg-slate-900 p-1.5 rounded border border-slate-800 text-[9px]">
-                      <span className="text-amber-400 font-bold">🚨 Priority Triage:</span>
-                      <div className="text-slate-400">DistilBERT Zero-Bias Classifier</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+                      <div className="bg-amber-50/80 p-2 rounded-xl border border-amber-300/40 text-[9px]">
+                        <span className="text-amber-950 font-black block">🎙️ Voice Scam Subagent</span>
+                        <div className="text-slate-600 font-sans font-semibold">Groq Whisper + gpt-oss-120b</div>
+                      </div>
+                      <div className="bg-amber-50/80 p-2 rounded-xl border border-amber-300/40 text-[9px]">
+                        <span className="text-amber-950 font-black block">💵 Banknote Forensic Subagent</span>
+                        <div className="text-slate-600 font-sans font-semibold">PyTorch EfficientNet-B0 + EasyOCR</div>
+                      </div>
+                      <div className="bg-amber-50/80 p-2 rounded-xl border border-amber-300/40 text-[9px]">
+                        <span className="text-amber-950 font-black block">⚖️ Legal RAG Counsel Subagent</span>
+                        <div className="text-slate-600 font-sans font-semibold">Gemini 2.5 Flash (3,974 Law Chunks)</div>
+                      </div>
+                      <div className="bg-amber-50/80 p-2 rounded-xl border border-amber-300/40 text-[9px]">
+                        <span className="text-amber-950 font-black block">🚨 Priority Triage Subagent</span>
+                        <div className="text-slate-600 font-sans font-semibold">DistilBERT Zero-Bias Classifier</div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex justify-center text-slate-500 font-bold text-xs py-0.5">↓</div>
+                  <div className="flex justify-center text-amber-700 font-black text-xs">↓</div>
 
-                {/* Node 3: Signal Fusion & Court Hash */}
-                <div className="bg-slate-950/80 rounded-xl p-2 border border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="p-1 bg-emerald-500/20 text-emerald-400 rounded font-bold">🛡️ Node 3</span>
-                    <div>
-                      <div className="font-bold text-slate-200">Multi-Signal Risk Fusion</div>
-                      <div className="text-slate-400 text-[9px]">Calculating Trust Score (0-100) &amp; Section 65B BSA SHA-256 Hash</div>
+                  {/* Node 3: Signal Fusion & Court Stamping */}
+                  <div className="bg-white rounded-2xl p-2.5 border border-amber-400/30 flex items-center justify-between shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded-lg font-black">🛡️ Step 3</span>
+                      <div>
+                        <div className="font-black text-amber-950 font-sora text-[11px]">Multi-Signal Risk Fusion</div>
+                        <div className="text-slate-600 text-[9px] font-sans font-semibold">Computing Trust Score (0-100) &amp; Section 65B SHA-256 Hash</div>
+                      </div>
                     </div>
+                    <span className="px-2 py-1 bg-[#E9BA26] text-amber-950 rounded-lg font-black text-[9px] uppercase tracking-wider">
+                      SEALING EVIDENCE
+                    </span>
                   </div>
-                  <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-bold">
-                    COMPUTING
-                  </span>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
