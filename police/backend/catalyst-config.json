@@ -1,0 +1,6 @@
+{
+	"name": "kawach_police_backend",
+	"type": "AppLogic",
+	"stack": "Python3.9",
+	"entry": "app/main.py"
+}

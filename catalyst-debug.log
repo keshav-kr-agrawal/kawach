@@ -1,0 +1,45 @@
+[debug] [2026-07-24T09:51:12.732Z] : 
+[debug] [2026-07-24T09:51:12.734Z] : ----------------------------------------------------------------------
+[debug] [2026-07-24T09:51:12.734Z] : Command:      C:\nvm4w\nodejs\node.exe C:\nvm4w\nodejs\node_modules\zcatalyst-cli\lib\bin\catalyst.js login
+[debug] [2026-07-24T09:51:12.734Z] : CLI Version:  1.27.0
+[debug] [2026-07-24T09:51:12.735Z] : Platform:     win32
+[debug] [2026-07-24T09:51:12.735Z] : Node Version: v20.19.4
+[debug] [2026-07-24T09:51:12.735Z] : Time:         Fri Jul 24 2026 15:21:12 GMT+0530 (India Standard Time)
+[debug] [2026-07-24T09:51:12.735Z] : ----------------------------------------------------------------------
+[debug] [2026-07-24T09:51:12.735Z] : 
+[debug] [2026-07-24T09:51:14.235Z] : migration completed for v1.4.0
+[debug] [2026-07-24T09:51:14.280Z] : migration completed for v1.6.2
+[debug] [2026-07-24T09:51:14.323Z] : migration completed for v1.25.0
+[debug] [2026-07-24T09:51:14.367Z] : migration completed for v1.27.0
+[info] [2026-07-24T09:51:39.145Z] : 
+[info] [2026-07-24T09:51:39.146Z] : Visit this URL on this device to log in:
+[info] [2026-07-24T09:51:39.146Z] : https://accounts.zoho.com/oauth/v2/auth?client_id=1000.D5IIHDXSPN2MII26AD0V61I6RMVSNM&scope=ZohoCatalyst.apigateway.apis.READ%20ZohoCatalyst.apigateway.apis.CREATE%20ZohoCatalyst.apigateway.apis.UPDATE%20ZohoCatalyst.apigateway.apis.DELETE%20ZohoCatalyst.apigateway.READ%20ZohoCatalyst.apigateway.UPDATE%20ZohoCatalyst.segments.ALL%20ZohoCatalyst.cache.READ%20ZohoCatalyst.cache.CREATE%20ZohoCatalyst.cache.DELETE%20ZohoCatalyst.queue.ALL%20ZohoCatalyst.queue.data.READ%20ZohoCatalyst.queue.data.CREATE%20ZohoCatalyst.projects.ALL%20ZohoCatalyst.project.export.READ%20ZohoCatalyst.project.export.CREATE%20ZohoCatalyst.project.import.READ%20ZohoCatalyst.project.import.CREATE%20ZohoCatalyst.project.import.DELETE%20ZohoCatalyst.cron.ALL%20ZohoCatalyst.zcql.CREATE%20ZohoCatalyst.webapp.ALL%20ZohoCatalyst.projects.users.READ%20ZohoCatalyst.projects.users.CREATE%20ZohoCatalyst.projects.users.DELETE%20ZohoCatalyst.projects.users.UPDATE%20ZohoCatalyst.authentication.CREATE%20ZohoCatalyst.email.CREATE%20ZohoCatalyst.tables.ALL%20ZohoCatalyst.tables.rows.ALL%20ZohoCatalyst.tables.columns.ALL%20ZohoCatalyst.tables.bulk.READ%20ZohoCatalyst.tables.bulk.CREATE%20ZohoCatalyst.nosql.READ%20ZohoCatalyst.nosql.rows.ALL%20ZohoCatalyst.folders.ALL%20ZohoCatalyst.files.CREATE%20ZohoCatalyst.files.READ%20ZohoCatalyst.files.DELETE%20ZohoCatalyst.functions.ALL%20ZohoCatalyst.functions.EXECUTE%20ZohoCatalyst.eventlistners.ALL%20ZohoCatalyst.eventlisteners.produce%20ZohoCatalyst.security.rules.Read%20ZohoCatalyst.security.rules.Update%20ZohoCatalyst.notifications.mobile%20ZohoCatalyst.notifications.web%20ZohoCatalyst.search.READ%20ZohoCatalyst.mlkit.READ%20QuickML.deployment.READ%20ZohoCatalyst.pdfshot.execute%20ZohoCatalyst.dataverse.execute%20ZohoCatalyst.grid.READ%20ZohoCatalyst.grid.terminate%20ZohoCatalyst.circuits.execute%20ZohoCatalyst.circuits.execution.READ%20ZohoCatalyst.circuits.execution.DELETE%20ZohoCatalyst.cli.logs.CREATE%20ZohoCatalyst.appsail.Read%20ZohoCatalyst.appsail.Create%20ZohoCatalyst.appsail.Update%20ZohoCatalyst.appsail.Delete%20ZohoCatalyst.jobpool.READ%20ZohoCatalyst.job.ALL%20ZohoCatalyst.tunneling.READ%20ZohoCatalyst.tunneling.UPDATE%20AaaServer.profile.READ%20profile.userphoto.READ%20Stratus.fileop.CREATE%20Stratus.fileop.ALL%20Stratus.bucketop.ALL%20ZohoCatalyst.buckets.objects.UPDATE%20ZohoCatalyst.buckets.objects.READ%20ZohoCatalyst.buckets.objects.DELETE%20ZohoCatalyst.buckets.READ%20ZohoCatalyst.buckets.objects.CREATE%20ZohoCatalyst.pipeline.READ%20ZohoCatalyst.pipeline.execution.CREATE%20ZohoCatalyst.connections.READ%20ZohoCatalyst.Slate.app.READ%20ZohoCatalyst.Slate.app.CREATE&response_type=code&access_type=offline&prompt=consent&redirect_uri=http%3A%2F%2Flocalhost%3A9005&state=taIsQwI2cbWDA2aBT%2BBFLg%3D%3D
+[info] [2026-07-24T09:51:39.146Z] : 
+[debug] [2026-07-24T09:53:08.276Z] : 
+[debug] [2026-07-24T09:53:08.277Z] : ----------------------------------------------------------------------
+[debug] [2026-07-24T09:53:08.277Z] : Command:      C:\nvm4w\nodejs\node.exe C:\nvm4w\nodejs\node_modules\zcatalyst-cli\lib\bin\catalyst.js login
+[debug] [2026-07-24T09:53:08.277Z] : CLI Version:  1.27.0
+[debug] [2026-07-24T09:53:08.278Z] : Platform:     win32
+[debug] [2026-07-24T09:53:08.278Z] : Node Version: v20.19.4
+[debug] [2026-07-24T09:53:08.278Z] : Time:         Fri Jul 24 2026 15:23:08 GMT+0530 (India Standard Time)
+[debug] [2026-07-24T09:53:08.278Z] : ----------------------------------------------------------------------
+[debug] [2026-07-24T09:53:08.278Z] : 
+[info] [2026-07-24T09:53:36.464Z] : 
+[info] [2026-07-24T09:53:36.465Z] : Visit this URL on this device to log in:
+[info] [2026-07-24T09:53:36.466Z] : https://accounts.zoho.in/oauth/v2/auth?client_id=1000.D5IIHDXSPN2MII26AD0V61I6RMVSNM&scope=ZohoCatalyst.apigateway.apis.READ%20ZohoCatalyst.apigateway.apis.CREATE%20ZohoCatalyst.apigateway.apis.UPDATE%20ZohoCatalyst.apigateway.apis.DELETE%20ZohoCatalyst.apigateway.READ%20ZohoCatalyst.apigateway.UPDATE%20ZohoCatalyst.segments.ALL%20ZohoCatalyst.cache.READ%20ZohoCatalyst.cache.CREATE%20ZohoCatalyst.cache.DELETE%20ZohoCatalyst.queue.ALL%20ZohoCatalyst.queue.data.READ%20ZohoCatalyst.queue.data.CREATE%20ZohoCatalyst.projects.ALL%20ZohoCatalyst.project.export.READ%20ZohoCatalyst.project.export.CREATE%20ZohoCatalyst.project.import.READ%20ZohoCatalyst.project.import.CREATE%20ZohoCatalyst.project.import.DELETE%20ZohoCatalyst.cron.ALL%20ZohoCatalyst.zcql.CREATE%20ZohoCatalyst.webapp.ALL%20ZohoCatalyst.projects.users.READ%20ZohoCatalyst.projects.users.CREATE%20ZohoCatalyst.projects.users.DELETE%20ZohoCatalyst.projects.users.UPDATE%20ZohoCatalyst.authentication.CREATE%20ZohoCatalyst.email.CREATE%20ZohoCatalyst.tables.ALL%20ZohoCatalyst.tables.rows.ALL%20ZohoCatalyst.tables.columns.ALL%20ZohoCatalyst.tables.bulk.READ%20ZohoCatalyst.tables.bulk.CREATE%20ZohoCatalyst.nosql.READ%20ZohoCatalyst.nosql.rows.ALL%20ZohoCatalyst.folders.ALL%20ZohoCatalyst.files.CREATE%20ZohoCatalyst.files.READ%20ZohoCatalyst.files.DELETE%20ZohoCatalyst.functions.ALL%20ZohoCatalyst.functions.EXECUTE%20ZohoCatalyst.eventlistners.ALL%20ZohoCatalyst.eventlisteners.produce%20ZohoCatalyst.security.rules.Read%20ZohoCatalyst.security.rules.Update%20ZohoCatalyst.notifications.mobile%20ZohoCatalyst.notifications.web%20ZohoCatalyst.search.READ%20ZohoCatalyst.mlkit.READ%20QuickML.deployment.READ%20ZohoCatalyst.pdfshot.execute%20ZohoCatalyst.grid.READ%20ZohoCatalyst.grid.terminate%20ZohoCatalyst.circuits.execute%20ZohoCatalyst.circuits.execution.READ%20ZohoCatalyst.circuits.execution.DELETE%20ZohoCatalyst.cli.logs.CREATE%20ZohoCatalyst.appsail.Read%20ZohoCatalyst.appsail.Create%20ZohoCatalyst.appsail.Update%20ZohoCatalyst.appsail.Delete%20ZohoCatalyst.jobpool.READ%20ZohoCatalyst.job.ALL%20ZohoCatalyst.tunneling.READ%20ZohoCatalyst.tunneling.UPDATE%20AaaServer.profile.READ%20profile.userphoto.READ%20Stratus.fileop.CREATE%20Stratus.fileop.ALL%20Stratus.bucketop.ALL%20ZohoCatalyst.buckets.objects.UPDATE%20ZohoCatalyst.buckets.objects.READ%20ZohoCatalyst.buckets.objects.DELETE%20ZohoCatalyst.buckets.READ%20ZohoCatalyst.buckets.objects.CREATE%20ZohoCatalyst.pipeline.READ%20ZohoCatalyst.pipeline.execution.CREATE%20ZohoCatalyst.connections.READ%20ZohoCatalyst.Slate.app.READ%20ZohoCatalyst.Slate.app.CREATE&response_type=code&access_type=offline&prompt=consent&redirect_uri=http%3A%2F%2Flocalhost%3A9006&state=YQEc%2B6VplX%2Fp9X2vEEkYwQ%3D%3D
+[info] [2026-07-24T09:53:36.466Z] : 
+[debug] [2026-07-24T09:53:48.699Z] : >>>> HTTP REQUEST : POST https://accounts.zoho.in/oauth/v2/token 
+<request query omitted>
+
+[debug] [2026-07-24T09:53:50.016Z] : <<<< HTTP RESPONSE : 200
+Response Headers: {"server":"ZGS","date":"Fri, 24 Jul 2026 09:53:50 GMT","content-type":"application/json;charset=UTF-8","content-length":"2612","connection":"keep-alive","cache-control":"no-store","x-content-type-options":"nosniff","pragma":"no-cache","x-frame-options":"SAMEORIGIN","vary":"accept-encoding","content-language":"en-US","strict-transport-security":"max-age=64072000; includeSubDomains; preload"}
+
+[debug] [2026-07-24T09:53:50.021Z] : >>>> HTTP REQUEST : GET https://accounts.zoho.in/oauth/user/info 
+
+[debug] [2026-07-24T09:53:50.073Z] : <<<< HTTP RESPONSE : 200
+Response Headers: {"server":"ZGS","date":"Fri, 24 Jul 2026 09:53:50 GMT","content-type":"application/json;charset=UTF-8","content-length":"118","connection":"keep-alive","x-content-type-options":"nosniff","cache-control":"private,no-cache,no-store,max-age=0,must-revalidate","pragma":"no-cache","expires":"Thu, 01 Jan 1970 00:00:00 GMT","x-frame-options":"SAMEORIGIN","content-language":"en-US","strict-transport-security":"max-age=64072000; includeSubDomains; preload"}
+
+[info] [2026-07-24T09:53:52.237Z] : √ Success! Logged in as : vignesh@hikat.xyz
+[debug] [2026-07-24T09:53:52.238Z] : NO ERRORS REGISTERED
+[debug] [2026-07-24T09:53:52.239Z] : EXEC ENDED with event: login, message: success
+[debug] [2026-07-24T09:53:52.239Z] : TOTAL DURATION OF COMMAND EXEC : 42643
