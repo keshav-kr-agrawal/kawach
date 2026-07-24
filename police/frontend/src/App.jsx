@@ -22,6 +22,16 @@ import DossierView from './views/DossierView.jsx';
 import TerminalView from './views/TerminalView.jsx';
 import IpTracingView from './views/IpTracingView.jsx';
 
+// Added modules from zoho_master_plan
+import AICopilotView from './views/AICopilotView.jsx';
+import DistrictPerformanceView from './views/DistrictPerformanceView.jsx';
+import SocioEconomicView from './views/SocioEconomicView.jsx';
+import CCTVAnalyticsSimulator from './views/CCTVAnalyticsSimulator.jsx';
+import FaceAnalyticsView from './views/FaceAnalyticsView.jsx';
+import MobileFieldSimulatorView from './views/MobileFieldSimulatorView.jsx';
+import IngestionExplorerView from './views/IngestionExplorerView.jsx';
+import CounterfeitScannerView from './views/CounterfeitScannerView.jsx';
+
 /**
  * Navigation register — grouped by operational story, gated by role.
  * SP-and-above sees strategic surfaces; every officer sees the field surfaces.
@@ -34,6 +44,8 @@ const NAV_GROUPS = [
       { path: '/map', label: 'Hotspot Map', Glyph: MapGlyph },
       { path: '/alerts', label: 'Anomaly Alerts', Glyph: SirenGlyph },
       { path: '/investigations', label: 'Investigations', Glyph: CaseGlyph },
+      { path: '/performance', label: 'District Performance', Glyph: RadarGlyph },
+      { path: '/data-lake', label: 'Unified Data Lake', Glyph: TerminalGlyph },
     ],
   },
   {
@@ -41,8 +53,10 @@ const NAV_GROUPS = [
     items: [
       { path: '/network', label: 'Fraud Network', Glyph: GraphGlyph, minRole: 'SP' },
       { path: '/offenders', label: 'Offender Registry', Glyph: ProfileGlyph },
+      { path: '/copilot', label: 'AI Investigation Copilot', Glyph: SirenGlyph },
       { path: '/ip-tracing', label: 'IP Tracing', Glyph: TraceGlyph },
       { path: '/risk', label: 'District Risk', Glyph: RadarGlyph, minRole: 'SP' },
+      { path: '/socioeconomic', label: 'Socioeconomic Correlation', Glyph: RadarGlyph },
       { path: '/terminal', label: 'Case Terminal', Glyph: TerminalGlyph },
     ],
   },
@@ -51,6 +65,15 @@ const NAV_GROUPS = [
     items: [
       { path: '/fraud-shield', label: 'Fraud Shield', Glyph: RupeeGlyph },
       { path: '/live-monitor', label: 'Live Arrest Monitor', Glyph: WaveGlyph },
+      { path: '/counterfeit-scanner', label: 'Counterfeit Scanner', Glyph: RupeeGlyph },
+    ],
+  },
+  {
+    label: 'Advanced AI & Field',
+    items: [
+      { path: '/cctv-analytics', label: 'CCTV Video Analytics', Glyph: WaveGlyph },
+      { path: '/face-analytics', label: 'Facial Recognition', Glyph: ProfileGlyph },
+      { path: '/field-simulator', label: 'Officer Field App', Glyph: SirenGlyph },
     ],
   },
   {
@@ -213,13 +236,21 @@ function Console({ user, onLogout }) {
               <Route path="/map" element={<HotspotsView />} />
               <Route path="/alerts" element={<AlertsView />} />
               <Route path="/investigations" element={<InvestigationsView />} />
+              <Route path="/performance" element={<DistrictPerformanceView user={user} />} />
+              <Route path="/data-lake" element={<IngestionExplorerView user={user} />} />
               <Route path="/network" element={<NetworkView />} />
               <Route path="/offenders" element={<OffendersView />} />
+              <Route path="/copilot" element={<AICopilotView user={user} />} />
               <Route path="/ip-tracing" element={<IpTracingView />} />
               <Route path="/risk" element={<PredictiveView />} />
+              <Route path="/socioeconomic" element={<SocioEconomicView user={user} />} />
               <Route path="/terminal" element={<TerminalView />} />
               <Route path="/fraud-shield" element={<FraudShieldView />} />
               <Route path="/live-monitor" element={<DigitalArrestView />} />
+              <Route path="/counterfeit-scanner" element={<CounterfeitScannerView user={user} />} />
+              <Route path="/cctv-analytics" element={<CCTVAnalyticsSimulator user={user} />} />
+              <Route path="/face-analytics" element={<FaceAnalyticsView user={user} />} />
+              <Route path="/field-simulator" element={<MobileFieldSimulatorView user={user} />} />
               <Route path="/dossiers" element={<DossierView />} />
               <Route path="*" element={<Navigate to="/command" replace />} />
             </Routes>
