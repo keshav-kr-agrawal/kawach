@@ -400,6 +400,22 @@ export default function AlertsChatView() {
     }
   };
 
+  const triggerUpload = (isCamera) => {
+    setMediaModalOpen(false);
+    if (isCamera) {
+      if (cameraInputRef.current) {
+        cameraInputRef.current.click();
+      } else {
+        startChatCamera();
+      }
+    } else {
+      if (fileInputRef.current) {
+        fileInputRef.current.accept = 'image/*,video/*,audio/*';
+        fileInputRef.current.click();
+      }
+    }
+  };
+
   const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const pushBot = (text, extra = {}) =>
     setMessages((prev) => [...prev, { id: 'bot-' + Date.now() + Math.random(), sender: 'bot', text, timestamp: now(), ...extra }]);

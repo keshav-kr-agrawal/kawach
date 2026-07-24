@@ -38,7 +38,14 @@ app = FastAPI(
 # Set CORS origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, specify actual origins
+    allow_origins=[
+        "https://kawach-two.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:5175",
+        "http://localhost:3000",
+        "http://localhost:8000",
+    ],
+    allow_origin_regex=r"https://.*\.vercel\.app.*|https://.*\.zohocatalyst\.app.*|http://localhost:.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
