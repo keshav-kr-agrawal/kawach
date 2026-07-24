@@ -28,7 +28,7 @@ try:
 except Exception as _e:
     # Don't block startup on DB issues — routes will surface errors honestly.
     print(f"[BOOT] Database bootstrap warning: {_e}", flush=True)
-from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports, fraud_shield, ingestion, osint_scraper, webhooks, nayak, digital_arrest, ip_tracing
+from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports, fraud_shield, ingestion, osint_scraper, webhooks, nayak, digital_arrest, ip_tracing, realtime
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -64,6 +64,7 @@ app.include_router(webhooks.router, prefix=f"{settings.API_V1_STR}/webhooks", ta
 app.include_router(nayak.router, prefix=f"{settings.API_V1_STR}/nayak", tags=["Nayak Citizen Assistant"])
 app.include_router(digital_arrest.router, prefix=f"{settings.API_V1_STR}/digital-arrest", tags=["Digital Arrest Live Monitor"])
 app.include_router(ip_tracing.router, prefix=f"{settings.API_V1_STR}/ip-tracing", tags=["IP Tracing"])
+app.include_router(realtime.router, prefix=f"{settings.API_V1_STR}/realtime", tags=["Realtime Telemetry & Stream"])
 
 @app.get("/")
 def read_root():

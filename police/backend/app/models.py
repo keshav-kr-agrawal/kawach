@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Table, text, Boolean
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Table, text, Boolean, JSON
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
+
+JSONB = JSON().with_variant(PG_JSONB(), "postgresql")
 from sqlalchemy.orm import relationship
 from app.database import Base
 from datetime import datetime

@@ -1,14 +1,30 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client.js';
+import { subscribeRealtimeStream } from '../api/realtime.js';
 import { ViewFrame, Panel, LoadingLine, ErrorNote, SeverityChip, Idx } from '../ui/kit.jsx';
 
-/** Statistical anomaly feed — z-score spikes per district (/api/alerts). */
+/** Statistical anomaly feed — z-score spikes per district (/api/alerts) + Real-time SSE stream. */
 export default function AlertsView() {
   const [alerts, setAlerts] = useState(null);
   const [error, setError] = useState(null);
+  const [liveStreamConnected, setLiveStreamConnected] = useState(false);
 
   useEffect(() => {
     api.get('/alerts').then(setAlerts).catch(setError);
+
+    // Subscribe to real-time event stream
+    const unsubscribe = subscribeRealtimeStream((event) => {
+      if (event.type === 'alert_push' && event.data) {
+        setLiveStreamConnected(true);
+        setAlerts((prev) => {
+          if (!prev) return [event.data];
+          if (prev.some((a) => a.id === event.data.id)) return prev;
+          return [event.data, ...prev];
+        });
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   return (
