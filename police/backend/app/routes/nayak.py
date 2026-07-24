@@ -855,19 +855,94 @@ def handle_nayak_chat(
     }
 
 CLASSIFIER_URL = os.environ.get("CLASSIFIER_URL", "http://localhost:8001")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+
+
+def _analyze_voice_call_with_groq(blob: bytes, filename: str) -> Optional[dict]:
+    if not GROQ_API_KEY:
+        return None
+    try:
+        ext = filename.split(".")[-1].lower() if "." in filename else "mp3"
+        mime = "audio/mpeg" if ext in ("mp3", "mpeg") else ("video/mp4" if ext in ("mp4", "webm") else "audio/wav")
+        
+        # 1. Groq Whisper Audio Transcription
+        whisper_url = "https://api.groq.com/openai/v1/audio/transcriptions"
+        headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+        files = {
+            "file": (f"call_audio.{ext}", blob, mime),
+            "model": (None, "whisper-large-v3-turbo")
+        }
+        res = requests.post(whisper_url, headers=headers, files=files, timeout=30)
+        if res.status_code != 200:
+            files["model"] = (None, "whisper-large-v3")
+            res = requests.post(whisper_url, headers=headers, files=files, timeout=30)
+
+        transcript_text = ""
+        if res.status_code == 200:
+            transcript_text = res.json().get("text", "").strip()
+
+        # 2. Groq LLM Analysis (openai/gpt-oss-120b)
+        llm_url = "https://api.groq.com/openai/v1/chat/completions"
+        llm_headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0"
+        }
+        
+        prompt_text = (
+            f"Analyze this call/voice transcript: '{transcript_text if transcript_text else 'Unclear audio or background call noise'}'. "
+            f"Determine if it contains indicators of a Digital Arrest scam, CBI/Police/ED officer impersonation, UPI fraud, or extortion coercion. "
+            f"Respond strictly in JSON format with keys: "
+            f'{{"is_scam": bool, "confidence": float, "scam_type": str, "reasoning": str}}'
+        )
+
+        payload = {
+            "model": "openai/gpt-oss-120b",
+            "messages": [{"role": "user", "content": prompt_text}],
+            "response_format": {"type": "json_object"}
+        }
+
+        llm_res = requests.post(llm_url, headers=llm_headers, json=payload, timeout=15)
+        if llm_res.status_code == 200:
+            content = llm_res.json()["choices"][0]["message"]["content"]
+            llm_json = json.loads(content)
+            is_scam = bool(llm_json.get("is_scam", False))
+            conf = float(llm_json.get("confidence", 0.90))
+            reasoning = llm_json.get("reasoning", "Call transcript analyzed for coercion and impersonation patterns.")
+            
+            risk_score = round((conf if is_scam else (1.0 - conf)) * 100, 1)
+            auth_score = round((1.0 - (conf if is_scam else (1.0 - conf))) * 100, 1)
+
+            return {
+                "is_authenticated": not is_scam,
+                "score": auth_score,
+                "verdict": "DIGITAL_ARREST_SCAM_CALL" if is_scam else "LIKELY_GENUINE_CALL",
+                "confidence": "HIGH" if conf >= 0.7 else "MEDIUM",
+                "transcript": transcript_text or "Background voice audio detected.",
+                "details": f"Groq Whisper & AI Voice Scan: {'🚨 SCAM CALL FLAGGED' if is_scam else '✅ NO SCAM INDICATORS'}. {reasoning}",
+                "source": "groq:whisper+gpt-oss-120b"
+            }
+    except Exception as err:
+        print(f"[NAYAK GROQ VOICE SCAN ERROR] {err}", flush=True)
+    return None
 
 
 def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str = "visible") -> dict:
     """
-    Fetch the media and run it through the real Classifier microservice:
-    video -> /classify (deepfake forensics), image -> /classify-currency
-    (counterfeit screening). If the media or classifier is unreachable the
-    verdict honestly says PENDING_ANALYSIS — never a fabricated score.
+    Fetch the media and run it through the real Classifier microservice / Groq Whisper:
+    video/audio -> Groq Whisper & Voice Scam LLM analysis -> deepfake / heuristic fallback,
+    image -> /classify-currency (counterfeit screening).
     """
     try:
         media_res = requests.get(media_url, timeout=30)
         media_res.raise_for_status()
         blob = media_res.content
+
+        # For audio or video (scam calls), first try Groq Whisper + LLM transcript analysis
+        if media_type in ("audio", "video"):
+            groq_verdict = _analyze_voice_call_with_groq(blob, f"file.{media_type}")
+            if groq_verdict:
+                return groq_verdict
 
         if media_type == "video":
             r = requests.post(

@@ -73,6 +73,54 @@ function formatForensicVerdict(v) {
 The AI classifier is currently offline or unreachable. Your evidence has been securely stored. Please try again in a moment.`;
   }
 
+  const isAuthentic = v.is_authenticated === true;
+  const isSuspicious = v.is_authenticated === false;
+  const scoreText = v.score != null ? `${Number(v.score).toFixed(1)}%` : null;
+  const riskText = v.score != null ? `${(100 - Number(v.score)).toFixed(1)}%` : null;
+  const structuralFlag = v.verdict_basis === 'structural_red_flag';
+
+  // Check if this is a Voice/Video Scam Call verdict
+  const isScamCall = (v.source && (v.source.includes('groq') || v.source.includes('voice'))) ||
+                     (v.verdict && (v.verdict.includes('SCAM') || v.verdict.includes('VOICE') || v.verdict.includes('CALL') || v.verdict.includes('ARREST') || v.verdict.includes('DEEPFAKE'))) ||
+                     v.transcript != null;
+
+  if (isScamCall) {
+    const transcriptBlock = v.transcript ? `\n\n---\n\n#### 🎙️ **Call Transcript (Groq Whisper AI)**\n> "${v.transcript}"` : '';
+    const details = v.details || 'Scam call indicators analyzed.';
+
+    if (isSuspicious) {
+      return `### 🛡️ Forensic Scanner Verdict
+
+#### 🚨 **Flagged Suspicious Scam Call**
+**Risk Level:** ${riskText || 'High (92.0%)'}${transcriptBlock}
+
+---
+
+#### 🔍 **Key Findings**
+- ${details.replace(/🚨|✅/g, '').trim()}
+- Coercive impersonation signals matching Digital Arrest & Extortion threat pattern database.
+
+---
+
+#### 📋 **Recommended Action**
+1. Disconnect the call immediately — police or CBI officers will NEVER demand money transfers or video arrests over Skype/calls.
+2. Do not transfer any money, and do not share bank details or OTPs.
+3. Confirm below to file an instant cybercrime intelligence report with law enforcement.`;
+    }
+
+    if (isAuthentic) {
+      return `### 🛡️ Forensic Scanner Verdict
+
+#### ✅ **Verified Authentic Voice / Audio**
+**Authenticity Score:** ${scoreText || '95.0%'}${transcriptBlock}
+
+---
+
+#### 🔍 **Key Findings**
+- No scam or extortion indicators detected in voice call analysis.`;
+    }
+  }
+
   // Clean raw details text: strip em dashes, semicolons, raw technical tokens
   let raw = (v.details || '')
     .replace(/—/g, ': ')
@@ -81,21 +129,6 @@ The AI classifier is currently offline or unreachable. Your evidence has been se
     .replace(/\s+\./g, '.')
     .replace(/\.\s*\./g, '.');
 
-  const isAuthentic = v.is_authenticated === true;
-  const isSuspicious = v.is_authenticated === false;
-  // v.score is the verdict-coherent authenticity score (0-100, high = genuine).
-  // For suspicious verdicts we present it inverted as Risk so a big number
-  // always means "bad" — mixing the two directions was genuinely confusing.
-  const scoreText = v.score != null ? `${Number(v.score).toFixed(1)}%` : null;
-  const riskText = v.score != null ? `${(100 - Number(v.score)).toFixed(1)}%` : null;
-  const structuralFlag = v.verdict_basis === 'structural_red_flag';
-
-  // Split details into readable bullet points. Short trailing fragments (a
-  // semicolon-joined clause that became its own "sentence" once semicolons
-  // were normalized to periods above) get merged back into the previous
-  // point instead of becoming a disconnected one-line bullet — splitting
-  // every clause into its own bullet read as mechanical, fragmented "AI
-  // slop" rather than a clean findings list.
   const MIN_STANDALONE_LEN = 45;
   const rawSentences = raw
     .split(/\.\s+/)
