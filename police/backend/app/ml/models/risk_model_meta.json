@@ -1,0 +1,27 @@
+{
+  "algorithm": "XGBoost Regressor",
+  "r2_score": 0.2628,
+  "rmse": 0.38,
+  "train_rows": 744,
+  "test_rows": 186,
+  "features": [
+    "unemployment_rate",
+    "poverty_rate",
+    "police_per_capita",
+    "gdp_per_capita",
+    "school_density",
+    "hospital_density",
+    "population_density",
+    "month_sin",
+    "month_cos",
+    "festival_flag",
+    "adjacent_crime_rate",
+    "lagged_crime_rate_3m",
+    "lagged_crime_rate_12m"
+  ],
+  "target": "crime_rate_per_100k",
+  "crime_rate_p5": 0.21656470980599593,
+  "crime_rate_p95": 1.4477067048407055,
+  "shap_available": true,
+  "trained_at": "2026-07-24T19:01:05.320526"
+}

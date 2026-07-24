@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from app.database import get_db
@@ -55,25 +54,6 @@ def get_socio_economic_correlation(db: Session = Depends(get_db)):
     # Return formatted correlation response
     # e.g., list of key correlations to render a matrix/heatmap easily
     return corr_matrix
-
-# ── ML INTEGRATION WINDOW (Vignesh) ─────────────────────────────────────────
-import os
-ML_MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "ml", "models")
-
-def _try_ml_predict(feature_rows: list) -> list | None:
-    """Attempt XGBoost prediction. Returns None if model not yet loaded."""
-    try:
-        import joblib, numpy as np
-        model_path = os.path.join(ML_MODELS_DIR, "risk_model.pkl")
-        if not os.path.exists(model_path):
-            return None
-        model = joblib.load(model_path)
-        X = np.array([[r[f] for f in model.feature_names_in_] for r in feature_rows])
-        return model.predict(X).tolist()
-    except Exception as e:
-        print(f"[ML] XGBoost prediction failed, falling back to formula: {e}")
-        return None
-# ── END ML INTEGRATION WINDOW ────────────────────────────────────────────────
 
 @router.get("/predict")
 def predict_district_risk(db: Session = Depends(get_db)):
@@ -261,16 +241,6 @@ def detect_crime_patterns(db: Session = Depends(get_db)):
                 "sample_size": len(rows),
             })
 
-    if not patterns:
-        patterns.append({
-            "id": "PAT-000",
-            "title": "Insufficient Data for Pattern Detection",
-            "description": f"Only {n_total} FIR records available — statistical pattern mining needs a larger seeded dataset (run generate_data.py).",
-            "confidence": 0.0,
-            "category": "System",
-            "sample_size": n_total,
-        })
-
     # ── ML INTEGRATION WINDOW ────────────────────────────────────────────────
     # Prophet forecasts + Isolation Forest anomalies, appended after the
     # statistical cards above. Each returns [] if its model isn't trained yet
@@ -280,6 +250,16 @@ def detect_crime_patterns(db: Session = Depends(get_db)):
     except Exception as e:
         print(f"[ML] Pattern ML failed, using statistical-only patterns: {e}")
     # ── END ML INTEGRATION WINDOW ────────────────────────────────────────────
+
+    if not patterns:
+        patterns.append({
+            "id": "PAT-000",
+            "title": "Insufficient Data for Pattern Detection",
+            "description": f"Only {n_total} FIR records available — statistical and ML pattern mining both need a larger seeded dataset (run generate_data.py) or trained models (see app/ml/).",
+            "confidence": 0.0,
+            "category": "System",
+            "sample_size": n_total,
+        })
 
     return patterns
 
