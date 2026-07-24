@@ -56,6 +56,14 @@ const NAYAK_SERVICES = [
     accept: 'audio/mpeg,audio/mp3,.mp3,video/mp4,.mp4',
   },
   {
+    id: 'live-call-mic',
+    mode: 'live_call_mic',
+    label: 'Live Mic Shield',
+    icon: '🎙️',
+    badge: 'Real-Time Call Listener',
+    type: 'live_mic',
+  },
+  {
     id: 'law-check',
     mode: 'law_check',
     label: 'Law Check',
@@ -338,6 +346,59 @@ export default function AlertsChatView() {
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [captureMode, setCaptureMode] = useState('visible'); // 'visible' | 'uv'
+
+  // Live Call Mic Listening State
+  const [isListeningMic, setIsListeningMic] = useState(false);
+  const [listeningSeconds, setListeningSeconds] = useState(0);
+  const liveRecorderRef = useRef(null);
+  const liveAudioChunksRef = useRef([]);
+  const liveTimerRef = useRef(null);
+
+  const startLiveMicListening = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      liveAudioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      liveRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          liveAudioChunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        clearInterval(liveTimerRef.current);
+        setIsListeningMic(false);
+        setListeningSeconds(0);
+
+        const audioBlob = new Blob(liveAudioChunksRef.current, { type: 'audio/webm' });
+        if (audioBlob.size < 100) return;
+
+        const file = new File([audioBlob], `live_call_segment_${Date.now()}.webm`, { type: 'audio/webm' });
+        pushBot('🎙️ **Live Mic Call Segment Captured** — Transcribing & scanning speech stream with Groq Whisper & LLM...');
+        processFile(file);
+
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      recorder.start();
+      setIsListeningMic(true);
+      setListeningSeconds(0);
+      liveTimerRef.current = setInterval(() => {
+        setListeningSeconds((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error('[LIVE MIC ACCESS ERROR]', err);
+      alert('Microphone permission required for real-time live call listening.');
+    }
+  };
+
+  const stopLiveMicListening = () => {
+    if (liveRecorderRef.current && isListeningMic) {
+      liveRecorderRef.current.stop();
+    }
+  };
 
   const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const pushBot = (text, extra = {}) =>
@@ -712,6 +773,14 @@ export default function AlertsChatView() {
       setEmergencyOpen(true);
       return;
     }
+    if (service.mode === 'live_call_mic') {
+      if (isListeningMic) {
+        stopLiveMicListening();
+      } else {
+        startLiveMicListening();
+      }
+      return;
+    }
     const nowSelected = selectedMode === service.mode ? null : service.mode;
     setSelectedMode(nowSelected);
     if (nowSelected) {
@@ -739,6 +808,22 @@ export default function AlertsChatView() {
       onPaste={handlePaste}
       className="flex-1 flex flex-col h-full bg-white font-sans text-ink overflow-hidden select-text relative"
     >
+      {/* Live Mic Listening Indicator Bar */}
+      {isListeningMic && (
+        <div className="bg-red-950 text-white px-4 py-2.5 border-b border-red-500 flex items-center justify-between animate-pulse z-30">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-red-500 animate-ping" />
+            <span className="text-xs font-black font-mono tracking-wider">🎙️ LIVE SCAM MIC SHIELD ACTIVE ({listeningSeconds}s)</span>
+          </div>
+          <button
+            type="button"
+            onClick={stopLiveMicListening}
+            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-[10px] font-black rounded-lg uppercase tracking-wider font-sora shadow-sm"
+          >
+            Stop & Analyze
+          </button>
+        </div>
+      )}
       
       {/* Drag & Drop Full Page Overlay */}
       {isDraggingFile && (
