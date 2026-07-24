@@ -89,131 +89,71 @@ Dashboards & Investigation Workspace
 
 ---
 
-# ML INTEGRATION CONTRACT
-## For Team Member Reference — Leave Integration Windows Open
+# ML INTEGRATION CONTRACT — STATUS: BUILT (2026-07-25)
+## For Team Member Reference
 
 > **Owner**: Vignesh builds, trains, and delivers the ML artifacts.
-> **Team**: Must leave the backend call-hooks below active and not re-implement the scoring logic.
+> **Status**: The integration hooks below are no longer a plan — they're merged into `police/backend/app/routes/analytics.py` and `police/backend/app/ml/`. Team member does not need to write any of this; just don't remove the `# ── ML INTEGRATION WINDOW ──` blocks in `analytics.py`.
 
-## Model Artifacts (Vignesh delivers to `police/backend/app/ml/models/`)
+## What's actually in the repo now
 
-| File | Algorithm | Purpose |
-|---|---|---|
-| `risk_model.pkl` | XGBoost Regressor | District risk score prediction |
-| `risk_model_meta.json` | — | Feature list, training R², RMSE, training date |
-| `isolation_forest.pkl` | Isolation Forest | Multi-dimensional crime anomaly detection |
-| `prophet_models/<crime_type>.pkl` | Facebook Prophet | Per-crime-type 90-day count forecasting |
-| `shap_explainer.pkl` | TreeExplainer (SHAP) | Per-district risk factor attribution |
-
-## Integration Hook 1 — `/api/analytics/predict` (analytics.py)
-
-Team member must replace the weighted-formula block in `predict_district_risk()` with:
-
-```python
-# ── ML INTEGRATION WINDOW (Vignesh) ─────────────────────────────────────────
-# Do NOT delete this block. Vignesh will drop risk_model.pkl here.
-import os
-ML_MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "ml", "models")
-
-def _try_ml_predict(feature_rows: list) -> list | None:
-    """Attempt XGBoost prediction. Returns None if model not yet loaded."""
-    try:
-        import joblib, numpy as np
-        model_path = os.path.join(ML_MODELS_DIR, "risk_model.pkl")
-        if not os.path.exists(model_path):
-            return None
-        model = joblib.load(model_path)
-        X = np.array([[r[f] for f in model.feature_names_in_] for r in feature_rows])
-        return model.predict(X).tolist()
-    except Exception as e:
-        print(f"[ML] XGBoost prediction failed, falling back to formula: {e}")
-        return None
-# ── END ML INTEGRATION WINDOW ────────────────────────────────────────────────
+```
+police/backend/app/ml/
+├── features.py               ← shared feature engineering (train + inference both import this)
+├── train_risk_model.py       ← run: python -m app.ml.train_risk_model
+├── train_isolation_forest.py ← run: python -m app.ml.train_isolation_forest
+├── train_prophet.py          ← run: python -m app.ml.train_prophet
+├── predict.py                ← ml_predict_district_risk(), called from analytics.py
+├── patterns.py               ← ml_forecast_patterns() + ml_anomaly_patterns(), called from analytics.py
+└── models/                   ← .pkl artifacts land here after training (gitignored until trained)
 ```
 
-The response schema stays identical — same JSON fields — so the frontend needs zero changes:
-```json
-{
-  "district_id": "...",
-  "district_name": "...",
-  "risk_score": 78.4,
-  "risk_tier": "High",
-  "score_breakdown": { "unemployment": 23.1, "poverty": 18.4, "police_deficit": 12.0, "recent_crime_volume": 24.9 },
-  "contributing_factors": { "unemployment": "...", ... },
-  "shap_explanation": "Risk primarily driven by unemployment rate 3.2× state average (+23pts) and police density deficit (+18pts). Spatial crime spillover from adjacent Ramanagara district adds +12pts.",
-  "ml_model": "xgboost",
-  "model_r2": 0.84
-}
-```
+`routes/analytics.py`'s `predict_district_risk()` and `detect_crime_patterns()` already call into these — if a `.pkl` is missing, they silently fall back to the original statistical formula (Graceful Degradation Rule, unchanged from the original plan). **Nobody else needs to touch `analytics.py` for this.**
 
-## Integration Hook 2 — `/api/analytics/patterns` (analytics.py)
+## Response schema (unchanged from original plan — frontend needs zero changes)
 
-Team member must add this call at the end of `detect_crime_patterns()`, **after** the existing 3 statistical patterns:
+`/api/analytics/predict` per-district object gains (when ML is active): `shap_explanation`, `ml_model`, `model_r2`, `model_rmse`, `predicted_crime_rate_per_100k` — `risk_score`/`risk_tier`/`contributing_factors` keep the same shape as the formula fallback.
 
-```python
-# ── ML INTEGRATION WINDOW (Vignesh) ─────────────────────────────────────────
-def _try_ml_patterns(fir_data) -> list:
-    """Attempt Prophet + Isolation Forest patterns. Returns [] if models not loaded."""
-    try:
-        from app.ml.patterns import ml_forecast_patterns, ml_anomaly_patterns
-        return ml_forecast_patterns(fir_data) + ml_anomaly_patterns(fir_data)
-    except Exception as e:
-        print(f"[ML] Pattern ML failed, using statistical-only patterns: {e}")
-        return []
-patterns += _try_ml_patterns(firs)
-# ── END ML INTEGRATION WINDOW ────────────────────────────────────────────────
-```
+`/api/analytics/patterns` gets extra cards appended after the 3 statistical ones, each with `ml_model: "Prophet"` or `"Isolation Forest"`, `confidence`, `sample_size`, `category: "Forecast"|"Anomaly"`.
 
-ML pattern response schema (appended to existing patterns list):
-```json
-[
-  {
-    "id": "PAT-ML-001",
-    "title": "Prophet Forecast: Cybercrime Rising — Bengaluru Urban",
-    "description": "Prophet model predicts Cybercrime FIRs will increase 34% in the next 60 days (95% CI: 18%–51%). Seasonal component shows recurring July–September peak.",
-    "confidence": 88.0,
-    "category": "Forecast",
-    "sample_size": 1240,
-    "forecast_30d": 142,
-    "forecast_90d": 391,
-    "confidence_interval": { "lower_90d": 318, "upper_90d": 464 }
-  },
-  {
-    "id": "PAT-ML-002",
-    "title": "Isolation Forest: Anomalous Crime Profile — Belagavi",
-    "description": "Isolation Forest detected a simultaneous multi-crime-type anomaly: Burglary + Vehicle Theft + Assault elevated together (4.2σ outlier vs all historical district profiles). Coordinated criminal activity suspected.",
-    "confidence": 91.0,
-    "category": "Anomaly",
-    "sample_size": 3100,
-    "anomaly_score": -0.42,
-    "district": "Belagavi"
-  }
-]
-```
+## Known bug found & fixed during build
+The original plan's Isolation Forest used a hardcoded `anomaly_threshold = -0.3`. Testing against real data showed this is wrong — `IsolationForest.score_samples()`'s scale shifts with dataset size, so a fixed constant flagged 100% of rows as "anomalous" on one test run and could flag 0% on another. Fixed: the threshold is now derived per-training-run as the contamination-percentile of that run's own score distribution, saved alongside the model. If you ever see `flagged_pct` far from ~5% in `isolation_forest.pkl`, that's the signal something's off with the training data, not the code.
 
-## Graceful Degradation Rule
-Both `_try_ml_predict()` and `_try_ml_patterns()` fall back silently if the `.pkl` files are missing. The system works without the models — it just uses the statistical fallback. This means the team can deploy and demo before Vignesh finishes training, and Vignesh can drop in the models anytime without a redeploy.
+---
 
-## Model Training Plan (Vignesh's Responsibility)
+# DATA GENERATION FIX — Owner: [team member / whoever owns `generate_data.py`]
+## Required before the ML models above will report honest, non-embarrassing metrics
 
-### XGBoost Risk Model
-- **Training data**: `generate_data.py` seed → District table × SocioEconomicIndicator table × FIRRecord counts, grouped by (district_id, year, month)
-- **Feature engineering**: Add `festival_flag` (Karnataka public holidays list), `adjacent_crime_rate` (avg of 2–3 geographic neighbors), `population_density` (population / assumed area)
-- **Training**: `XGBRegressor(n_estimators=200, max_depth=5, learning_rate=0.05)`, 5-fold CV on district-year splits (NOT random split — spatial/temporal leakage risk)
-- **SHAP**: `shap.TreeExplainer(model)` → `shap_values = explainer(X_test)` → serialize explainer
-- **Target metric to report**: R² > 0.75 on held-out districts, RMSE < 15 crime_per_100k
+**Why this matters**: I (Vignesh) verified `police/backend/app/scripts/generate_data.py`'s FIR seeding (`seed_database()`, the loop around line 340) and it currently has **no signal for any model to learn**:
 
-### Prophet Forecasting
-- **Training data**: FIRRecord grouped by `(district_name, crime_type, year_month)` → `ds` (date) + `y` (count)
-- **One model per crime_type** (Cybercrime, Theft, Assault, Fraud, etc.)
-- **Prophet config**: `seasonality_mode='multiplicative'`, `yearly_seasonality=True`, `weekly_seasonality=True`, custom `add_seasonality('festival', period=365.25/12, fourier_order=3)`
-- **Output**: 90-day forecast dataframe → serialize with `pickle`
+- `station = random.choice(stations_objects)` — picks a station **uniformly at random across all 31 districts**, regardless of that district's unemployment/poverty/police-density.
+- `crime_type, ipc, severity = random.choice(CRIME_TYPES_IPC)` — uniform, independent of district.
+- `date_filed = start_date + timedelta(days=random.randint(0, delta_days))` — uniform over the whole ~2.5-year window, so there's zero seasonality/festival effect for Prophet to find and zero real trend for XGBoost's lagged features to pick up.
 
-### Isolation Forest
-- **Training data**: Per-district crime type vector: `[cybercrime_rate, theft_rate, assault_rate, fraud_rate, drug_rate, ...]` per month
-- **Model**: `IsolationForest(n_estimators=100, contamination=0.05)` (5% of data expected anomalous)
-- **Output**: `anomaly_score` per (district, month) — negative scores = anomalous
-- **Label generation**: When `anomaly_score < -0.3`, identify which crime types are driving it (compare to district's own baseline per-type)
+I've already built and tested the training pipeline (XGBoost + SHAP, Prophet, Isolation Forest — see section above) against a synthetic dataset where I hand-injected exactly this kind of signal, and confirmed the code runs correctly and metrics come out sane. But against the **actual current seeded data**, R² will land near zero or negative, Prophet forecasts will be noise, and Isolation Forest will have nothing coordinated to detect — not because the models are broken, but because the seed data has no story for them to learn. If a judge asks to see a fresh training run against the live DB, this gap will show immediately.
+
+**The fix (in `generate_data.py`, the FIR-seeding loop only — nothing else needs to change):**
+
+1. **Weight station selection by district risk**, instead of `random.choice(stations_objects)`:
+   ```python
+   # Precompute once, outside the FIR loop:
+   station_weights = []
+   for s in stations_objects:
+       dist = next(d for d, m in districts_objects if m.id == s.district_id)  # or however you look up the parent District
+       risk_factor = dist_model.unemployment_rate + (100 - min(indicator.police_per_capita, 100)) / 10
+       station_weights.append(max(risk_factor, 1.0))
+   # In the loop:
+   station = random.choices(stations_objects, weights=station_weights, k=1)[0]
+   ```
+   Higher unemployment / lower police-per-capita districts should end up with proportionally more FIRs — that's the correlation `/api/analytics/correlation` and the XGBoost model are supposed to find.
+
+2. **Weight `date_filed` toward festival months** (Jan/Mar/Oct/Nov — Sankranti/Ugadi/Dasara/Deepavali) instead of uniform `random.randint`. Simplest approach: generate the uniform date as today, then with ~40% probability re-roll it to fall within a festival month of the same year (keeps the date range identical, just re-shapes the distribution). This is what gives Prophet an actual seasonal pattern to decompose instead of flat noise.
+
+3. **Weight `crime_type` by district character** — e.g. higher `urbanization_pct` → upweight `"Cybercrime / Phishing"` and `"Economic Offense / Fraud"`; higher `poverty_rate`/lower `avg_income` → upweight `"Theft / Robbery"` and `"Agrarian / Land Dispute"`. Doesn't need to be elaborate — even a 2-3x weight multiplier per matching condition is enough for Isolation Forest to have real multivariate structure to find.
+
+**Nothing else changes** — schema, row counts (10,500 FIRs), district list, SocioEconomicIndicator generation all stay exactly as they are. This is purely re-weighting three `random.choice`/`random.randint` calls to `random.choices(..., weights=...)`.
+
+**Sequencing**: I don't need to block on this — my training scripts (`python -m app.ml.train_risk_model`, `train_isolation_forest`, `train_prophet`) will run against whatever's in the DB right now and just report honest (currently weak) metrics. Once this fix lands and `generate_data.py` is re-run, re-running the same three training commands picks up the new signal automatically — no code changes needed on my side. Ping me when it's in so I can retrain and refresh `risk_model_meta.json`'s reported R²/RMSE before the demo.
 
 ---
 

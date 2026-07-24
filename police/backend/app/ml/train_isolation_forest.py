@@ -29,7 +29,7 @@ from app.models import District, FIRRecord, PoliceStation
 
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "models")
 MIN_ROWS_FOR_TRAINING = 30
-ANOMALY_THRESHOLD = -0.3
+CONTAMINATION = 0.05
 
 
 def _slugify(crime_type: str) -> str:
@@ -96,24 +96,30 @@ def train():
 
     model = IsolationForest(
         n_estimators=200,
-        contamination=0.05,
+        contamination=CONTAMINATION,
         max_samples="auto",
         random_state=42,
         n_jobs=-1,
     )
     model.fit(X_scaled)
 
+    # Derive the anomaly cutoff from this model's own score distribution
+    # (the contamination-th percentile) rather than a hardcoded constant —
+    # score_samples()'s scale shifts with dataset size/sparsity, so a fixed
+    # threshold silently flags 0% or 100% depending on how much data there is.
     scores = model.score_samples(X_scaled)
-    flagged = (scores < ANOMALY_THRESHOLD).sum()
+    anomaly_threshold = float(np.percentile(scores, CONTAMINATION * 100))
+    flagged = int((scores < anomaly_threshold).sum())
     print(f"[IF] Trained on {len(df)} district-months across {len(rate_cols)} crime types — "
-          f"{flagged} flagged anomalous ({flagged / len(df) * 100:.1f}%, target ~5%)")
+          f"{flagged} flagged anomalous ({flagged / len(df) * 100:.1f}%, target ~5%), "
+          f"threshold={anomaly_threshold:.4f}")
 
     output = {
         "model": model,
         "scaler": scaler,
         "feature_cols": rate_cols,
         "train_rows": len(df),
-        "anomaly_threshold": ANOMALY_THRESHOLD,
+        "anomaly_threshold": anomaly_threshold,
         "flagged_pct": round(float(flagged) / len(df) * 100, 2),
     }
     with open(os.path.join(MODELS_DIR, "isolation_forest.pkl"), "wb") as f:

@@ -7,6 +7,9 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from app.database import get_db
 from app.models import District, SocioEconomicIndicator, FIRRecord, PoliceStation
+from app.ml.features import build_latest_month_frame
+from app.ml.predict import ml_predict_district_risk
+from app.ml.patterns import ml_forecast_patterns, ml_anomaly_patterns
 
 router = APIRouter()
 
@@ -64,6 +67,15 @@ def predict_district_risk(db: Session = Depends(get_db)):
     Weights: unemployment ≤30, poverty ≤25, police-density deficit ≤20,
     recent crime rate per 100k ≤25.
     """
+    # ── ML INTEGRATION WINDOW ────────────────────────────────────────────────
+    # XGBoost regressor trained on district features + spatial/temporal lag
+    # (app/ml/train_risk_model.py). Falls back to the statistical formula
+    # below if risk_model.pkl hasn't been trained yet.
+    ml_predictions = ml_predict_district_risk(build_latest_month_frame(db))
+    if ml_predictions is not None:
+        return ml_predictions
+    # ── END ML INTEGRATION WINDOW ────────────────────────────────────────────
+
     districts = db.query(District).all()
 
     # Recent 180-day FIR count per district (single grouped query)
@@ -244,6 +256,17 @@ def detect_crime_patterns(db: Session = Depends(get_db)):
             "category": "System",
             "sample_size": n_total,
         })
+
+    # ── ML INTEGRATION WINDOW ────────────────────────────────────────────────
+    # Prophet forecasts + Isolation Forest anomalies, appended after the
+    # statistical cards above. Each returns [] if its model isn't trained yet
+    # (app/ml/train_prophet.py, app/ml/train_isolation_forest.py).
+    try:
+        patterns += ml_forecast_patterns(db) + ml_anomaly_patterns(db)
+    except Exception as e:
+        print(f"[ML] Pattern ML failed, using statistical-only patterns: {e}")
+    # ── END ML INTEGRATION WINDOW ────────────────────────────────────────────
+
     return patterns
 
 @router.get("/district")
