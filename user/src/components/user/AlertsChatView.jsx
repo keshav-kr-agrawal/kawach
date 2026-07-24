@@ -386,6 +386,7 @@ export default function AlertsChatView() {
   const [liveTranscript, setLiveTranscript] = useState('');
   const [liveRiskScore, setLiveRiskScore] = useState(15);
   const [autoDispatched, setAutoDispatched] = useState(false);
+  const [showThinkingTrace, setShowThinkingTrace] = useState(true);
   const liveRecorderRef = useRef(null);
   const liveAudioChunksRef = useRef([]);
   const liveTimerRef = useRef(null);
@@ -1194,11 +1195,90 @@ export default function AlertsChatView() {
         })}
 
         {busy && (
-          <div className="flex justify-start">
-            <div className="bg-white border border-amber-400/20 rounded-2xl p-3 text-xs text-ink-soft font-bold flex items-center gap-2">
-              <span className="w-3.5 h-3.5 border-2 border-[#E9BA26] border-t-transparent rounded-full animate-spin" />
-              Nayak AI is consulting legal rulebooks &amp; incident DB...
+          <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-700/60 rounded-2xl p-3.5 text-slate-200 opacity-90 shadow-xl space-y-3 mb-3 animate-fadeIn">
+            {/* Collapsible Thinking Trace Header */}
+            <div 
+              onClick={() => setShowThinkingTrace(!showThinkingTrace)}
+              className="flex items-center justify-between border-b border-slate-800 pb-2 cursor-pointer select-none"
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+                <span className="font-sora font-black text-xs text-amber-400 uppercase tracking-wider">
+                  🧠 NAYAK AGENTIC THINKING TRACE
+                </span>
+                <span className="px-1.5 py-0.5 bg-slate-800 text-slate-300 rounded text-[9px] font-mono font-bold">
+                  4 Subagents Active
+                </span>
+              </div>
+              <button type="button" className="text-slate-400 hover:text-white font-mono text-xs">
+                {showThinkingTrace ? '▲ Hide Trace' : '▼ View Trace'}
+              </button>
             </div>
+
+            {/* Graphical Pipeline Flow Nodes */}
+            {showThinkingTrace && (
+              <div className="space-y-2 pt-1 font-mono text-[10px]">
+                {/* Node 1: Router */}
+                <div className="bg-slate-950/80 rounded-xl p-2 border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 bg-blue-500/20 text-blue-400 rounded font-bold">⚡ Node 1</span>
+                    <div>
+                      <div className="font-bold text-slate-200">Nayak-Orchestrator-Agent</div>
+                      <div className="text-slate-400 text-[9px]">Analyzing intent, mode ({selectedMode || 'general'}) &amp; spatial coords</div>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded font-bold animate-pulse">
+                    ROUTING
+                  </span>
+                </div>
+
+                <div className="flex justify-center text-slate-500 font-bold text-xs py-0.5">↓</div>
+
+                {/* Node 2: Subagent Execution Matrix */}
+                <div className="bg-slate-950/80 rounded-xl p-2 border border-slate-800 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="p-1 bg-amber-500/20 text-amber-400 rounded font-bold">🤖 Node 2</span>
+                    <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded font-bold animate-pulse">
+                      PARALLEL AGENTS
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                    <div className="bg-slate-900 p-1.5 rounded border border-slate-800 text-[9px]">
+                      <span className="text-amber-400 font-bold">🎙️ Voice Scam Subagent:</span>
+                      <div className="text-slate-400">Groq Whisper + gpt-oss-120b</div>
+                    </div>
+                    <div className="bg-slate-900 p-1.5 rounded border border-slate-800 text-[9px]">
+                      <span className="text-amber-400 font-bold">💵 Banknote Forensic:</span>
+                      <div className="text-slate-400">PyTorch EfficientNet-B0 + EasyOCR</div>
+                    </div>
+                    <div className="bg-slate-900 p-1.5 rounded border border-slate-800 text-[9px]">
+                      <span className="text-amber-400 font-bold">⚖️ Legal RAG Counsel:</span>
+                      <div className="text-slate-400">Gemini 2.5 Flash (3,974 Law Chunks)</div>
+                    </div>
+                    <div className="bg-slate-900 p-1.5 rounded border border-slate-800 text-[9px]">
+                      <span className="text-amber-400 font-bold">🚨 Priority Triage:</span>
+                      <div className="text-slate-400">DistilBERT Zero-Bias Classifier</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-center text-slate-500 font-bold text-xs py-0.5">↓</div>
+
+                {/* Node 3: Signal Fusion & Court Hash */}
+                <div className="bg-slate-950/80 rounded-xl p-2 border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 bg-emerald-500/20 text-emerald-400 rounded font-bold">🛡️ Node 3</span>
+                    <div>
+                      <div className="font-bold text-slate-200">Multi-Signal Risk Fusion</div>
+                      <div className="text-slate-400 text-[9px]">Calculating Trust Score (0-100) &amp; Section 65B BSA SHA-256 Hash</div>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-bold">
+                    COMPUTING
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
