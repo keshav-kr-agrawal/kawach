@@ -859,6 +859,32 @@ CLASSIFIER_URL = os.environ.get("CLASSIFIER_URL", "http://localhost:8001")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 
+def _transcribe_with_gemini(blob: bytes, mime: str) -> Optional[str]:
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    if not gemini_key:
+        return None
+    try:
+        import base64
+        b64_data = base64.b64encode(blob).decode("utf-8")
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+        payload = {
+            "contents": [{
+                "parts": [
+                    {"inline_data": {"mime_type": mime, "data": b64_data}},
+                    {"text": "Transcribe all spoken dialogue/speech in this audio/video file word for word. Return ONLY the transcribed text."}
+                ]
+            }]
+        }
+        res = requests.post(url, json=payload, timeout=20)
+        if res.status_code == 200:
+            parts = res.json().get("candidates", [{}])[0].get("content", {}).get("parts", [])
+            if parts and "text" in parts[0]:
+                return parts[0]["text"].strip()
+    except Exception as e:
+        print(f"[NAYAK GEMINI TRANSCRIBE WARN] {e}", flush=True)
+    return None
+
+
 def _get_groq_key() -> str:
     k = os.environ.get("GROQ_API_KEY")
     if k:
@@ -906,6 +932,12 @@ def _analyze_voice_call_with_groq(blob: bytes, filename: str) -> Optional[dict]:
         transcript_text = ""
         if res.status_code == 200:
             transcript_text = res.json().get("text", "").strip()
+
+        # Fallback to Gemini 2.5 Flash if Groq Whisper speech transcript is empty
+        if not transcript_text:
+            gemini_transcript = _transcribe_with_gemini(blob, mime)
+            if gemini_transcript:
+                transcript_text = gemini_transcript
         else:
             print(f"[NAYAK GROQ WHISPER FAIL] Status {res.status_code}: {res.text}", flush=True)
 

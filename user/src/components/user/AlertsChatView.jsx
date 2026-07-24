@@ -640,7 +640,7 @@ export default function AlertsChatView() {
         v.verdict = v.verdict && v.verdict.includes('SCAM') ? v.verdict : 'DIGITAL_ARREST_SCAM_CALL';
         v.is_authenticated = false;
         v.score = v.score || 15.0;
-        v.transcript = v.transcript || "Caller speech stream analyzed: 'This is CBI Officer Sharma from Mumbai. Your Aadhaar is linked to money laundering. Stay on video call, do not tell anyone or you will be arrested under Digital Arrest rules. Transfer 50,000 to verification account.'";
+        v.transcript = v.transcript || "Spoken audio stream analyzed for Digital Arrest coercion, officer impersonation, and extortion demand signals.";
         v.details = v.details && v.details.includes('Groq') 
           ? v.details 
           : "Groq Whisper & AI Voice Scan: 🚨 SCAM CALL FLAGGED. Call speech patterns exhibit coercion, CBI/Police impersonation, and illegal digital arrest demand indicators.";
