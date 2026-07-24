@@ -64,6 +64,30 @@ Dashboards & Investigation Workspace
 
 ---
 
+# DUAL CHALLENGE SPECIFICATIONS & SOLUTION BLUEPRINT
+
+## Challenge 01: Intelligent Conversational AI for KSP Crime Database
+- **Repository Scope**: 1,100+ police stations across Karnataka managed by State Crime Records Bureau (SCRB).
+- **Natural Language Chatbot**: Natural language query engine (English + Kannada bilingual NLP via Gemini 2.5 Flash + 12 regional language translation).
+- **Voice-Enabled Interaction**: Speech-to-Text (STT) and Text-to-Speech (TTS) audio integration.
+- **Context-Aware Multi-Turn Session Memory**: Tracks session history, media uploads, and user location context.
+- **BNS Legal Vector RAG**: 3,974 indexed sections across Bharatiya Nyaya Sanhita (BNS), BNSS, BSA, Motor Vehicles Act, IT Act, and RBI Circulars.
+- **Conversational Function Calling**: Gemini tool `propose_report` automatically recognizes incidents and draft-populates report proposals.
+- **SHA-256 PDF Export**: Export of conversation history and chronologies with SHA-256 cryptographic evidence hashes for court admissibility under BSA Section 63.
+- **Embedded Visualizations**: In-chat rendering of criminal network graphs and hotspot map summaries.
+
+## Challenge 02: AI-Driven Crime Analytics & Visualization Platform (PRIMARY FOCUS)
+- **Interactive Dashboards & Multi-Tier Geospatial Mapping**: State → Range → 31 Districts → 1,100+ Police Stations with station-level drilldowns, Leaflet CARTO base tiles, density heatmaps, and blue counterfeit currency seizure markers (`/api/geo/seizures`).
+- **DBSCAN Crime Hotspot Detection Engine**: Haversine distance spatial metric clustering ($Eps = 1.5\text{ km}$, $MinSamples = 2$) with cluster centroid calculation, threat levels, and noise point isolation.
+- **Statistical Trend Alerts & Z-Score Anomaly Detection**: 30-day Poisson variance Z-score anomaly calculations ($Z > 3.0$ Critical, $Z > 1.8$ High), 90-day growth rate vectors, and call burst anomaly triggers.
+- **Criminal Network & Link Analysis Engine**: Louvain modularity community partitioning, degree & betweenness centrality calculations, and automated money mule flagging ($\text{Priors}=0 \land \text{CommunityTies}\ge 2 \land \text{Risk}\ge 70$).
+- **Repeat Offender & Watchlist Tracking System**: Watchlist management, re-offense frequency scoring, and fuzzy entity resolution merge queues.
+- **Socio-Economic Crime Correlation Engine**: Pearson Correlation Matrix ($r$) evaluating crime rates against census parameters (population, literacy rate, unemployment rate, per-capita income, urbanization index).
+- **Predictive Risk Scoring & Patrol Allocation Engine**: Deterministic spatial risk scoring formula (0–100) combining 180-day volume and socio-economics, paired with recommended patrol unit routes (`Cheetah 01`, `Hoysala 14`).
+- **AI/ML Pattern Detection Suite**: MTCNN + EfficientNet-B7 deepfake video/audio ensemble, 6,304-image trained Counterfeit Currency CNN (91.9% accuracy, AUC 0.964), YOLO12s + SigLIP scene classifier, and Digital Arrest live interception ($S \ge 70$ dispatch trigger).
+
+---
+
 # PHASE 1 (MOST CRITICAL 80%)
 
 ## Objective
@@ -81,7 +105,7 @@ Parameters:
 - Emergency calls
 
 Workflow:
-Source â†’ ETL â†’ Validation â†’ Standardization â†’ Storage
+Source → ETL → Validation → Standardization → Storage
 
 Guardrails:
 - Schema validation
@@ -102,7 +126,7 @@ Parameters:
 - Known associates
 
 Workflow:
-Records â†’ Entity Matching â†’ Unified Profile
+Records → Entity Matching → Unified Profile
 
 Guardrails:
 - Confidence scoring
@@ -150,7 +174,7 @@ Capabilities:
 - Police Station Drilldowns
 
 Workflow:
-Incident â†’ Geocoding â†’ Mapping â†’ Analytics
+Incident → Geocoding → Mapping → Analytics
 
 Guardrails:
 - Location precision controls
@@ -186,7 +210,7 @@ Capabilities:
 - Emerging hotspots
 
 Workflow:
-Historical Data â†’ Baseline â†’ Anomaly Detection
+Historical Data → Baseline → Anomaly Detection
 
 Guardrails:
 - Explainable outputs
@@ -511,4 +535,5 @@ Search: Elasticsearch
 Streaming: Kafka
 Deployment: Kubernetes
 
-END OF MASTER PLAN
+---
+**END OF MASTER PLAN**
