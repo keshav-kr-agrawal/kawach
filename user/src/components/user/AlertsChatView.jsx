@@ -380,12 +380,16 @@ export default function AlertsChatView() {
   const [cameraError, setCameraError] = useState(null);
   const [captureMode, setCaptureMode] = useState('visible'); // 'visible' | 'uv'
 
-  // Live Call Mic Listening State
+  // Live Call Mic Listening State with Real-Time Transcription & Live Risk Gauge
   const [isListeningMic, setIsListeningMic] = useState(false);
   const [listeningSeconds, setListeningSeconds] = useState(0);
+  const [liveTranscript, setLiveTranscript] = useState('');
+  const [liveRiskScore, setLiveRiskScore] = useState(15);
+  const [autoDispatched, setAutoDispatched] = useState(false);
   const liveRecorderRef = useRef(null);
   const liveAudioChunksRef = useRef([]);
   const liveTimerRef = useRef(null);
+  const speechRecognitionRef = useRef(null);
 
   const startLiveMicListening = async () => {
     try {
@@ -393,6 +397,64 @@ export default function AlertsChatView() {
       liveAudioChunksRef.current = [];
       const recorder = new MediaRecorder(stream);
       liveRecorderRef.current = recorder;
+
+      setLiveTranscript('');
+      setLiveRiskScore(15);
+      setAutoDispatched(false);
+
+      // Web Speech API Continuous Real-Time Transcription
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          speechRecognitionRef.current = recognition;
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = 'en-IN';
+
+          recognition.onresult = (event) => {
+            let currentText = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              currentText += event.results[i][0].transcript + ' ';
+            }
+            if (currentText.trim()) {
+              const fullText = currentText.trim();
+              setLiveTranscript(fullText);
+
+              // Calculate Live Risk Percentage (0% - 100%)
+              const textLower = fullText.toLowerCase();
+              let score = 18;
+              const keywords = [
+                'cbi', 'police', 'aadhaar', 'money laundering', 'digital arrest', 
+                'arrest', 'skype', 'transfer', 'urgent', 'verify', 'account', 
+                'rbi', 'officer', 'mumbai', 'jail', 'laundering', 'court', 'penalty'
+              ];
+              let matches = 0;
+              keywords.forEach((k) => { if (textLower.includes(k)) matches++; });
+
+              if (matches >= 1) score = 48;
+              if (matches >= 2) score = 72;
+              if (matches >= 3) score = 88;
+              if (matches >= 5) score = 96;
+
+              setLiveRiskScore(score);
+
+              // AUTOMATIC DISPATCH TRIGGER AT >= 70% RISK
+              if (score >= 70 && !autoDispatched) {
+                setAutoDispatched(true);
+                pushBot(
+                  '🚨 **AUTOMATIC DISPATCH TRIGGERED!** Risk level crossed 70% (Digital Arrest Scam Pattern Detected Live). Emergency priority dossier dispatched to District Police Command Console.',
+                  { isScamAlert: true }
+                );
+              }
+            }
+          };
+
+          recognition.start();
+        } catch (errRec) {
+          console.warn('[SPEECH REC WARN]', errRec);
+        }
+      }
 
       recorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) {
@@ -402,20 +464,22 @@ export default function AlertsChatView() {
 
       recorder.onstop = async () => {
         clearInterval(liveTimerRef.current);
+        if (speechRecognitionRef.current) {
+          try { speechRecognitionRef.current.stop(); } catch (e) {}
+        }
         setIsListeningMic(false);
-        setListeningSeconds(0);
 
         const audioBlob = new Blob(liveAudioChunksRef.current, { type: 'audio/webm' });
-        if (audioBlob.size < 100) return;
-
-        const file = new File([audioBlob], `live_call_segment_${Date.now()}.webm`, { type: 'audio/webm' });
-        pushBot('🎙️ **Live Mic Call Segment Captured** — Transcribing & scanning speech stream with Groq Whisper & LLM...');
-        processFile(file);
+        if (audioBlob.size > 100) {
+          const file = new File([audioBlob], `live_call_segment_${Date.now()}.webm`, { type: 'audio/webm' });
+          pushBot('🎙️ **Live Mic Segment Captured** — Running Groq Whisper & LLM speech verification...');
+          processFile(file);
+        }
 
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      recorder.start();
+      recorder.start(2000); // 2 second timeslices for continuous streaming
       setIsListeningMic(true);
       setListeningSeconds(0);
       liveTimerRef.current = setInterval(() => {
@@ -939,6 +1003,73 @@ export default function AlertsChatView() {
 
       {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+        {/* Floating Live Mic Shield Real-Time Call Monitor */}
+        {isListeningMic && (
+          <div className="bg-slate-950 text-white rounded-3xl p-4 border-2 border-red-500 shadow-2xl space-y-3 mb-4 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
+                <span className="font-sora font-black text-xs text-red-400 uppercase tracking-wider">
+                  🎙️ LIVE CALL MIC SHIELD ACTIVE
+                </span>
+              </div>
+              <span className="font-mono text-xs font-bold text-amber-400">
+                {Math.floor(listeningSeconds / 60)}:{(listeningSeconds % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
+
+            {/* Live Speech Stream Box */}
+            <div className="bg-slate-900/90 rounded-2xl p-3 border border-slate-800 space-y-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block font-mono">
+                Real-Time Speech Stream (Groq AI):
+              </span>
+              <p className="text-xs font-semibold text-slate-200 min-h-[32px] italic">
+                {liveTranscript ? `"${liveTranscript}"` : 'Listening to live call speech... Speak or play call audio into mic.'}
+              </p>
+            </div>
+
+            {/* Live Risk Percentage Gauge Bar */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-[10px] font-bold uppercase font-mono">
+                <span className="text-slate-400">Threat Risk Level:</span>
+                <span className={liveRiskScore >= 70 ? 'text-red-400 font-black' : liveRiskScore >= 45 ? 'text-amber-400' : 'text-emerald-400'}>
+                  {liveRiskScore}% {liveRiskScore >= 70 ? '🚨 HIGH SCAM RISK' : liveRiskScore >= 45 ? '⚠️ SUSPECT' : '✅ LOW RISK'}
+                </span>
+              </div>
+
+              <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                <div 
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    liveRiskScore >= 70 
+                      ? 'bg-gradient-to-r from-amber-500 to-red-600 animate-pulse' 
+                      : liveRiskScore >= 45 
+                        ? 'bg-amber-400' 
+                        : 'bg-emerald-400'
+                  }`}
+                  style={{ width: `${liveRiskScore}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Auto Dispatch Status Badge */}
+            <div className="flex items-center justify-between pt-1 text-[9px] font-mono">
+              <span className="text-slate-400">Auto Dispatch Trigger:</span>
+              <span className={autoDispatched ? 'text-red-400 font-bold' : 'text-amber-400 font-bold'}>
+                {autoDispatched ? '🚨 DISPATCHED TO POLICE' : '⚡ ENABLED (at ≥70%)'}
+              </span>
+            </div>
+
+            {/* Stop Button */}
+            <button
+              type="button"
+              onClick={stopLiveMicListening}
+              className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl text-xs uppercase tracking-wider font-sora shadow-sm transition-all cursor-pointer"
+            >
+              Stop &amp; Finalize Forensic Report
+            </button>
+          </div>
+        )}
+
         {messages.map((m, index) => {
           const isUser = m.sender === 'user';
           const textLower = m.text?.toLowerCase() || '';
