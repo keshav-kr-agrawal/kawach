@@ -56,16 +56,30 @@ def get_socio_economic_correlation(db: Session = Depends(get_db)):
     # e.g., list of key correlations to render a matrix/heatmap easily
     return corr_matrix
 
+# ── ML INTEGRATION WINDOW (Vignesh) ─────────────────────────────────────────
+import os
+ML_MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "ml", "models")
+
+def _try_ml_predict(feature_rows: list) -> list | None:
+    """Attempt XGBoost prediction. Returns None if model not yet loaded."""
+    try:
+        import joblib, numpy as np
+        model_path = os.path.join(ML_MODELS_DIR, "risk_model.pkl")
+        if not os.path.exists(model_path):
+            return None
+        model = joblib.load(model_path)
+        X = np.array([[r[f] for f in model.feature_names_in_] for r in feature_rows])
+        return model.predict(X).tolist()
+    except Exception as e:
+        print(f"[ML] XGBoost prediction failed, falling back to formula: {e}")
+        return None
+# ── END ML INTEGRATION WINDOW ────────────────────────────────────────────────
+
 @router.get("/predict")
 def predict_district_risk(db: Session = Depends(get_db)):
     """
-    District risk scoring: deterministic weighted model over socio-economic
-    indicators PLUS observed recent crime volume. Identical inputs always
-    produce identical scores — no random jitter (a score that changes on
-    refresh is indefensible under scrutiny).
-
-    Weights: unemployment ≤30, poverty ≤25, police-density deficit ≤20,
-    recent crime rate per 100k ≤25.
+    District risk scoring: ML XGBoost prediction if model is loaded,
+    else deterministic formula over socio-economic indicators + recent crime volume.
     """
     # ── ML INTEGRATION WINDOW ────────────────────────────────────────────────
     # XGBoost regressor trained on district features + spatial/temporal lag

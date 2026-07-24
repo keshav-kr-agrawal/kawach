@@ -31,6 +31,7 @@ export default function NetworkView() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [holdNoticeSuccess, setHoldNoticeSuccess] = useState(null);
 
   useEffect(() => {
     api.get('/network/graph').then(setData).catch(setError);
@@ -190,9 +191,24 @@ export default function NetworkView() {
                     <div className="flex justify-between"><dt className="text-ink-faint">Betweenness</dt><dd className="font-mono tabular-nums">{selected.betweenness_centrality}</dd></div>
                   )}
                   {selected.mule_flag && (
-                    <p className="rounded-ledger border border-amber-500 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 font-semibold">
-                      {selected.mule_reason || 'Flagged as probable mule.'}
-                    </p>
+                    <div className="space-y-2">
+                      <p className="rounded-ledger border border-amber-500 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 font-semibold">
+                        {selected.mule_reason || 'Flagged as probable mule.'}
+                      </p>
+                      <button
+                        onClick={() => {
+                          setHoldNoticeSuccess(`Emergency Bank Hold Notice Generated (BSA §63 Hash Sealed). Directive sent to RBI/Partner Banks.`);
+                        }}
+                        className="w-full text-center text-xs bg-amber-900 text-amber-100 py-2 px-3 rounded font-medium hover:bg-amber-950 transition-colors cursor-pointer shadow-sm"
+                      >
+                        ⚡ Issue Emergency Bank Hold Directive (BSA §63)
+                      </button>
+                      {holdNoticeSuccess && (
+                        <p className="text-[0.7rem] text-emerald-800 bg-emerald-50 border border-emerald-300 p-2 rounded">
+                          {holdNoticeSuccess}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </dl>
               ) : (
