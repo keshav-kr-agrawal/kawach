@@ -387,10 +387,21 @@ export default function AlertsChatView() {
   const [liveRiskScore, setLiveRiskScore] = useState(15);
   const [autoDispatched, setAutoDispatched] = useState(false);
   const [showThinkingTrace, setShowThinkingTrace] = useState(true);
+  const [thinkingStep, setThinkingStep] = useState(1);
+  const autoDispatchedRef = useRef(false);
   const liveRecorderRef = useRef(null);
   const liveAudioChunksRef = useRef([]);
   const liveTimerRef = useRef(null);
   const speechRecognitionRef = useRef(null);
+
+  useEffect(() => {
+    if (busy) {
+      setThinkingStep(1);
+      const t1 = setTimeout(() => setThinkingStep(2), 600);
+      const t2 = setTimeout(() => setThinkingStep(3), 1500);
+      return () => { clearTimeout(t1); clearTimeout(t2); };
+    }
+  }, [busy]);
 
   const startLiveMicListening = async () => {
     try {
@@ -402,6 +413,7 @@ export default function AlertsChatView() {
       setLiveTranscript('');
       setLiveRiskScore(15);
       setAutoDispatched(false);
+      autoDispatchedRef.current = false;
 
       // Web Speech API Continuous Real-Time Transcription
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -458,8 +470,9 @@ export default function AlertsChatView() {
 
               setLiveRiskScore(score);
 
-              // AUTOMATIC DISPATCH TRIGGER AT >= 70% RISK
-              if (score >= 70 && !autoDispatched) {
+              // AUTOMATIC DISPATCH TRIGGER AT >= 70% RISK (Fires EXACTLY ONCE per call session)
+              if (score >= 70 && !autoDispatchedRef.current) {
+                autoDispatchedRef.current = true;
                 setAutoDispatched(true);
                 pushBot(
                   '🚨 **AUTOMATIC EMERGENCY DISPATCH TRIGGERED!** Real-time risk level crossed 70% (OTP & Extortion Scam Pattern Detected Live). High-priority incident dossier dispatched to District Police Command Console.',
@@ -1238,7 +1251,9 @@ export default function AlertsChatView() {
               {showThinkingTrace && (
                 <div className="space-y-2 pt-1 font-mono text-[10px]">
                   {/* Node 1: Router */}
-                  <div className="bg-white rounded-2xl p-2.5 border border-amber-400/30 flex items-center justify-between shadow-xs">
+                  <div className={`rounded-2xl p-2.5 border transition-all duration-300 flex items-center justify-between shadow-xs ${
+                    thinkingStep >= 1 ? 'bg-white border-[#E9BA26] ring-2 ring-amber-400/20' : 'bg-white/60 border-amber-200 opacity-60'
+                  }`}>
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded-lg font-black">⚡ Step 1</span>
                       <div>
@@ -1246,19 +1261,25 @@ export default function AlertsChatView() {
                         <div className="text-slate-600 text-[9px] font-sans font-semibold">Routing intent &amp; mode: <span className="font-bold text-amber-900">{selectedMode || 'general'}</span></div>
                       </div>
                     </div>
-                    <span className="px-2 py-1 bg-[#E9BA26] text-amber-950 rounded-lg font-black text-[9px] uppercase tracking-wider animate-pulse">
-                      ROUTING
+                    <span className={`px-2 py-1 rounded-lg font-black text-[9px] uppercase tracking-wider ${
+                      thinkingStep === 1 ? 'bg-[#E9BA26] text-amber-950 animate-pulse' : 'bg-amber-100 text-amber-900'
+                    }`}>
+                      {thinkingStep === 1 ? 'ROUTING...' : 'COMPLETED ✓'}
                     </span>
                   </div>
 
                   <div className="flex justify-center text-amber-700 font-black text-xs">↓</div>
 
                   {/* Node 2: Subagent Execution Matrix */}
-                  <div className="bg-white rounded-2xl p-2.5 border border-amber-400/30 space-y-2 shadow-xs">
+                  <div className={`rounded-2xl p-2.5 border transition-all duration-300 space-y-2 shadow-xs ${
+                    thinkingStep >= 2 ? 'bg-white border-[#E9BA26] ring-2 ring-amber-400/20' : 'bg-white/60 border-amber-200 opacity-60'
+                  }`}>
                     <div className="flex items-center justify-between border-b border-amber-100 pb-1.5">
                       <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded-lg font-black">🤖 Step 2</span>
-                      <span className="px-2 py-0.5 bg-amber-400/20 text-amber-950 border border-amber-400/40 rounded-lg font-black text-[9px] uppercase tracking-wider">
-                        PARALLEL SUBAGENTS
+                      <span className={`px-2 py-0.5 rounded-lg font-black text-[9px] uppercase tracking-wider ${
+                        thinkingStep === 2 ? 'bg-[#E9BA26] text-amber-950 animate-pulse' : thinkingStep > 2 ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {thinkingStep === 2 ? 'EXECUTING PARALLEL AGENTS...' : thinkingStep > 2 ? 'AGENT RESULTS READY ✓' : 'QUEUED'}
                       </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
@@ -1284,7 +1305,9 @@ export default function AlertsChatView() {
                   <div className="flex justify-center text-amber-700 font-black text-xs">↓</div>
 
                   {/* Node 3: Signal Fusion & Court Stamping */}
-                  <div className="bg-white rounded-2xl p-2.5 border border-amber-400/30 flex items-center justify-between shadow-xs">
+                  <div className={`rounded-2xl p-2.5 border transition-all duration-300 flex items-center justify-between shadow-xs ${
+                    thinkingStep >= 3 ? 'bg-white border-[#E9BA26] ring-2 ring-amber-400/20' : 'bg-white/60 border-amber-200 opacity-60'
+                  }`}>
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded-lg font-black">🛡️ Step 3</span>
                       <div>
@@ -1292,8 +1315,10 @@ export default function AlertsChatView() {
                         <div className="text-slate-600 text-[9px] font-sans font-semibold">Computing Trust Score (0-100) &amp; Section 65B SHA-256 Hash</div>
                       </div>
                     </div>
-                    <span className="px-2 py-1 bg-[#E9BA26] text-amber-950 rounded-lg font-black text-[9px] uppercase tracking-wider">
-                      SEALING EVIDENCE
+                    <span className={`px-2 py-1 rounded-lg font-black text-[9px] uppercase tracking-wider ${
+                      thinkingStep === 3 ? 'bg-[#E9BA26] text-amber-950 animate-pulse' : 'bg-amber-100 text-amber-900'
+                    }`}>
+                      {thinkingStep === 3 ? 'SEALING EVIDENCE...' : 'READY ✓'}
                     </span>
                   </div>
                 </div>
