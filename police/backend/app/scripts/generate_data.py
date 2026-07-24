@@ -78,47 +78,55 @@ def seed_database():
             print("Schema initialized.")
         
         # 1. Seed Districts
+        existing_districts = {d.name: d for d in db.query(District).all()}
         districts_objects = []
         for d in KARNATAKA_DISTRICTS:
-            district = District(
-                name=d["name"],
-                population=d["pop"],
-                area_sqkm=d["area"],
-                literacy_rate=d["lit"],
-                unemployment_rate=d["unemp"],
-                avg_income=d["income"],
-                urbanization_pct=d["urban"]
-            )
-            db.add(district)
-            districts_objects.append((d, district))
+            if d["name"] in existing_districts:
+                districts_objects.append((d, existing_districts[d["name"]]))
+            else:
+                district = District(
+                    name=d["name"],
+                    population=d["pop"],
+                    area_sqkm=d["area"],
+                    literacy_rate=d["lit"],
+                    unemployment_rate=d["unemp"],
+                    avg_income=d["income"],
+                    urbanization_pct=d["urban"]
+                )
+                db.add(district)
+                districts_objects.append((d, district))
         
         db.commit()
-        print("Districts seeded.")
+        print("Districts ensured.")
         
         # 2. Seed Police Stations
+        existing_stations = {s.id: s for s in db.query(PoliceStation).all()}
         stations_objects = []
         for d_info, d_model in districts_objects:
             num_stations = 15 if d_model.name == "Bengaluru Urban" else random.randint(3, 5)
             
             for i in range(num_stations):
                 station_id = f"PS-{d_model.id:02d}-{i+1:02d}"
-                jitter_lat = random.uniform(-0.15, 0.15)
-                jitter_lng = random.uniform(-0.15, 0.15)
-                
-                station = PoliceStation(
-                    id=station_id,
-                    name=f"{d_model.name} Station {i+1}",
-                    district_id=d_model.id,
-                    lat=d_info["lat"] + jitter_lat,
-                    lng=d_info["lng"] + jitter_lng,
-                    jurisdiction_area_sqkm=round(d_info["area"] / num_stations, 2),
-                    officer_count=random.randint(15, 80)
-                )
-                db.add(station)
-                stations_objects.append(station)
+                if station_id in existing_stations:
+                    stations_objects.append(existing_stations[station_id])
+                else:
+                    jitter_lat = random.uniform(-0.15, 0.15)
+                    jitter_lng = random.uniform(-0.15, 0.15)
+                    
+                    station = PoliceStation(
+                        id=station_id,
+                        name=f"{d_model.name} Station {i+1}",
+                        district_id=d_model.id,
+                        lat=d_info["lat"] + jitter_lat,
+                        lng=d_info["lng"] + jitter_lng,
+                        jurisdiction_area_sqkm=round(d_info["area"] / num_stations, 2),
+                        officer_count=random.randint(15, 80)
+                    )
+                    db.add(station)
+                    stations_objects.append(station)
                 
         db.commit()
-        print(f"{len(stations_objects)} Police Stations seeded.")
+        print(f"{len(stations_objects)} Police Stations ensured.")
 
         # 3. Seed Users with credentials, roles, and boundaries
         blr_dist = db.query(District).filter(District.name == "Bengaluru Urban").first()
@@ -160,6 +168,7 @@ def seed_database():
         print("Users seeded successfully.")
         
         # 4. Seed Gangs
+        existing_gangs = {g.id: g for g in db.query(Gang).all()}
         gangs_objects = []
         gang_names = [
             "KGF Syndicate", "Silk Board Extortionists", "Brigade Road Gang", 
@@ -167,22 +176,30 @@ def seed_database():
             "Malleswaram Hackers", "Indiranagar Syndicate", "Whitefield Mafia"
         ]
         for idx, gname in enumerate(gang_names):
-            gang = Gang(
-                id=f"GANG-{idx+1:02d}",
-                name=gname,
-                description=f"Active organized syndicate specialized in operations near {gname.split(' ')[0]} areas."
-            )
-            db.add(gang)
-            gangs_objects.append(gang)
+            gid = f"GANG-{idx+1:02d}"
+            if gid in existing_gangs:
+                gangs_objects.append(existing_gangs[gid])
+            else:
+                gang = Gang(
+                    id=gid,
+                    name=gname,
+                    description=f"Active organized syndicate specialized in operations near {gname.split(' ')[0]} areas."
+                )
+                db.add(gang)
+                gangs_objects.append(gang)
         db.commit()
-        print("Criminal Gangs seeded.")
+        print("Criminal Gangs ensured.")
 
         # 5. Seed Offenders
+        existing_offenders = {o.id: o for o in db.query(Offender).all()}
         offenders_objects = []
         genders = ["Male", "Female", "Other"]
         # Generate 2000 offenders
         for i in range(2000):
             offender_id = f"OFF-{i+1:04d}"
+            if offender_id in existing_offenders:
+                offenders_objects.append(existing_offenders[offender_id])
+                continue
             # Let's seed specific names for entity resolution demo
             if i == 10:
                 name = "Ramesh Kumar"
@@ -213,33 +230,36 @@ def seed_database():
             offenders_objects.append(offender)
             
         db.commit()
-        print(f"{len(offenders_objects)} Offenders seeded.")
+        print(f"{len(offenders_objects)} Offenders ensured.")
         
         # Link some offenders to the Gangs
         for offender in offenders_objects:
-            if random.random() < 0.15:
+            if not offender.gangs and random.random() < 0.15:
                 gang = random.choice(gangs_objects)
                 offender.gangs.append(gang)
                 
         # Seed Graph Nodes: Phones, Vehicles, Bank Accounts
-        phones_objects = []
-        vehicles_objects = []
-        accounts_objects = []
+        existing_phones = {p.phone_number: p for p in db.query(Phone).all()}
+        existing_vehicles = {v.plate_number: v for v in db.query(Vehicle).all()}
+        existing_accounts = {a.account_number: a for a in db.query(Account).all()}
+        phones_objects = list(existing_phones.values())
+        vehicles_objects = list(existing_vehicles.values())
+        accounts_objects = list(existing_accounts.values())
         
         for idx, o in enumerate(offenders_objects):
-            # Seed Phone (75% of offenders have phones)
-            if random.random() < 0.75:
+            pnum = f"+91-9844{idx:06d}"
+            if pnum not in existing_phones and random.random() < 0.75:
                 phone = Phone(
-                    phone_number=f"+91-9844{idx:06d}",
+                    phone_number=pnum,
                     owner_offender_id=o.id
                 )
                 db.add(phone)
                 phones_objects.append(phone)
                 
-            # Seed Vehicle (50% of offenders have vehicles)
-            if random.random() < 0.50:
+            plate = f"KA-{random.randint(10,55)}-XY-{idx:04d}"
+            if plate not in existing_vehicles and random.random() < 0.50:
                 vehicle = Vehicle(
-                    plate_number=f"KA-{random.randint(10,55)}-XY-{idx:04d}",
+                    plate_number=plate,
                     make=random.choice(["Maruti", "Hyundai", "Tata", "Mahindra", "Honda"]),
                     model=random.choice(["Swift", "i20", "Nexon", "Thar", "City"]),
                     owner_offender_id=o.id
@@ -247,10 +267,10 @@ def seed_database():
                 db.add(vehicle)
                 vehicles_objects.append(vehicle)
                 
-            # Seed Bank Account (60% of offenders)
-            if random.random() < 0.60:
+            acc_num = f"SB-{random.randint(100000,999999)}-{idx:04d}"
+            if acc_num not in existing_accounts and random.random() < 0.60:
                 account = Account(
-                    account_number=f"SB-{random.randint(100000,999999)}-{idx:04d}",
+                    account_number=acc_num,
                     bank_name=random.choice(["State Bank of India", "HDFC Bank", "ICICI Bank", "Canara Bank"]),
                     owner_offender_id=o.id
                 )
@@ -258,7 +278,7 @@ def seed_database():
                 accounts_objects.append(account)
                 
         db.commit()
-        print("Associated Phones, Vehicles, and Accounts seeded.")
+        print("Associated Phones, Vehicles, and Accounts ensured.")
 
         # Seed Calls between phones
         for i in range(120):
@@ -275,17 +295,22 @@ def seed_database():
                     db.add(call)
         
         # Seed Locations & Visits
+        existing_locations = {l.id: l for l in db.query(Location).all()}
         locations_objects = []
         loc_names = ["Kempegowda Bus Stand", "MG Road Metro", "Koramangala 3rd Block", "Yeshwanthpur Toll", "Silk Board Junction", "Mysore Palace Plaza", "Mangalore Port Warehouse", "Dharwad Court Complex"]
         for idx, lname in enumerate(loc_names):
-            location = Location(
-                id=f"LOC-{idx+1:02d}",
-                name=lname,
-                lat=12.9716 + random.uniform(-0.1, 0.1),
-                lng=77.5946 + random.uniform(-0.1, 0.1)
-            )
-            db.add(location)
-            locations_objects.append(location)
+            lid = f"LOC-{idx+1:02d}"
+            if lid in existing_locations:
+                locations_objects.append(existing_locations[lid])
+            else:
+                location = Location(
+                    id=lid,
+                    name=lname,
+                    lat=12.9716 + random.uniform(-0.1, 0.1),
+                    lng=77.5946 + random.uniform(-0.1, 0.1)
+                )
+                db.add(location)
+                locations_objects.append(location)
             
         db.commit()
         
@@ -327,7 +352,8 @@ def seed_database():
         print("Entity merge candidate reviews seeded.")
 
         # 7. Seed FIR Records
-        fir_objects = []
+        existing_firs = {f.id: f for f in db.query(FIRRecord).all()}
+        fir_objects = list(existing_firs.values())
         statuses = ["Investigation", "Charge Sheeted", "Closed"]
         victim_genders = ["Male", "Female"]
         
@@ -339,6 +365,8 @@ def seed_database():
 
         for i in range(10500):
             fir_id = f"FIR-{2024 + random.randint(0,2)}-{i+1:05d}"
+            if fir_id in existing_firs:
+                continue
             station = random.choice(stations_objects)
             crime_type, ipc, severity = random.choice(CRIME_TYPES_IPC)
             
@@ -473,15 +501,19 @@ def seed_database():
         print("Initial Audit Trail seeded.")
 
         # 10. Seed Missing Persons
+        existing_missing = {p.id: p for p in db.query(MissingPerson).all()}
         missing_names = ["Amit Gowda", "Kavitha Raj", "Chethan Kumar", "Sushma Hedge", "Nandini Reddy", "Vikram Sen", "Rupa Patel", "Srinivas Rao", "Ananya Bhat", "Aditya Sharma"]
         for idx in range(50):
+            mp_id = f"MP-{idx+1:04d}"
+            if mp_id in existing_missing:
+                continue
             name = random.choice(missing_names) + f" {random.randint(1, 100)}"
             age = random.randint(5, 75)
             gender = random.choice(["Male", "Female"])
             last_seen_date = datetime(2024, 1, 1) + timedelta(days=random.randint(1, 800))
             last_seen_loc = random.choice(KARNATAKA_DISTRICTS)["name"]
             person = MissingPerson(
-                id=f"MP-{idx+1:04d}",
+                id=mp_id,
                 name=name,
                 age=age,
                 gender=gender,
@@ -491,16 +523,20 @@ def seed_database():
                 status=random.choices(["Active", "Found"], weights=[80, 20])[0]
             )
             db.add(person)
-        print("Missing persons seeded.")
+        print("Missing persons ensured.")
 
         # 11. Seed Unidentified Bodies
+        existing_bodies = {b.id: b for b in db.query(UnidentifiedBody).all()}
         features_list = ["Tattoo of trident on left forearm", "Surgical scar on right knee", "Silver ring on index finger", "Black birthmark on neck", "Stature approx 175cm, wearing blue shirt", "Gold tooth on upper left jaw"]
         for idx in range(30):
+            ub_id = f"UB-{idx+1:04d}"
+            if ub_id in existing_bodies:
+                continue
             gender = random.choice(["Male", "Female", "Unknown"])
             found_date = datetime(2024, 1, 1) + timedelta(days=random.randint(1, 800))
             found_loc = random.choice(KARNATAKA_DISTRICTS)["name"]
             body = UnidentifiedBody(
-                id=f"UB-{idx+1:04d}",
+                id=ub_id,
                 estimated_age=random.randint(20, 60),
                 gender=gender,
                 found_date=found_date,
@@ -509,17 +545,19 @@ def seed_database():
                 status=random.choices(["Unidentified", "Identified"], weights=[85, 15])[0]
             )
             db.add(body)
-        print("Unidentified bodies seeded.")
+        print("Unidentified bodies ensured.")
 
         # 12. Seed Telecom CDRs
-        cdr_types = ["Incoming", "Outgoing", "SMS"]
-        offender_phones = [p.phone_number for p in phones_objects]
-        for idx in range(500):
-            phone = random.choice(offender_phones) if (offender_phones and random.random() < 0.3) else f"+91-9844{random.randint(100000, 999999)}"
-            associated = f"+91-9123{random.randint(100000, 999999)}"
-            timestamp = datetime(2024, 1, 1) + timedelta(days=random.randint(1, 800), hours=random.randint(0, 23))
-            cdr = TelecomCDR(
-                phone_number=phone,
+        existing_cdr_count = db.query(TelecomCDR).count()
+        if existing_cdr_count == 0:
+            cdr_types = ["Incoming", "Outgoing", "SMS"]
+            offender_phones = [p.phone_number for p in phones_objects]
+            for idx in range(500):
+                phone = random.choice(offender_phones) if (offender_phones and random.random() < 0.3) else f"+91-9844{random.randint(100000, 999999)}"
+                associated = f"+91-9123{random.randint(100000, 999999)}"
+                timestamp = datetime(2024, 1, 1) + timedelta(days=random.randint(1, 800), hours=random.randint(0, 23))
+                cdr = TelecomCDR(
+                    phone_number=phone,
                 imsi=f"IMSI-404-45-{random.randint(10000, 99999)}",
                 imei=f"IMEI-3589{random.randint(100000, 999999)}",
                 cell_tower_id=f"TOWER-{random.choice(KARNATAKA_DISTRICTS)['name'][:4].upper()}-{random.randint(1, 50)}",
