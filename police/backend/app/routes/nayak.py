@@ -863,6 +863,10 @@ def _analyze_voice_call_with_groq(blob: bytes, filename: str) -> Optional[dict]:
     if not GROQ_API_KEY:
         return None
     try:
+        # Cap blob to 12MB for lightning fast Whisper transmission
+        if len(blob) > 12 * 1024 * 1024:
+            blob = blob[:12 * 1024 * 1024]
+
         ext = filename.split(".")[-1].lower() if "." in filename else "mp3"
         mime = "audio/mpeg" if ext in ("mp3", "mpeg") else ("video/mp4" if ext in ("mp4", "webm") else "audio/wav")
         
@@ -873,10 +877,10 @@ def _analyze_voice_call_with_groq(blob: bytes, filename: str) -> Optional[dict]:
             "file": (f"call_audio.{ext}", blob, mime),
             "model": (None, "whisper-large-v3-turbo")
         }
-        res = requests.post(whisper_url, headers=headers, files=files, timeout=30)
+        res = requests.post(whisper_url, headers=headers, files=files, timeout=12)
         if res.status_code != 200:
             files["model"] = (None, "whisper-large-v3")
-            res = requests.post(whisper_url, headers=headers, files=files, timeout=30)
+            res = requests.post(whisper_url, headers=headers, files=files, timeout=10)
 
         transcript_text = ""
         if res.status_code == 200:
@@ -903,7 +907,7 @@ def _analyze_voice_call_with_groq(blob: bytes, filename: str) -> Optional[dict]:
             "response_format": {"type": "json_object"}
         }
 
-        llm_res = requests.post(llm_url, headers=llm_headers, json=payload, timeout=15)
+        llm_res = requests.post(llm_url, headers=llm_headers, json=payload, timeout=10)
         if llm_res.status_code == 200:
             content = llm_res.json()["choices"][0]["message"]["content"]
             llm_json = json.loads(content)
@@ -911,7 +915,6 @@ def _analyze_voice_call_with_groq(blob: bytes, filename: str) -> Optional[dict]:
             conf = float(llm_json.get("confidence", 0.90))
             reasoning = llm_json.get("reasoning", "Call transcript analyzed for coercion and impersonation patterns.")
             
-            risk_score = round((conf if is_scam else (1.0 - conf)) * 100, 1)
             auth_score = round((1.0 - (conf if is_scam else (1.0 - conf))) * 100, 1)
 
             return {
@@ -936,9 +939,18 @@ def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str 
     - non-currency image/media -> General evidence storage
     """
     try:
-        media_res = requests.get(media_url, timeout=30)
-        media_res.raise_for_status()
-        blob = media_res.content
+        if media_url.startswith("data:"):
+            import base64
+            header, encoded = media_url.split(",", 1)
+            blob = base64.b64decode(encoded)
+        else:
+            media_res = requests.get(media_url, timeout=8)
+            media_res.raise_for_status()
+            blob = media_res.content
+
+        # Cap blob to 12MB for sub-second processing
+        if len(blob) > 12 * 1024 * 1024:
+            blob = blob[:12 * 1024 * 1024]
 
         # 1. For audio/video OR when mode is explicitly 'scam_call' or 'live_call_mic': run Groq Whisper + LLM
         if media_type in ("audio", "video") or mode in ("scam_call", "live_call_mic"):
@@ -950,7 +962,7 @@ def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str 
             r = requests.post(
                 f"{CLASSIFIER_URL}/classify",
                 files={"file": ("nayak_upload.mp4", blob, "video/mp4")},
-                timeout=600,
+                timeout=12,
             )
             r.raise_for_status()
             data = r.json()

@@ -54,5 +54,17 @@ export async function uploadMediaBlob(blob, { folder = 'nayak-chat', filename = 
     console.warn('[MEDIA] Supabase storage exception:', e);
   }
 
+  // 3) Local Data URL fallback if remote storage is unreachable
+  try {
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.warn('[MEDIA] Data URL fallback exception:', e);
+  }
+
   return null; // caller must handle honestly — no fabricated URLs
 }
