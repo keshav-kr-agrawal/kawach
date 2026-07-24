@@ -83,8 +83,137 @@ Dashboards & Investigation Workspace
 - **Criminal Network & Link Analysis Engine**: Louvain modularity community partitioning, degree & betweenness centrality calculations, and automated money mule flagging ($\text{Priors}=0 \land \text{CommunityTies}\ge 2 \land \text{Risk}\ge 70$).
 - **Repeat Offender & Watchlist Tracking System**: Watchlist management, re-offense frequency scoring, and fuzzy entity resolution merge queues.
 - **Socio-Economic Crime Correlation Engine**: Pearson Correlation Matrix ($r$) evaluating crime rates against census parameters (population, literacy rate, unemployment rate, per-capita income, urbanization index).
-- **Predictive Risk Scoring & Patrol Allocation Engine**: Deterministic spatial risk scoring formula (0–100) combining 180-day volume and socio-economics, paired with recommended patrol unit routes (`Cheetah 01`, `Hoysala 14`).
-- **AI/ML Pattern Detection Suite**: MTCNN + EfficientNet-B7 deepfake video/audio ensemble, 6,304-image trained Counterfeit Currency CNN (91.9% accuracy, AUC 0.964), YOLO12s + SigLIP scene classifier, and Digital Arrest live interception ($S \ge 70$ dispatch trigger).
+- **Predictive Risk Scoring & Patrol Allocation Engine** *(ML UPGRADE — Vignesh owns)*: **XGBoost Regressor** trained on Karnataka district features (unemployment, poverty, police_per_capita, gdp_per_capita, population_density, school/hospital density, month seasonality, festival flag, spatial lag from adjacent districts) → predicts `crime_rate_per_100k` → normalized 0–100 risk score. SHAP explainability layer generates per-district natural language rationale ("Risk driven by: unemployment +23pts, low police density +18pts"). Model delivers cross-validation R² and RMSE. Paired with recommended patrol unit routes (`Cheetah 01`, `Hoysala 14`).
+- **AI/ML Pattern Detection Suite** *(ML UPGRADE — Vignesh owns)*: (1) **Facebook Prophet** time-series forecasting per (district × crime_type) trained on historical FIR monthly counts — outputs 30/60/90-day forecasts with 95% confidence intervals and trend/seasonality decomposition. (2) **Isolation Forest** unsupervised anomaly detection on multi-dimensional crime fingerprint vectors — detects districts whose simultaneous cross-crime-type pattern is an outlier vs all historical profiles (catches coordinated crime events that single-variable Z-scores miss). Both models deliver explainable audit rationale in the `/api/analytics/patterns` response. Additionally: MTCNN + EfficientNet-B7 deepfake ensemble, Currency CNN (91.9% AUC 0.964), YOLO12s + SigLIP, Digital Arrest monitor ($S \ge 70$ dispatch).
+
+
+---
+
+# ML INTEGRATION CONTRACT
+## For Team Member Reference — Leave Integration Windows Open
+
+> **Owner**: Vignesh builds, trains, and delivers the ML artifacts.
+> **Team**: Must leave the backend call-hooks below active and not re-implement the scoring logic.
+
+## Model Artifacts (Vignesh delivers to `police/backend/app/ml/models/`)
+
+| File | Algorithm | Purpose |
+|---|---|---|
+| `risk_model.pkl` | XGBoost Regressor | District risk score prediction |
+| `risk_model_meta.json` | — | Feature list, training R², RMSE, training date |
+| `isolation_forest.pkl` | Isolation Forest | Multi-dimensional crime anomaly detection |
+| `prophet_models/<crime_type>.pkl` | Facebook Prophet | Per-crime-type 90-day count forecasting |
+| `shap_explainer.pkl` | TreeExplainer (SHAP) | Per-district risk factor attribution |
+
+## Integration Hook 1 — `/api/analytics/predict` (analytics.py)
+
+Team member must replace the weighted-formula block in `predict_district_risk()` with:
+
+```python
+# ── ML INTEGRATION WINDOW (Vignesh) ─────────────────────────────────────────
+# Do NOT delete this block. Vignesh will drop risk_model.pkl here.
+import os
+ML_MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "ml", "models")
+
+def _try_ml_predict(feature_rows: list) -> list | None:
+    """Attempt XGBoost prediction. Returns None if model not yet loaded."""
+    try:
+        import joblib, numpy as np
+        model_path = os.path.join(ML_MODELS_DIR, "risk_model.pkl")
+        if not os.path.exists(model_path):
+            return None
+        model = joblib.load(model_path)
+        X = np.array([[r[f] for f in model.feature_names_in_] for r in feature_rows])
+        return model.predict(X).tolist()
+    except Exception as e:
+        print(f"[ML] XGBoost prediction failed, falling back to formula: {e}")
+        return None
+# ── END ML INTEGRATION WINDOW ────────────────────────────────────────────────
+```
+
+The response schema stays identical — same JSON fields — so the frontend needs zero changes:
+```json
+{
+  "district_id": "...",
+  "district_name": "...",
+  "risk_score": 78.4,
+  "risk_tier": "High",
+  "score_breakdown": { "unemployment": 23.1, "poverty": 18.4, "police_deficit": 12.0, "recent_crime_volume": 24.9 },
+  "contributing_factors": { "unemployment": "...", ... },
+  "shap_explanation": "Risk primarily driven by unemployment rate 3.2× state average (+23pts) and police density deficit (+18pts). Spatial crime spillover from adjacent Ramanagara district adds +12pts.",
+  "ml_model": "xgboost",
+  "model_r2": 0.84
+}
+```
+
+## Integration Hook 2 — `/api/analytics/patterns` (analytics.py)
+
+Team member must add this call at the end of `detect_crime_patterns()`, **after** the existing 3 statistical patterns:
+
+```python
+# ── ML INTEGRATION WINDOW (Vignesh) ─────────────────────────────────────────
+def _try_ml_patterns(fir_data) -> list:
+    """Attempt Prophet + Isolation Forest patterns. Returns [] if models not loaded."""
+    try:
+        from app.ml.patterns import ml_forecast_patterns, ml_anomaly_patterns
+        return ml_forecast_patterns(fir_data) + ml_anomaly_patterns(fir_data)
+    except Exception as e:
+        print(f"[ML] Pattern ML failed, using statistical-only patterns: {e}")
+        return []
+patterns += _try_ml_patterns(firs)
+# ── END ML INTEGRATION WINDOW ────────────────────────────────────────────────
+```
+
+ML pattern response schema (appended to existing patterns list):
+```json
+[
+  {
+    "id": "PAT-ML-001",
+    "title": "Prophet Forecast: Cybercrime Rising — Bengaluru Urban",
+    "description": "Prophet model predicts Cybercrime FIRs will increase 34% in the next 60 days (95% CI: 18%–51%). Seasonal component shows recurring July–September peak.",
+    "confidence": 88.0,
+    "category": "Forecast",
+    "sample_size": 1240,
+    "forecast_30d": 142,
+    "forecast_90d": 391,
+    "confidence_interval": { "lower_90d": 318, "upper_90d": 464 }
+  },
+  {
+    "id": "PAT-ML-002",
+    "title": "Isolation Forest: Anomalous Crime Profile — Belagavi",
+    "description": "Isolation Forest detected a simultaneous multi-crime-type anomaly: Burglary + Vehicle Theft + Assault elevated together (4.2σ outlier vs all historical district profiles). Coordinated criminal activity suspected.",
+    "confidence": 91.0,
+    "category": "Anomaly",
+    "sample_size": 3100,
+    "anomaly_score": -0.42,
+    "district": "Belagavi"
+  }
+]
+```
+
+## Graceful Degradation Rule
+Both `_try_ml_predict()` and `_try_ml_patterns()` fall back silently if the `.pkl` files are missing. The system works without the models — it just uses the statistical fallback. This means the team can deploy and demo before Vignesh finishes training, and Vignesh can drop in the models anytime without a redeploy.
+
+## Model Training Plan (Vignesh's Responsibility)
+
+### XGBoost Risk Model
+- **Training data**: `generate_data.py` seed → District table × SocioEconomicIndicator table × FIRRecord counts, grouped by (district_id, year, month)
+- **Feature engineering**: Add `festival_flag` (Karnataka public holidays list), `adjacent_crime_rate` (avg of 2–3 geographic neighbors), `population_density` (population / assumed area)
+- **Training**: `XGBRegressor(n_estimators=200, max_depth=5, learning_rate=0.05)`, 5-fold CV on district-year splits (NOT random split — spatial/temporal leakage risk)
+- **SHAP**: `shap.TreeExplainer(model)` → `shap_values = explainer(X_test)` → serialize explainer
+- **Target metric to report**: R² > 0.75 on held-out districts, RMSE < 15 crime_per_100k
+
+### Prophet Forecasting
+- **Training data**: FIRRecord grouped by `(district_name, crime_type, year_month)` → `ds` (date) + `y` (count)
+- **One model per crime_type** (Cybercrime, Theft, Assault, Fraud, etc.)
+- **Prophet config**: `seasonality_mode='multiplicative'`, `yearly_seasonality=True`, `weekly_seasonality=True`, custom `add_seasonality('festival', period=365.25/12, fourier_order=3)`
+- **Output**: 90-day forecast dataframe → serialize with `pickle`
+
+### Isolation Forest
+- **Training data**: Per-district crime type vector: `[cybercrime_rate, theft_rate, assault_rate, fraud_rate, drug_rate, ...]` per month
+- **Model**: `IsolationForest(n_estimators=100, contamination=0.05)` (5% of data expected anomalous)
+- **Output**: `anomaly_score` per (district, month) — negative scores = anomalous
+- **Label generation**: When `anomaly_score < -0.3`, identify which crime types are driving it (compare to district's own baseline per-type)
 
 ---
 
