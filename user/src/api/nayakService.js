@@ -31,6 +31,16 @@ export const SUPPORTED_LANGUAGES = [
   'Marathi', 'Bengali', 'Gujarati', 'Punjabi', 'Urdu', 'Odia',
 ];
 
+export async function checkFraudShield(queryStr) {
+  const res = await fetch(`${API_BASE}/api/fraud-shield/check`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ query: queryStr }),
+  });
+  if (!res.ok) throw new Error(`fraud shield HTTP ${res.status}`);
+  return res.json();
+}
+
 export async function sendChat({ sessionId, message, lat, lng, lang, mode }) {
   const res = await fetch(`${API_BASE}/api/nayak/chat`, {
     method: 'POST',
