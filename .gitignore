@@ -7,3 +7,10 @@ venv/
 .venv/
 .env
 *.db
+
+# Node
+node_modules/
+dist/
+
+# Police console frontend uses a local-only env for its build step (see CLAUDE.md)
+police/frontend/.env
