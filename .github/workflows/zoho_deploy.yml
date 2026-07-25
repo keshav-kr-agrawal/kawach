@@ -1,0 +1,42 @@
+name: Deploy to Zoho Catalyst
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build and Deploy to Zoho Catalyst
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Catalyst CLI
+        run: npm install -g zcatalyst-cli
+
+      - name: Setup Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Backend Dependencies & Validate
+        run: |
+          cd police/backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Deploy Police Backend to Zoho Catalyst
+        working-directory: police/backend
+        env:
+          ZCATALYST_AUTH_TOKEN: ${{ secrets.ZOHO_CATALYST_TOKEN }}
+        run: |
+          catalyst deploy --token ${{ secrets.ZOHO_CATALYST_TOKEN }} --non-interactive
