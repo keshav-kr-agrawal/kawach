@@ -1,0 +1,1585 @@
+[
+    {
+        "table_name": "Account",
+        "columns": [
+            {
+                "column_name": "account_number",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "bank_name",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "owner_offender_id",
+                "data_type": "bigint"
+            }
+        ]
+    },
+    {
+        "table_name": "Accused",
+        "columns": [
+            {
+                "column_name": "AccusedMasterID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "CaseMasterID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "AccusedName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "AgeYear",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "GenderID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "PersonID",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "address",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "num_prior_offenses",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "risk_score",
+                "data_type": "double"
+            }
+        ]
+    },
+    {
+        "table_name": "Act",
+        "columns": [
+            {
+                "column_name": "ActCode",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "ActDescription",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "ShortName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "Active",
+                "data_type": "boolean"
+            }
+        ]
+    },
+    {
+        "table_name": "ActSectionAssociation",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "CaseMasterID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "ActID",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "SectionID",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "ActOrderID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "SectionOrderID",
+                "data_type": "bigint"
+            }
+        ]
+    },
+    {
+        "table_name": "ArrestSurrender",
+        "columns": [
+            {
+                "column_name": "ArrestSurrenderID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "CaseMasterID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "ArrestSurrenderTypeID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "ArrestSurrenderDate",
+                "data_type": "date"
+            },
+            {
+                "column_name": "ArrestSurrenderStateId",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "ArrestSurrenderDistrictId",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "PoliceStationID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "IOID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "CourtID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "AccusedMasterID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "IsAccused",
+                "data_type": "boolean"
+            },
+            {
+                "column_name": "IsComplainantAccused",
+                "data_type": "boolean"
+            }
+        ]
+    },
+    {
+        "table_name": "AuditLog",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "timestamp",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "username",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "role",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "action",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "details",
+                "data_type": "var-char",
+                "max_length": 5000
+            },
+            {
+                "column_name": "ip_address",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "Call",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "caller_phone",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "receiver_phone",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "timestamp",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "duration_seconds",
+                "data_type": "bigint"
+            }
+        ]
+    },
+    {
+        "table_name": "CaseCategory",
+        "columns": [
+            {
+                "column_name": "CaseCategoryID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "LookupValue",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "CaseMaster",
+        "columns": [
+            {
+                "column_name": "CaseMasterID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "CrimeNo",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "CaseNo",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "CrimeRegisteredDate",
+                "data_type": "date"
+            },
+            {
+                "column_name": "PolicePersonID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "PoliceStationID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "CaseCategoryID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "GravityOffenceID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "CrimeMajorHeadID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "CrimeMinorHeadID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "CaseStatusID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "CourtID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "IncidentFromDate",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "IncidentToDate",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "InfoReceivedPSDate",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "latitude",
+                "data_type": "double"
+            },
+            {
+                "column_name": "longitude",
+                "data_type": "double"
+            },
+            {
+                "column_name": "BriefFacts",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "priority",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "sla_deadline",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "summary",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "leads",
+                "data_type": "var-char",
+                "max_length": 5000
+            },
+            {
+                "column_name": "evidence_correlations",
+                "data_type": "var-char",
+                "max_length": 5000
+            },
+            {
+                "column_name": "timeline",
+                "data_type": "var-char",
+                "max_length": 5000
+            }
+        ]
+    },
+    {
+        "table_name": "CaseStatusMaster",
+        "columns": [
+            {
+                "column_name": "CaseStatusID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "CaseStatusName",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "CasteMaster",
+        "columns": [
+            {
+                "column_name": "caste_master_id",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "caste_master_name",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "ChargesheetDetails",
+        "columns": [
+            {
+                "column_name": "CSID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "CaseMasterID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "csdate",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "cstype",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "PolicePersonID",
+                "data_type": "bigint"
+            }
+        ]
+    },
+    {
+        "table_name": "ComplainantDetails",
+        "columns": [
+            {
+                "column_name": "ComplainantID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "CaseMasterID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "ComplainantName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "AgeYear",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "OccupationID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "ReligionID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "CasteID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "GenderID",
+                "data_type": "bigint"
+            }
+        ]
+    },
+    {
+        "table_name": "Court",
+        "columns": [
+            {
+                "column_name": "CourtID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "CourtName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "DistrictID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "StateID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "Active",
+                "data_type": "boolean"
+            }
+        ]
+    },
+    {
+        "table_name": "CrimeHead",
+        "columns": [
+            {
+                "column_name": "CrimeHeadID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "CrimeGroupName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "Active",
+                "data_type": "boolean"
+            }
+        ]
+    },
+    {
+        "table_name": "CrimeHeadActSection",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "CrimeHeadID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "ActCode",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "SectionCode",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "CrimeSubHead",
+        "columns": [
+            {
+                "column_name": "CrimeSubHeadID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "CrimeHeadID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "CrimeHeadName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "SeqID",
+                "data_type": "bigint"
+            }
+        ]
+    },
+    {
+        "table_name": "CurrencySeizure",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "var-char",
+                "max_length": 255,
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "lat",
+                "data_type": "double"
+            },
+            {
+                "column_name": "lng",
+                "data_type": "double"
+            },
+            {
+                "column_name": "denomination",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "verdict",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "authenticity_score",
+                "data_type": "double"
+            },
+            {
+                "column_name": "notes_count",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "logged_by",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "location_name",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "logged_at",
+                "data_type": "datetime"
+            }
+        ]
+    },
+    {
+        "table_name": "Designation",
+        "columns": [
+            {
+                "column_name": "DesignationID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "DesignationName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "Active",
+                "data_type": "boolean"
+            },
+            {
+                "column_name": "SortOrder",
+                "data_type": "bigint"
+            }
+        ]
+    },
+    {
+        "table_name": "District",
+        "columns": [
+            {
+                "column_name": "DistrictID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "DistrictName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "StateID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "Active",
+                "data_type": "boolean"
+            },
+            {
+                "column_name": "population",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "area_sqkm",
+                "data_type": "double"
+            },
+            {
+                "column_name": "literacy_rate",
+                "data_type": "double"
+            },
+            {
+                "column_name": "unemployment_rate",
+                "data_type": "double"
+            },
+            {
+                "column_name": "avg_income",
+                "data_type": "double"
+            },
+            {
+                "column_name": "urbanization_pct",
+                "data_type": "double"
+            }
+        ]
+    },
+    {
+        "table_name": "Employee",
+        "columns": [
+            {
+                "column_name": "EmployeeID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "DistrictID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "UnitID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "RankID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "DesignationID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "KGID",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "FirstName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "EmployeeDOB",
+                "data_type": "date"
+            },
+            {
+                "column_name": "GenderID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "BloodGroupID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "PhysicallyChallenged",
+                "data_type": "boolean"
+            },
+            {
+                "column_name": "AppointmentDate",
+                "data_type": "date"
+            },
+            {
+                "column_name": "username",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "hashed_password",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "role",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "mfa_secret",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "mfa_enabled",
+                "data_type": "boolean"
+            }
+        ]
+    },
+    {
+        "table_name": "Gang",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "var-char",
+                "max_length": 255,
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "name",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "description",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "GravityOffence",
+        "columns": [
+            {
+                "column_name": "GravityOffenceID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "LookupValue",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "IPSighting",
+        "columns": [
+            {
+                "column_name": "ip",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "lookup_count",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "first_seen",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "last_seen",
+                "data_type": "datetime"
+            }
+        ]
+    },
+    {
+        "table_name": "IPWatchlistEntry",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "ip",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "list_type",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "note",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "added_by",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "datetime"
+            }
+        ]
+    },
+    {
+        "table_name": "Location",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "var-char",
+                "max_length": 255,
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "name",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "lat",
+                "data_type": "double"
+            },
+            {
+                "column_name": "lng",
+                "data_type": "double"
+            }
+        ]
+    },
+    {
+        "table_name": "MissingPerson",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "var-char",
+                "max_length": 255,
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "name",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "age",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "gender",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "last_seen_date",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "last_seen_location",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "photo_url",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "status",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "NayakLawChunk",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "var-char",
+                "max_length": 255,
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "act",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "section",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "title",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "official_text",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "citizen_scenario",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "citizen_explanation",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "recommended_action",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "penalty_summary",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "source_url",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "last_verified",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "tags",
+                "data_type": "var-char",
+                "max_length": 5000
+            },
+            {
+                "column_name": "embedding",
+                "data_type": "var-char",
+                "max_length": 5000
+            }
+        ]
+    },
+    {
+        "table_name": "NayakMessage",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "session_id",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "role",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "content",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "tool_name",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "tool_result",
+                "data_type": "var-char",
+                "max_length": 5000
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "datetime"
+            }
+        ]
+    },
+    {
+        "table_name": "NayakSession",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "var-char",
+                "max_length": 255,
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "user_id",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "started_at",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "last_active_at",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "title",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "NayakUserUpload",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "var-char",
+                "max_length": 255,
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "user_id",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "session_id",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "media_url",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "media_type",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "classifier_verdict",
+                "data_type": "var-char",
+                "max_length": 5000
+            },
+            {
+                "column_name": "linked_report_id",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "datetime"
+            }
+        ]
+    },
+    {
+        "table_name": "OccupationMaster",
+        "columns": [
+            {
+                "column_name": "OccupationID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "OccupationName",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "Phone",
+        "columns": [
+            {
+                "column_name": "phone_number",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "owner_offender_id",
+                "data_type": "bigint"
+            }
+        ]
+    },
+    {
+        "table_name": "RBIFraudRegistry",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "account_number",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "bank_name",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "flagged_date",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "fraud_type",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "reported_amount",
+                "data_type": "double"
+            },
+            {
+                "column_name": "status",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "Rank",
+        "columns": [
+            {
+                "column_name": "RankID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "RankName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "Hierarchy",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "Active",
+                "data_type": "boolean"
+            }
+        ]
+    },
+    {
+        "table_name": "ReligionMaster",
+        "columns": [
+            {
+                "column_name": "ReligionID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "ReligionName",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "Section",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "ActCode",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "SectionCode",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "SectionDescription",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "Active",
+                "data_type": "boolean"
+            }
+        ]
+    },
+    {
+        "table_name": "SocioEconomicIndicator",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "district_id",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "year",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "gdp_per_capita",
+                "data_type": "double"
+            },
+            {
+                "column_name": "poverty_rate",
+                "data_type": "double"
+            },
+            {
+                "column_name": "school_density",
+                "data_type": "double"
+            },
+            {
+                "column_name": "hospital_density",
+                "data_type": "double"
+            },
+            {
+                "column_name": "police_per_capita",
+                "data_type": "double"
+            }
+        ]
+    },
+    {
+        "table_name": "State",
+        "columns": [
+            {
+                "column_name": "StateID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "StateName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "NationalityID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "Active",
+                "data_type": "boolean"
+            }
+        ]
+    },
+    {
+        "table_name": "TelecomCDR",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "phone_number",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "imsi",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "imei",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "cell_tower_id",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "call_type",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "associated_number",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "duration_seconds",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "timestamp",
+                "data_type": "datetime"
+            }
+        ]
+    },
+    {
+        "table_name": "UnidentifiedBody",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "var-char",
+                "max_length": 255,
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "estimated_age",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "gender",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "found_date",
+                "data_type": "datetime"
+            },
+            {
+                "column_name": "found_location",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "distinguishing_features",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "status",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "Unit",
+        "columns": [
+            {
+                "column_name": "UnitID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "UnitName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "TypeID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "ParentUnit",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "NationalityID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "StateID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "DistrictID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "Active",
+                "data_type": "boolean"
+            },
+            {
+                "column_name": "lat",
+                "data_type": "double"
+            },
+            {
+                "column_name": "lng",
+                "data_type": "double"
+            },
+            {
+                "column_name": "jurisdiction_area_sqkm",
+                "data_type": "double"
+            },
+            {
+                "column_name": "officer_count",
+                "data_type": "bigint"
+            }
+        ]
+    },
+    {
+        "table_name": "UnitType",
+        "columns": [
+            {
+                "column_name": "UnitTypeID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "UnitTypeName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "CityDistState",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "Hierarchy",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "Active",
+                "data_type": "boolean"
+            }
+        ]
+    },
+    {
+        "table_name": "Vehicle",
+        "columns": [
+            {
+                "column_name": "plate_number",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "make",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "model",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "owner_offender_id",
+                "data_type": "bigint"
+            }
+        ]
+    },
+    {
+        "table_name": "Victim",
+        "columns": [
+            {
+                "column_name": "VictimMasterID",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "CaseMasterID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "VictimName",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "AgeYear",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "GenderID",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "VictimPolice",
+                "data_type": "var-char",
+                "max_length": 255
+            }
+        ]
+    },
+    {
+        "table_name": "Visit",
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "bigint",
+                "is_unique": true,
+                "is_mandatory": true
+            },
+            {
+                "column_name": "offender_id",
+                "data_type": "bigint"
+            },
+            {
+                "column_name": "location_id",
+                "data_type": "var-char",
+                "max_length": 255
+            },
+            {
+                "column_name": "timestamp",
+                "data_type": "datetime"
+            }
+        ]
+    }
+]

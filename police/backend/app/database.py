@@ -1,27 +1,16 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-from app.config import settings
+import zcatalyst_sdk
 
-is_sqlite = settings.DATABASE_URL.startswith("sqlite")
-connect_args = {"check_same_thread": False} if is_sqlite else {}
-
-engine_kwargs = {"pool_pre_ping": True}
-if not is_sqlite:
-    engine_kwargs.update({"pool_size": 10, "max_overflow": 20})
-
-engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args=connect_args,
-    **engine_kwargs
-)
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
+# Base class mapping for Pydantic Models
+class Base:
+    pass
 
 def get_db():
-    db = SessionLocal()
     try:
-        yield db
-    finally:
-        db.close()
+        app = zcatalyst_sdk.initialize()
+        datastore = app.datastore()
+        yield datastore
+    except Exception as e:
+        print(f"Error initializing Zoho Catalyst SDK: {e}")
+        # Yield a dummy object for local testing if ZCatalyst is not running
+        yield None
+

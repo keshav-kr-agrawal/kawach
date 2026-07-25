@@ -1,373 +1,399 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Table, text, Boolean, JSON
-from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
+from pydantic import BaseModel, Field
+from typing import Optional, List, Any, Dict
+from datetime import datetime, date
 
-JSONB = JSON().with_variant(PG_JSONB(), "postgresql")
-from sqlalchemy.orm import relationship
-from app.database import Base
-from datetime import datetime
+# ==========================================
+# ZOHO PRESCRIBED LOOKUP TABLES (NoSQL)
+# ==========================================
 
-# Junction table for FIR to Accused (Many-to-Many)
-fir_accused = Table(
-    'fir_accused',
-    Base.metadata,
-    Column('fir_id', String, ForeignKey('fir_records.id', ondelete='CASCADE'), primary_key=True),
-    Column('offender_id', String, ForeignKey('offenders.id', ondelete='CASCADE'), primary_key=True)
-)
+class State(BaseModel):
+    StateID: int
+    StateName: Optional[str] = None
+    NationalityID: Optional[int] = None
+    Active: Optional[bool] = None
 
-# Junction table for Offender known associates (Self-referencing Many-to-Many)
-offender_associates = Table(
-    'offender_associates',
-    Base.metadata,
-    Column('offender_id', String, ForeignKey('offenders.id', ondelete='CASCADE'), primary_key=True),
-    Column('associate_id', String, ForeignKey('offenders.id', ondelete='CASCADE'), primary_key=True)
-)
+class District(BaseModel):
+    DistrictID: int
+    DistrictName: Optional[str] = None
+    StateID: Optional[int] = None
+    Active: Optional[bool] = None
+    # Extended AI Fields
+    population: Optional[int] = None
+    area_sqkm: Optional[float] = None
+    literacy_rate: Optional[float] = None
+    unemployment_rate: Optional[float] = None
+    avg_income: Optional[float] = None
+    urbanization_pct: Optional[float] = None
 
-# Junction table for Offender to Gangs
-offender_gang = Table(
-    'offender_gang',
-    Base.metadata,
-    Column('offender_id', String, ForeignKey('offenders.id', ondelete='CASCADE'), primary_key=True),
-    Column('gang_id', String, ForeignKey('gangs.id', ondelete='CASCADE'), primary_key=True)
-)
+class Court(BaseModel):
+    CourtID: int
+    CourtName: Optional[str] = None
+    DistrictID: Optional[int] = None
+    StateID: Optional[int] = None
+    Active: Optional[bool] = None
 
-class User(Base):
-    __tablename__ = 'users'
-    
-    username = Column(String, primary_key=True)
-    hashed_password = Column(String, nullable=False)
-    role = Column(String, nullable=False)  # DGP, SP, SHO, Constable
-    district_id = Column(Integer, ForeignKey('districts.id', ondelete='SET NULL'), nullable=True)
-    station_id = Column(String, ForeignKey('police_stations.id', ondelete='SET NULL'), nullable=True)
-    mfa_secret = Column(String, nullable=True)
-    mfa_enabled = Column(Boolean, default=True)
-    
-    district = relationship("District")
-    station = relationship("PoliceStation")
+class UnitType(BaseModel):
+    UnitTypeID: int
+    UnitTypeName: Optional[str] = None
+    CityDistState: Optional[str] = None
+    Hierarchy: Optional[int] = None
+    Active: Optional[bool] = None
 
-class AuditLog(Base):
-    __tablename__ = 'audit_logs'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
-    username = Column(String, nullable=False)
-    role = Column(String, nullable=False)
-    action = Column(String, nullable=False)
-    details = Column(JSONB, nullable=True)
-    ip_address = Column(String, nullable=True)
+class Unit(BaseModel):
+    UnitID: int
+    UnitName: Optional[str] = None
+    TypeID: Optional[int] = None
+    ParentUnit: Optional[int] = None
+    NationalityID: Optional[int] = None
+    StateID: Optional[int] = None
+    DistrictID: Optional[int] = None
+    Active: Optional[bool] = None
+    # AI Fields
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    jurisdiction_area_sqkm: Optional[float] = None
+    officer_count: Optional[int] = None
 
-class EntityMatchReview(Base):
-    __tablename__ = 'entity_match_reviews'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    offender1_id = Column(String, ForeignKey('offenders.id', ondelete='CASCADE'), nullable=False)
-    offender2_id = Column(String, ForeignKey('offenders.id', ondelete='CASCADE'), nullable=False)
-    confidence_score = Column(Float, nullable=False)
-    status = Column(String, default="Pending")  # Pending, Merged, Rejected
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    reviewed_by = Column(String, nullable=True)
-    reviewed_at = Column(DateTime, nullable=True)
-    
-    offender1 = relationship("Offender", foreign_keys=[offender1_id])
-    offender2 = relationship("Offender", foreign_keys=[offender2_id])
+class Rank(BaseModel):
+    RankID: int
+    RankName: Optional[str] = None
+    Hierarchy: Optional[int] = None
+    Active: Optional[bool] = None
 
-class District(Base):
-    __tablename__ = 'districts'
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
-    population = Column(Integer)
-    area_sqkm = Column(Float)
-    literacy_rate = Column(Float)
-    unemployment_rate = Column(Float)
-    avg_income = Column(Float)
-    urbanization_pct = Column(Float)
-    
-    stations = relationship("PoliceStation", back_populates="district")
-    socio_economic = relationship("SocioEconomicIndicator", back_populates="district")
+class Designation(BaseModel):
+    DesignationID: int
+    DesignationName: Optional[str] = None
+    Active: Optional[bool] = None
+    SortOrder: Optional[int] = None
 
-class PoliceStation(Base):
-    __tablename__ = 'police_stations'
-    
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    district_id = Column(Integer, ForeignKey('districts.id'))
-    lat = Column(Float, nullable=False)
-    lng = Column(Float, nullable=False)
-    jurisdiction_area_sqkm = Column(Float)
-    officer_count = Column(Integer)
-    
-    district = relationship("District", back_populates="stations")
-    firs = relationship("FIRRecord", back_populates="station")
+class Employee(BaseModel):
+    EmployeeID: int
+    DistrictID: Optional[int] = None
+    UnitID: Optional[int] = None
+    RankID: Optional[int] = None
+    DesignationID: Optional[int] = None
+    KGID: Optional[str] = None
+    FirstName: Optional[str] = None
+    EmployeeDOB: Optional[date] = None
+    GenderID: Optional[int] = None
+    BloodGroupID: Optional[int] = None
+    PhysicallyChallenged: Optional[bool] = None
+    AppointmentDate: Optional[date] = None
+    # Extended AI Auth fields
+    username: Optional[str] = None
+    hashed_password: Optional[str] = None
+    role: Optional[str] = None
+    mfa_secret: Optional[str] = None
+    mfa_enabled: bool = True
 
-class Gang(Base):
-    __tablename__ = 'gangs'
-    
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    description = Column(String)
-    
-    members = relationship("Offender", secondary=offender_gang, back_populates="gangs")
+class CaseCategory(BaseModel):
+    CaseCategoryID: int
+    LookupValue: Optional[str] = None
 
-class Vehicle(Base):
-    __tablename__ = 'vehicles'
-    
-    plate_number = Column(String, primary_key=True)
-    make = Column(String)
-    model = Column(String)
-    owner_offender_id = Column(String, ForeignKey('offenders.id', ondelete='SET NULL'), nullable=True)
-    
-    owner = relationship("Offender", back_populates="vehicles")
+class GravityOffence(BaseModel):
+    GravityOffenceID: int
+    LookupValue: Optional[str] = None
 
-class Phone(Base):
-    __tablename__ = 'phones'
-    
-    phone_number = Column(String, primary_key=True)
-    owner_offender_id = Column(String, ForeignKey('offenders.id', ondelete='SET NULL'), nullable=True)
-    
-    owner = relationship("Offender", back_populates="phones")
+class CrimeHead(BaseModel):
+    CrimeHeadID: int
+    CrimeGroupName: Optional[str] = None
+    Active: Optional[bool] = None
 
-class Account(Base):
-    __tablename__ = 'accounts'
-    
-    account_number = Column(String, primary_key=True)
-    bank_name = Column(String)
-    owner_offender_id = Column(String, ForeignKey('offenders.id', ondelete='SET NULL'), nullable=True)
-    
-    owner = relationship("Offender", back_populates="accounts")
+class CrimeSubHead(BaseModel):
+    CrimeSubHeadID: int
+    CrimeHeadID: Optional[int] = None
+    CrimeHeadName: Optional[str] = None
+    SeqID: Optional[int] = None
 
-class Call(Base):
-    __tablename__ = 'calls'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    caller_phone = Column(String, ForeignKey('phones.phone_number', ondelete='CASCADE'), nullable=False)
-    receiver_phone = Column(String, ForeignKey('phones.phone_number', ondelete='CASCADE'), nullable=False)
-    timestamp = Column(DateTime, nullable=False)
-    duration_seconds = Column(Integer, nullable=False)
+class CaseStatusMaster(BaseModel):
+    CaseStatusID: int
+    CaseStatusName: Optional[str] = None
 
-class Location(Base):
-    __tablename__ = 'locations'
-    
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    lat = Column(Float, nullable=False)
-    lng = Column(Float, nullable=False)
+class CasteMaster(BaseModel):
+    caste_master_id: int
+    caste_master_name: Optional[str] = None
 
-class Visit(Base):
-    __tablename__ = 'visits'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    offender_id = Column(String, ForeignKey('offenders.id', ondelete='CASCADE'), nullable=False)
-    location_id = Column(String, ForeignKey('locations.id', ondelete='CASCADE'), nullable=False)
-    timestamp = Column(DateTime, nullable=False)
-    
-    offender = relationship("Offender")
-    location = relationship("Location")
+class ReligionMaster(BaseModel):
+    ReligionID: int
+    ReligionName: Optional[str] = None
 
-class Offender(Base):
-    __tablename__ = 'offenders'
-    
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    age = Column(Integer)
-    gender = Column(String)
-    address = Column(String)
-    num_prior_offenses = Column(Integer, default=0)
-    risk_score = Column(Float, default=0.0)
-    
-    firs = relationship("FIRRecord", secondary=fir_accused, back_populates="accused")
-    gangs = relationship("Gang", secondary=offender_gang, back_populates="members")
-    vehicles = relationship("Vehicle", back_populates="owner")
-    phones = relationship("Phone", back_populates="owner")
-    accounts = relationship("Account", back_populates="owner")
-    
-    # Self-referencing relationship for associates
-    associates = relationship(
-        'Offender',
-        secondary=offender_associates,
-        primaryjoin=id == offender_associates.c.offender_id,
-        secondaryjoin=id == offender_associates.c.associate_id,
-        backref='associated_by'
-    )
+class OccupationMaster(BaseModel):
+    OccupationID: int
+    OccupationName: Optional[str] = None
 
-class FIRRecord(Base):
-    __tablename__ = 'fir_records'
-    
-    id = Column(String, primary_key=True)
-    police_station_id = Column(String, ForeignKey('police_stations.id'), nullable=False)
-    crime_type = Column(String, nullable=False)
-    ipc_section = Column(String, nullable=False)
-    date_filed = Column(DateTime, nullable=False)
-    lat = Column(Float, nullable=False)
-    lng = Column(Float, nullable=False)
-    status = Column(String, default="Investigation")  # Investigation, Charge Sheeted, Closed
-    victim_age = Column(Integer)
-    victim_gender = Column(String)
-    
-    # SLA, routing, AI helper columns
-    assigned_officer_id = Column(String, ForeignKey('users.username', ondelete='SET NULL'), nullable=True)
-    priority = Column(String, default="Medium")  # Low, Medium, High, Critical
-    sla_deadline = Column(DateTime, nullable=True)
-    summary = Column(String, nullable=True)
-    leads = Column(JSONB, nullable=True)
-    evidence_correlations = Column(JSONB, nullable=True)
-    timeline = Column(JSONB, nullable=True)
-    
-    station = relationship("PoliceStation", back_populates="firs")
-    accused = relationship("Offender", secondary=fir_accused, back_populates="firs")
-    assigned_officer = relationship("User")
+class Act(BaseModel):
+    ActCode: str
+    ActDescription: Optional[str] = None
+    ShortName: Optional[str] = None
+    Active: Optional[bool] = None
 
-class SocioEconomicIndicator(Base):
-    __tablename__ = 'socio_economic_indicators'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    district_id = Column(Integer, ForeignKey('districts.id'), nullable=False)
-    year = Column(Integer, nullable=False)
-    gdp_per_capita = Column(Float)
-    poverty_rate = Column(Float)
-    school_density = Column(Float)
-    hospital_density = Column(Float)
-    police_per_capita = Column(Float)
-    
-    district = relationship("District", back_populates="socio_economic")
+class Section(BaseModel):
+    id: int
+    ActCode: Optional[str] = None
+    SectionCode: Optional[str] = None
+    SectionDescription: Optional[str] = None
+    Active: Optional[bool] = None
 
-class MissingPerson(Base):
-    __tablename__ = 'missing_persons'
-    
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    age = Column(Integer)
-    gender = Column(String)
-    last_seen_date = Column(DateTime, nullable=False)
-    last_seen_location = Column(String)
-    photo_url = Column(String, nullable=True)
-    status = Column(String, default="Active") # Active, Found
+class CrimeHeadActSection(BaseModel):
+    id: int
+    CrimeHeadID: Optional[int] = None
+    ActCode: Optional[str] = None
+    SectionCode: Optional[str] = None
 
-class UnidentifiedBody(Base):
-    __tablename__ = 'unidentified_bodies'
-    
-    id = Column(String, primary_key=True)
-    estimated_age = Column(Integer)
-    gender = Column(String)
-    found_date = Column(DateTime, nullable=False)
-    found_location = Column(String)
-    distinguishing_features = Column(String)
-    status = Column(String, default="Unidentified") # Unidentified, Identified
+# ==========================================
+# ZOHO PRESCRIBED CORE INCIDENT TABLES
+# ==========================================
 
-class TelecomCDR(Base):
-    __tablename__ = 'telecom_cdrs'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    phone_number = Column(String, nullable=False)
-    imsi = Column(String)
-    imei = Column(String)
-    cell_tower_id = Column(String)
-    call_type = Column(String) # Incoming, Outgoing, SMS
-    associated_number = Column(String)
-    duration_seconds = Column(Integer)
-    timestamp = Column(DateTime, nullable=False)
+class CaseMaster(BaseModel):
+    CaseMasterID: int
+    CrimeNo: Optional[str] = None
+    CaseNo: Optional[str] = None
+    CrimeRegisteredDate: Optional[date] = None
+    PolicePersonID: Optional[int] = None
+    PoliceStationID: Optional[int] = None
+    CaseCategoryID: Optional[int] = None
+    GravityOffenceID: Optional[int] = None
+    CrimeMajorHeadID: Optional[int] = None
+    CrimeMinorHeadID: Optional[int] = None
+    CaseStatusID: Optional[int] = None
+    CourtID: Optional[int] = None
+    IncidentFromDate: Optional[datetime] = None
+    IncidentToDate: Optional[datetime] = None
+    InfoReceivedPSDate: Optional[datetime] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    BriefFacts: Optional[str] = None
+    # AI Specific Extensions
+    priority: str = "Medium"
+    sla_deadline: Optional[datetime] = None
+    summary: Optional[str] = None
+    leads: Optional[List[Any]] = None
+    evidence_correlations: Optional[List[Any]] = None
+    timeline: Optional[List[Any]] = None
 
-class RBIFraudRegistry(Base):
-    __tablename__ = 'rbi_fraud_registry'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    account_number = Column(String, nullable=False)
-    bank_name = Column(String)
-    flagged_date = Column(DateTime, default=datetime.utcnow, nullable=False)
-    fraud_type = Column(String)
-    reported_amount = Column(Float)
-    status = Column(String, default="Flagged") # Flagged, Frozen
+class ComplainantDetails(BaseModel):
+    ComplainantID: int
+    CaseMasterID: Optional[int] = None
+    ComplainantName: Optional[str] = None
+    AgeYear: Optional[int] = None
+    OccupationID: Optional[int] = None
+    ReligionID: Optional[int] = None
+    CasteID: Optional[int] = None
+    GenderID: Optional[int] = None
 
-class NayakSession(Base):
-    __tablename__ = 'nayak_sessions'
-    
-    id = Column(String, primary_key=True)
-    user_id = Column(String, nullable=False)
-    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    last_active_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    title = Column(String, nullable=True)
+class ActSectionAssociation(BaseModel):
+    id: int
+    CaseMasterID: Optional[int] = None
+    ActID: Optional[str] = None
+    SectionID: Optional[str] = None
+    ActOrderID: Optional[int] = None
+    SectionOrderID: Optional[int] = None
 
-class NayakMessage(Base):
-    __tablename__ = 'nayak_messages'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(String, ForeignKey('nayak_sessions.id', ondelete='CASCADE'), nullable=False)
-    role = Column(String, nullable=False)  # 'user', 'assistant', 'tool'
-    content = Column(String, nullable=False)
-    tool_name = Column(String, nullable=True)
-    tool_result = Column(JSONB, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+class Victim(BaseModel):
+    VictimMasterID: int
+    CaseMasterID: Optional[int] = None
+    VictimName: Optional[str] = None
+    AgeYear: Optional[int] = None
+    GenderID: Optional[int] = None
+    VictimPolice: Optional[str] = None
 
-class NayakUserUpload(Base):
-    __tablename__ = 'nayak_user_uploads'
-    
-    id = Column(String, primary_key=True)
-    user_id = Column(String, nullable=False)
-    session_id = Column(String, ForeignKey('nayak_sessions.id', ondelete='SET NULL'), nullable=True)
-    media_url = Column(String, nullable=False)
-    media_type = Column(String, nullable=False)  # 'image', 'video', 'audio', 'link', 'text'
-    classifier_verdict = Column(JSONB, nullable=True)
-    linked_report_id = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+class Accused(BaseModel):
+    AccusedMasterID: int
+    CaseMasterID: Optional[int] = None
+    AccusedName: Optional[str] = None
+    AgeYear: Optional[int] = None
+    GenderID: Optional[int] = None
+    PersonID: Optional[str] = None
+    # Extended AI Offender fields
+    address: Optional[str] = None
+    num_prior_offenses: int = 0
+    risk_score: float = 0.0
 
-class CurrencySeizure(Base):
-    """
-    Field-logged counterfeit currency seizure — geo-tagged so it can render
-    on the same hotspot map as crime incidents (ET PS: 'counterfeit currency
-    seizure points' alongside fraud/cybercrime hotspots). Independent of the
-    Neo4j incident graph on purpose: seizures are officer-logged facts, not
-    graph-derived intelligence, so they live in Postgres like FIRs.
-    """
-    __tablename__ = 'currency_seizures'
+class ArrestSurrender(BaseModel):
+    ArrestSurrenderID: int
+    CaseMasterID: Optional[int] = None
+    ArrestSurrenderTypeID: Optional[int] = None
+    ArrestSurrenderDate: Optional[date] = None
+    ArrestSurrenderStateId: Optional[int] = None
+    ArrestSurrenderDistrictId: Optional[int] = None
+    PoliceStationID: Optional[int] = None
+    IOID: Optional[int] = None
+    CourtID: Optional[int] = None
+    AccusedMasterID: Optional[int] = None
+    IsAccused: Optional[bool] = None
+    IsComplainantAccused: Optional[bool] = None
 
-    id = Column(String, primary_key=True)
-    lat = Column(Float, nullable=False)
-    lng = Column(Float, nullable=False)
-    denomination = Column(String, nullable=True)
-    verdict = Column(String, nullable=False)  # mirrors Classifier's /classify-currency verdict enum
-    authenticity_score = Column(Float, nullable=True)
-    notes_count = Column(Integer, default=1)
-    logged_by = Column(String, nullable=True)
-    location_name = Column(String, nullable=True)
-    logged_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+class ChargesheetDetails(BaseModel):
+    CSID: int
+    CaseMasterID: Optional[int] = None
+    csdate: Optional[datetime] = None
+    cstype: Optional[str] = None
+    PolicePersonID: Optional[int] = None
 
+# ==========================================
+# KAWACH AI EXTENSIONS & GRAPH TABLES
+# ==========================================
 
-class NayakLawChunk(Base):
-    __tablename__ = 'nayak_law_chunks'
-    
-    id = Column(String, primary_key=True)
-    act = Column(String, nullable=False)
-    section = Column(String, nullable=False)
-    title = Column(String, nullable=False)
-    official_text = Column(String, nullable=False)
-    citizen_scenario = Column(String, nullable=False)
-    citizen_explanation = Column(String, nullable=False)
-    recommended_action = Column(String, nullable=False)
-    penalty_summary = Column(String, nullable=False)
-    source_url = Column(String, nullable=True)
-    last_verified = Column(String, nullable=False)
-    tags = Column(JSONB, nullable=False)
-    embedding = Column(JSONB, nullable=True)
+class AuditLog(BaseModel):
+    id: int
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    username: str
+    role: str
+    action: str
+    details: Optional[Dict] = None
+    ip_address: Optional[str] = None
 
+class SocioEconomicIndicator(BaseModel):
+    id: int
+    district_id: int
+    year: int
+    gdp_per_capita: Optional[float] = None
+    poverty_rate: Optional[float] = None
+    school_density: Optional[float] = None
+    hospital_density: Optional[float] = None
+    police_per_capita: Optional[float] = None
 
-class IPSighting(Base):
-    """How many times KAWACH itself has looked up a given IP — the one
-    'reputation' signal no external API can supply, since it reflects this
-    department's own case history, not the wider internet's."""
-    __tablename__ = 'ip_sightings'
+class Gang(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = None
 
-    ip = Column(String, primary_key=True)
-    lookup_count = Column(Integer, default=1, nullable=False)
-    first_seen = Column(DateTime, default=datetime.utcnow, nullable=False)
-    last_seen = Column(DateTime, default=datetime.utcnow, nullable=False)
+class Vehicle(BaseModel):
+    plate_number: str
+    make: Optional[str] = None
+    model: Optional[str] = None
+    owner_offender_id: Optional[int] = None
 
+class Phone(BaseModel):
+    phone_number: str
+    owner_offender_id: Optional[int] = None
 
-class IPWatchlistEntry(Base):
-    __tablename__ = 'ip_watchlist'
+class Account(BaseModel):
+    account_number: str
+    bank_name: Optional[str] = None
+    owner_offender_id: Optional[int] = None
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    ip = Column(String, nullable=False, index=True)
-    list_type = Column(String, nullable=False)  # 'watchlist' | 'blocklist'
-    note = Column(String, nullable=True)
-    added_by = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+class Call(BaseModel):
+    id: int
+    caller_phone: str
+    receiver_phone: str
+    timestamp: datetime
+    duration_seconds: int
 
+class Location(BaseModel):
+    id: str
+    name: str
+    lat: float
+    lng: float
+
+class Visit(BaseModel):
+    id: int
+    offender_id: int
+    location_id: str
+    timestamp: datetime
+
+class MissingPerson(BaseModel):
+    id: str
+    name: str
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    last_seen_date: datetime
+    last_seen_location: Optional[str] = None
+    photo_url: Optional[str] = None
+    status: str = "Active"
+
+class UnidentifiedBody(BaseModel):
+    id: str
+    estimated_age: Optional[int] = None
+    gender: Optional[str] = None
+    found_date: datetime
+    found_location: Optional[str] = None
+    distinguishing_features: Optional[str] = None
+    status: str = "Unidentified"
+
+class TelecomCDR(BaseModel):
+    id: int
+    phone_number: str
+    imsi: Optional[str] = None
+    imei: Optional[str] = None
+    cell_tower_id: Optional[str] = None
+    call_type: Optional[str] = None
+    associated_number: Optional[str] = None
+    duration_seconds: Optional[int] = None
+    timestamp: datetime
+
+class RBIFraudRegistry(BaseModel):
+    id: int
+    account_number: str
+    bank_name: Optional[str] = None
+    flagged_date: datetime = Field(default_factory=datetime.utcnow)
+    fraud_type: Optional[str] = None
+    reported_amount: Optional[float] = None
+    status: str = "Flagged"
+
+class NayakSession(BaseModel):
+    id: str
+    user_id: str
+    started_at: datetime = Field(default_factory=datetime.utcnow)
+    last_active_at: datetime = Field(default_factory=datetime.utcnow)
+    title: Optional[str] = None
+
+class NayakMessage(BaseModel):
+    id: int
+    session_id: str
+    role: str
+    content: str
+    tool_name: Optional[str] = None
+    tool_result: Optional[Dict] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class NayakUserUpload(BaseModel):
+    id: str
+    user_id: str
+    session_id: Optional[str] = None
+    media_url: str
+    media_type: str
+    classifier_verdict: Optional[Dict] = None
+    linked_report_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CurrencySeizure(BaseModel):
+    id: str
+    lat: float
+    lng: float
+    denomination: Optional[str] = None
+    verdict: str
+    authenticity_score: Optional[float] = None
+    notes_count: int = 1
+    logged_by: Optional[str] = None
+    location_name: Optional[str] = None
+    logged_at: datetime = Field(default_factory=datetime.utcnow)
+
+class NayakLawChunk(BaseModel):
+    id: str
+    act: str
+    section: str
+    title: str
+    official_text: str
+    citizen_scenario: str
+    citizen_explanation: str
+    recommended_action: str
+    penalty_summary: str
+    source_url: Optional[str] = None
+    last_verified: str
+    tags: List[str]
+    embedding: Optional[List[float]] = None
+
+class IPSighting(BaseModel):
+    ip: str
+    lookup_count: int = 1
+    first_seen: datetime = Field(default_factory=datetime.utcnow)
+    last_seen: datetime = Field(default_factory=datetime.utcnow)
+
+class IPWatchlistEntry(BaseModel):
+    id: int
+    ip: str
+    list_type: str
+    note: Optional[str] = None
+    added_by: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)

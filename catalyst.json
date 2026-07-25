@@ -1,0 +1,14 @@
+{
+  "datastore": {
+    "source": "datastore"
+  },
+  "appsail": [
+    {
+      "source": "police/backend",
+      "name": "police"
+    }
+  ],
+  "client": {
+    "source": "police/frontend"
+  }
+}
