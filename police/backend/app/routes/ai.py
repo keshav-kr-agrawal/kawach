@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 from app.database import get_db
+from app.models import FIRRecord, Offender, Vehicle, Phone, Call, AuditLog, Gang
 from app.auth import get_current_user_claims
-from app.zcql_utils import zcql_rows, parse_datetime, log_audit
-from app.ml.train_isolation_forest import get_case_category_lookup
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
@@ -74,7 +74,7 @@ class ChatRequest(BaseModel):
 @router.post("/query")
 def process_copilot_query(
     req: ChatRequest,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     neo4j_db = Depends(get_neo4j_db),
     claims: dict = Depends(get_current_user_claims)
 ):
@@ -138,31 +138,32 @@ def process_copilot_query(
 
     
     # Track the interaction in the audit logs
-    log_audit(db, claims.get("sub", claims.get("username", "anonymous")), claims.get("role", "Field Officer"),
-              "AI_COPILOT_QUERY", {"query": msg})
-
-    category_labels = get_case_category_lookup(db)
-
-    # 1. Search for Case references (e.g. FIR-2024-00005 / a numeric CaseMasterID)
-    fir_match = re.search(r'fir-\d{4}-\d+', msg_lower) or re.search(r'\bcase\s*#?(\d+)\b', msg_lower)
+    audit_log = AuditLog(
+        username=claims.get("sub", "anonymous"),
+        role=claims.get("role", "Field Officer"),
+        action="AI_COPILOT_QUERY",
+        details={"query": msg},
+        ip_address="10.25.0.1"
+    )
+    db.add(audit_log)
+    db.commit()
+    
+    # 1. Search for FIR references (e.g. FIR-2024-00005)
+    fir_match = re.search(r'fir-\d{4}-\d+', msg_lower)
     if fir_match:
-        raw_id = fir_match.group(0).upper()
-        cases = zcql_rows(db, "CaseMaster")
-        fir = next((c for c in cases if str(c.get("CaseMasterID")) == raw_id or raw_id.endswith(str(c.get("CaseMasterID")))), None)
+        fir_id = fir_match.group(0).upper()
+        fir = db.query(FIRRecord).filter(FIRRecord.id == fir_id).first()
         if fir:
-            stations_by_id = {u["UnitID"]: u for u in zcql_rows(db, "Unit") if u.get("UnitID") is not None}
-            station = stations_by_id.get(fir.get("PoliceStationID"))
-            filed = parse_datetime(fir.get("CrimeRegisteredDate"))
-            citation = f"Citation: [CaseMaster: {fir.get('CaseMasterID')}] filed on {filed.strftime('%Y-%m-%d') if filed else '?'} at {station.get('UnitName') if station else 'Unknown Station'}."
-            timeline_str = "\n".join([f"- {str(t.get('date'))[:10]}: {t.get('event')}" for t in (fir.get("timeline") or [])])
-            leads_str = "\n".join([f"- {lead}" for lead in (fir.get("leads") or [])])
-
-            response_text = f"""### AI Case Synthesis: {fir.get('CaseMasterID')}
-**Status:** {fir.get('CaseStatusID')} | **Priority:** {fir.get('priority')} | **Crime Type:** {category_labels.get(fir.get('CaseCategoryID'), 'Unclassified')}
-**Assigned Officer (EmployeeID):** {fir.get('PolicePersonID') or "Not Assigned"}
+            citation = f"Citation: [FIRRecord: {fir.id}] filed on {fir.date_filed.strftime('%Y-%m-%d')} at {fir.station.name}."
+            timeline_str = "\n".join([f"- {t.get('date')[:10]}: {t.get('event')}" for t in (fir.timeline or [])])
+            leads_str = "\n".join([f"- {lead}" for lead in (fir.leads or [])])
+            
+            response_text = f"""### AI Case Synthesis: {fir.id}
+**Status:** {fir.status} | **Priority:** {fir.priority} | **Crime Type:** {fir.crime_type}
+**Assigned Officer:** {fir.assigned_officer_id or "Not Assigned"}
 
 #### AI-Generated Summary
-{fir.get('summary') or "Summary not compiled yet."}
+{fir.summary or "Summary not compiled yet."}
 
 #### Case Timeline
 {timeline_str or "No timeline events recorded."}
@@ -175,42 +176,40 @@ def process_copilot_query(
 *Source Reference: {citation}*"""
             return {"response": rag_header + response_text, "citations": [citation]}
         else:
-            return {"response": rag_header + f"Case ID **{raw_id}** was not found in the Data Lake. Please check the ID format and try again.", "citations": []}
+            return {"response": rag_header + f"Case ID **{fir_id}** was not found in the Data Lake. Please check the ID format and try again.", "citations": []}
 
-    # 2. Search for Accused/offender references (e.g. Ramesh Kumar or an AccusedMasterID)
-    off_match = re.search(r'off-(\d+)', msg_lower)
+    # 2. Search for Offender references (e.g. Ramesh Kumar or OFF-0011)
+    off_match = re.search(r'off-\d+', msg_lower)
+    offender_name = None
     offender = None
-    all_accused = zcql_rows(db, "Accused")
-
+    
     if off_match:
-        off_id = int(off_match.group(1))
-        offender = next((a for a in all_accused if a.get("AccusedMasterID") == off_id), None)
+        off_id = off_match.group(0).upper()
+        offender = db.query(Offender).filter(Offender.id == off_id).first()
     else:
+        # Check if query names an offender like Ramesh Kumar or Zia Ahmed
         for name in ["ramesh", "suresh", "zia", "anil", "vikram"]:
             if name in msg_lower:
-                offender = next((a for a in all_accused if name in (a.get("AccusedName") or "").lower()), None)
-                if offender:
-                    break
+                offender = db.query(Offender).filter(Offender.name.ilike(f"%{name}%")).first()
+                break
 
     if offender:
-        oid = offender.get("AccusedMasterID")
-        citation = f"Citation: [AccusedProfile: {oid} - {offender.get('AccusedName')}], priors: {offender.get('num_prior_offenses')}."
-        vehicles = ", ".join([f"{v.get('make')} {v.get('model')} ({v['plate_number']})" for v in zcql_rows(db, "Vehicle") if v.get("owner_offender_id") == oid]) or "None registered"
-        phones = ", ".join([p["phone_number"] for p in zcql_rows(db, "Phone") if p.get("owner_offender_id") == oid]) or "None logged"
-        associates = ", ".join([
-            a.get("AccusedName") for a in all_accused
-            if a.get("CaseMasterID") == offender.get("CaseMasterID") and a.get("AccusedMasterID") != oid
-        ]) or "No immediate associates logged"
-
-        response_text = f"""### Master Criminal Profile: {offender.get('AccusedName')} ({oid})
-**Priors Count:** {offender.get('num_prior_offenses')} offenses | **Risk Score:** {offender.get('risk_score')}%
+        citation = f"Citation: [OffenderProfile: {offender.id} - {offender.name}], priors: {offender.num_prior_offenses}."
+        vehicles = ", ".join([f"{v.make} {v.model} ({v.plate_number})" for v in offender.vehicles]) or "None registered"
+        phones = ", ".join([p.phone_number for p in offender.phones]) or "None logged"
+        gangs = ", ".join([g.name for g in offender.gangs]) or "None"
+        associates = ", ".join([a.name for a in offender.associates]) or "No immediate associates logged"
+        
+        response_text = f"""### Master Criminal Profile: {offender.name} ({offender.id})
+**Syndicate Affiliation:** {gangs}
+**Priors Count:** {offender.num_prior_offenses} offenses | **Risk Score:** {offender.risk_score}%
 
 #### Known Assets & Identifiers
 - **Registered Vehicles:** {vehicles}
 - **Phone Numbers:** {phones}
 
 #### Known Criminal Network
-- **Co-accused (same case):** {associates}
+- **Associates:** {associates}
 
 #### Guardrail Disclaimer
 *System compliance notification: This platform does NOT profile race, religion, caste, or ethnicity. No automated guilt or arrest suggestions have been generated. Prior arrest rates are shown for mapping context only.*
@@ -222,14 +221,13 @@ def process_copilot_query(
     veh_match = re.search(r'ka-\d{2}-[a-z]{2}-\d+', msg_lower)
     if veh_match:
         plate = veh_match.group(0).upper()
-        veh = next((v for v in zcql_rows(db, "Vehicle") if plate in v.get("plate_number", "").upper()), None)
+        veh = db.query(Vehicle).filter(Vehicle.plate_number.ilike(f"%{plate}%")).first()
         if veh:
-            owner = next((a for a in all_accused if a.get("AccusedMasterID") == veh.get("owner_offender_id")), None)
-            citation = f"Citation: [Vehicle Table: {veh['plate_number']}] owned by {owner.get('AccusedName') if owner else 'Unknown'}."
+            citation = f"Citation: [Vehicle Table: {veh.plate_number}] owned by {veh.owner.name if veh.owner else 'Unknown'}."
             response_text = f"""### Vehicle Ownership Details
-**Plate Number:** {veh['plate_number']}
-**Make / Model:** {veh.get('make')} {veh.get('model')}
-**Registered Owner:** {owner.get('AccusedName') if owner else "Unknown"} ({veh.get('owner_offender_id') or "N/A"})
+**Plate Number:** {veh.plate_number}
+**Make / Model:** {veh.make} {veh.model}
+**Registered Owner:** {veh.owner.name if veh.owner else "Unknown"} ({veh.owner_offender_id or "N/A"})
 
 ---
 *Source Reference: {citation}*"""

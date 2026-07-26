@@ -4,18 +4,31 @@ load_dotenv()  # local dev: reads police/backend/.env; hosted: real env/secrets 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-import app.models as models  # noqa: F401 — kept for typing/import-side-effects
-# elsewhere; models.py is now Pydantic schemas over the Zoho Catalyst
-# NoSQL datastore, not SQLAlchemy ORM classes.
+from app.database import Base, engine
+import app.models as models  # noqa: F401 — import side-effect registers every
+# table on Base.metadata. MUST happen before create_all() below, or metadata
+# is empty and create_all() silently creates nothing (bug hit on first Render
+# deploy 2026-07-19: "relation nayak_sessions does not exist").
 
-# Table/schema bootstrap is not applicable anymore — Zoho Catalyst's
-# datastore is provisioned via the Catalyst console (Application Setup ->
-# Catalyst QuickML/Datastore -> table definitions), not SQLAlchemy DDL.
-# This used to call Base.metadata.create_all(bind=engine) against Postgres;
-# removed 2026-07-26 during the Catalyst migration cleanup — app.database no
-# longer exposes Base.metadata/engine at all (see app/database.py), so this
-# was a hard ImportError blocking the entire backend from starting.
-from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports, fraud_shield, ingestion, osint_scraper, webhooks, nayak, digital_arrest, ip_tracing, realtime, media
+# Fresh-database bootstrap (Render/HF free tiers have no shell):
+# create_all is idempotent and ADDITIVE ONLY — it creates missing tables and
+# never touches existing ones/data.
+#
+# Demo-data seeding is INTENTIONALLY NOT run automatically here anymore.
+# app/scripts/generate_data.py's seed_database() starts with
+# Base.metadata.drop_all(bind=engine) — it drops EVERY SQLAlchemy-mapped
+# table, including live Nayak chat data (nayak_sessions/messages/uploads).
+# Running that on every cold boot (as SEED_ON_START used to) is a standing
+# data-loss risk — caught 2026-07-19 when a boot attempted it against the
+# real production database (failed only on a lock timeout, not by design).
+# If you want demo FIR/offender data, run it manually, once, deliberately:
+#   DATABASE_URL=<target> python -m app.scripts.generate_data
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as _e:
+    # Don't block startup on DB issues — routes will surface errors honestly.
+    print(f"[BOOT] Database bootstrap warning: {_e}", flush=True)
+from app.routes import auth, dashboard, geo, network, offenders, analytics, alerts, investigations, ai, audit, admin, reports, fraud_shield, ingestion, osint_scraper, webhooks, nayak, digital_arrest, ip_tracing, realtime
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -59,7 +72,6 @@ app.include_router(nayak.router, prefix=f"{settings.API_V1_STR}/nayak", tags=["N
 app.include_router(digital_arrest.router, prefix=f"{settings.API_V1_STR}/digital-arrest", tags=["Digital Arrest Live Monitor"])
 app.include_router(ip_tracing.router, prefix=f"{settings.API_V1_STR}/ip-tracing", tags=["IP Tracing"])
 app.include_router(realtime.router, prefix=f"{settings.API_V1_STR}/realtime", tags=["Realtime Telemetry & Stream"])
-app.include_router(media.router, prefix=f"{settings.API_V1_STR}/media", tags=["Media Storage"])
 
 @app.get("/")
 def read_root():

@@ -1,35 +1,27 @@
-import zcatalyst_sdk
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from app.config import settings
 
-# Base class mapping for Pydantic Models
-class Base:
-    pass
+is_sqlite = settings.DATABASE_URL.startswith("sqlite")
+connect_args = {"check_same_thread": False} if is_sqlite else {}
 
+engine_kwargs = {"pool_pre_ping": True}
+if not is_sqlite:
+    engine_kwargs.update({"pool_size": 10, "max_overflow": 20})
 
-class _CatalystDB:
-    """Thin wrapper exposing both the ZCQL query API and the Datastore table
-    API off a single object. The real SDK splits these across two components
-    — app.zcql().execute_query(...) for reads, app.datastore().table(...) for
-    writes — but every route in this codebase (and app/ml/features.py) was
-    written against a single `db` object offering both, so this wrapper is
-    what actually makes that code run instead of hitting AttributeError on
-    whichever half wasn't on the object it got."""
+engine = create_engine(
+    settings.DATABASE_URL,
+    connect_args=connect_args,
+    **engine_kwargs
+)
 
-    def __init__(self, app):
-        self._zcql = app.zcql()
-        self._datastore = app.datastore()
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-    def execute_query(self, query: str):
-        return self._zcql.execute_query(query)
-
-    def table(self, table_id):
-        return self._datastore.table(table_id)
-
+Base = declarative_base()
 
 def get_db():
+    db = SessionLocal()
     try:
-        app = zcatalyst_sdk.initialize()
-        yield _CatalystDB(app)
-    except Exception as e:
-        print(f"Error initializing Zoho Catalyst SDK: {e}")
-        # Yield a dummy object for local testing if ZCatalyst is not running
-        yield None
+        yield db
+    finally:
+        db.close()

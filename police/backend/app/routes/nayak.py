@@ -5,9 +5,10 @@ import json
 from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Header
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.database import get_db
-from app.zcql_utils import zcql_rows, parse_datetime, insert_row, log_audit
+from app.models import NayakSession, NayakMessage, NayakUserUpload, FIRRecord, AuditLog
 from app.routes.nayak_rag import retrieve_law_chunks, get_embedding
 from app.routes.digital_arrest import score_scam_script, analyze_voice_heuristic
 
@@ -210,7 +211,7 @@ def run_classify_text(text_content: str, api_key: str = None) -> dict:
     }
 
 
-def _handle_mode_request(mode: str, message: str, db, api_key: Optional[str]) -> str:
+def _handle_mode_request(mode: str, message: str, db: Session, api_key: Optional[str]) -> str:
     """
     Deterministic dispatch for the 4 text-based Nayak mode tags (currency is
     upload-only and already handled by /upload's media_type routing). Each
@@ -279,35 +280,34 @@ def _handle_mode_request(mode: str, message: str, db, api_key: Optional[str]) ->
 
 
 # Proximity Area Incidents check utility
-def run_get_area_incidents(lat: float, lng: float, radius_km: float, db) -> list:
+def run_get_area_incidents(lat: float, lng: float, radius_km: float, db: Session) -> list:
     # Query database for recent reports within bounding box
     # 1 degree of latitude is ~111km, longitude is ~111*cos(lat)km
     lat_delta = radius_km / 111.0
     lng_delta = radius_km / (111.0 * 0.97) # rough multiplier for Karnataka lat (~12-15)
-
+    
+    reports = db.query(FIRRecord).filter(
+        FIRRecord.lat >= lat - lat_delta,
+        FIRRecord.lat <= lat + lat_delta,
+        FIRRecord.lng >= lng - lng_delta,
+        FIRRecord.lng <= lng + lng_delta
+    ).limit(10).all()
+    
     results = []
-    for r in zcql_rows(db, "CaseMaster"):
-        r_lat, r_lng = r.get("latitude"), r.get("longitude")
-        if r_lat is None or r_lng is None:
-            continue
-        if not (lat - lat_delta <= r_lat <= lat + lat_delta and lng - lng_delta <= r_lng <= lng + lng_delta):
-            continue
-        filed = parse_datetime(r.get("CrimeRegisteredDate"))
+    for r in reports:
         results.append({
-            "id": r.get("CaseMasterID"),
-            "crime_type": None,  # CaseCategoryID would need the CaseCategory lookup; kept minimal for this proximity check
-            "date_filed": filed.isoformat() if filed else None,
-            "priority": r.get("priority"),
-            "status": r.get("CaseStatusID"),
-            "lat": r_lat,
-            "lng": r_lng,
+            "id": r.id,
+            "crime_type": r.crime_type,
+            "date_filed": r.date_filed.isoformat(),
+            "priority": r.priority,
+            "status": r.status,
+            "lat": r.lat,
+            "lng": r.lng
         })
-        if len(results) >= 10:
-            break
     return results
 
 # Gemini function tool calls mapper
-def call_agent_tool(tool_name: str, args: dict, db, api_key: str = None) -> dict:
+def call_agent_tool(tool_name: str, args: dict, db: Session, api_key: str = None) -> dict:
     if tool_name == "search_law":
         query = args.get("query", "")
         return {"results": retrieve_law_chunks(query, db, api_key)}
@@ -337,13 +337,17 @@ def call_agent_tool(tool_name: str, args: dict, db, api_key: str = None) -> dict
         }
     return {"error": "Unknown tool called"}
 
-def get_recent_session_uploads(db, session_id: str, limit: int = 5):
+def get_recent_session_uploads(db: Session, session_id: str, limit: int = 5):
     """Most-recent-first uploads for a session — the chat's evidence memory."""
     if not session_id:
         return []
-    uploads = [u for u in zcql_rows(db, "NayakUserUpload") if u.get("session_id") == session_id]
-    uploads.sort(key=lambda u: str(u.get("created_at") or ""), reverse=True)
-    return uploads[:limit]
+    return (
+        db.query(NayakUserUpload)
+        .filter(NayakUserUpload.session_id == session_id)
+        .order_by(NayakUserUpload.created_at.desc())
+        .limit(limit)
+        .all()
+    )
 
 
 def summarize_uploads_for_context(uploads) -> str:
@@ -353,9 +357,9 @@ def summarize_uploads_for_context(uploads) -> str:
         return ""
     lines = ["Recent media the citizen uploaded in this session (most recent first):"]
     for u in uploads:
-        v = u.get("classifier_verdict") or {}
+        v = u.classifier_verdict or {}
         lines.append(
-            f"- [{u.get('media_type')}] verdict={v.get('verdict', 'unknown')} "
+            f"- [{u.media_type}] verdict={v.get('verdict', 'unknown')} "
             f"score={v.get('score')} details={str(v.get('details', ''))[:160]}"
         )
     return "\n".join(lines)
@@ -385,14 +389,14 @@ def suggest_department(crime_type: str):
     return "POLICE", "HIGH"  # cyber/crime chat default
 
 
-def enrich_proposal(prefilled: dict, db, session_id: str, lat, lng) -> dict:
+def enrich_proposal(prefilled: dict, db: Session, session_id: str, lat, lng) -> dict:
     """Turn the LLM's bare propose_report draft into everything the frontend
     confirmation card needs: department, severity, evidence, nearby context."""
     dept, severity = suggest_department(prefilled.get("category", ""))
     uploads = get_recent_session_uploads(db, session_id, limit=1)
     evidence_url, upload_id = None, None
     if uploads:
-        evidence_url, upload_id = uploads[0].get("media_url"), uploads[0].get("id")
+        evidence_url, upload_id = uploads[0].media_url, uploads[0].id
 
     nearby_count = 0
     if lat is not None and lng is not None:
@@ -414,7 +418,7 @@ def enrich_proposal(prefilled: dict, db, session_id: str, lat, lng) -> dict:
 
 
 # Fallback Conversational Response Generator (when Gemini key is missing)
-def generate_fallback_chat_reply(user_msg: str, db, session_id: str = None) -> str:
+def generate_fallback_chat_reply(user_msg: str, db: Session, session_id: str = None) -> str:
     msg_lower = user_msg.lower()
 
     # 0. Reference the latest upload verdict, if any — the citizen usually asks
@@ -422,9 +426,9 @@ def generate_fallback_chat_reply(user_msg: str, db, session_id: str = None) -> s
     upload_note = ""
     uploads = get_recent_session_uploads(db, session_id, limit=1)
     if uploads:
-        v = uploads[0].get("classifier_verdict") or {}
+        v = uploads[0].classifier_verdict or {}
         upload_note = (
-            f"\n\n🔎 **Your last upload ({uploads[0].get('media_type')}):** "
+            f"\n\n🔎 **Your last upload ({uploads[0].media_type}):** "
             f"{v.get('verdict', 'unknown')} — {str(v.get('details', ''))[:180]}\n"
         )
     
@@ -489,77 +493,67 @@ def generate_fallback_chat_reply(user_msg: str, db, session_id: str = None) -> s
 
 # --- FastAPI Endpoints ---
 
-def _get_session(db, session_id: str, user_id: str) -> Optional[dict]:
-    return next(
-        (s for s in zcql_rows(db, "NayakSession") if s.get("id") == session_id and s.get("user_id") == user_id),
-        None,
-    )
-
-
-def _add_message(db, session_id: str, role: str, content: str, tool_name: str = None, tool_result: dict = None):
-    return insert_row(db, "NayakMessage", {
-        "session_id": session_id,
-        "role": role,
-        "content": content,
-        "tool_name": tool_name,
-        "tool_result": tool_result,
-        "created_at": datetime.utcnow().isoformat(),
-    })
-
-
 @router.get("/sessions")
 def list_sessions(
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     user_id: str = Depends(get_nayak_user_id)
 ):
-    sessions = [s for s in zcql_rows(db, "NayakSession") if s.get("user_id") == user_id]
-    sessions.sort(key=lambda s: str(s.get("last_active_at") or ""), reverse=True)
-    return [{"id": s.get("id"), "title": s.get("title") or "New Session", "started_at": s.get("started_at")} for s in sessions]
+    sessions = db.query(NayakSession).filter(NayakSession.user_id == user_id).order_by(NayakSession.last_active_at.desc()).all()
+    return [{"id": s.id, "title": s.title or "New Session", "started_at": s.started_at.isoformat()} for s in sessions]
 
 @router.get("/sessions/{session_id}/messages")
 def get_session_messages(
     session_id: str,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     user_id: str = Depends(get_nayak_user_id)
 ):
     # Verify session ownership
-    sess = _get_session(db, session_id, user_id)
+    sess = db.query(NayakSession).filter(NayakSession.id == session_id, NayakSession.user_id == user_id).first()
     if not sess:
         raise HTTPException(status_code=404, detail="Session not found")
-
-    messages = [m for m in zcql_rows(db, "NayakMessage") if m.get("session_id") == session_id]
-    messages.sort(key=lambda m: str(m.get("created_at") or ""))
+        
+    messages = db.query(NayakMessage).filter(NayakMessage.session_id == session_id).order_by(NayakMessage.created_at.asc()).all()
     return [{
-        "id": m.get("ROWID") or m.get("id"),
-        "role": m.get("role"),
-        "content": m.get("content"),
-        "tool_name": m.get("tool_name"),
-        "tool_result": m.get("tool_result"),
-        "created_at": m.get("created_at"),
+        "id": m.id,
+        "role": m.role,
+        "content": m.content,
+        "tool_name": m.tool_name,
+        "tool_result": m.tool_result,
+        "created_at": m.created_at.isoformat()
     } for m in messages]
 
 @router.post("/chat")
 def handle_nayak_chat(
     req: ChatRequest,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     user_id: str = Depends(get_nayak_user_id)
 ):
     # 1. Resolve Session
     session_id = req.session_id
-    session = _get_session(db, session_id, user_id) if session_id else None
-
+    session = None
+    if session_id:
+        session = db.query(NayakSession).filter(NayakSession.id == session_id, NayakSession.user_id == user_id).first()
+        
     if not session:
         session_id = str(uuid.uuid4())
-        insert_row(db, "NayakSession", {
-            "id": session_id,
-            "user_id": user_id,
-            "title": req.message[:35] + "..." if len(req.message) > 35 else req.message,
-            "started_at": datetime.utcnow().isoformat(),
-            "last_active_at": datetime.utcnow().isoformat(),
-        })
-
+        session = NayakSession(
+            id=session_id,
+            user_id=user_id,
+            title=req.message[:35] + "..." if len(req.message) > 35 else req.message
+        )
+        db.add(session)
+        db.commit()
+        
     # 2. Log User message
-    _add_message(db, session_id, "user", req.message)
+    user_msg = NayakMessage(
+        session_id=session_id,
+        role="user",
+        content=req.message
+    )
+    db.add(user_msg)
+
+    session.last_active_at = datetime.utcnow()
+    db.commit()
 
     # 2b. Mode-tagged request — a citizen selected one of the 5 Nayak tags,
     # so route deterministically to the real tool instead of the general
@@ -569,7 +563,9 @@ def handle_nayak_chat(
     if req.mode in MODE_LABELS:
         api_key_for_mode = os.environ.get("GEMINI_API_KEY")
         reply_txt = _handle_mode_request(req.mode, req.message, db, api_key_for_mode)
-        _add_message(db, session_id, "assistant", reply_txt, tool_name=req.mode)
+        bot_reply = NayakMessage(session_id=session_id, role="assistant", content=reply_txt, tool_name=req.mode)
+        db.add(bot_reply)
+        db.commit()
         return {
             "session_id": session_id,
             "message": {"role": "assistant", "content": reply_txt},
@@ -577,15 +573,20 @@ def handle_nayak_chat(
         }
 
     # 3. Retrieve session context/history
-    history = [m for m in zcql_rows(db, "NayakMessage") if m.get("session_id") == session_id]
-    history.sort(key=lambda m: str(m.get("created_at") or ""))
-
+    history = db.query(NayakMessage).filter(NayakMessage.session_id == session_id).order_by(NayakMessage.created_at.asc()).all()
+    
     # 4. Check for Gemini Key
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         print("[NAYAK] No GEMINI_API_KEY — running honest fallback.", flush=True)
         reply_txt = generate_fallback_chat_reply(req.message, db, session_id)
-        _add_message(db, session_id, "assistant", reply_txt)
+        bot_reply = NayakMessage(
+            session_id=session_id,
+            role="assistant",
+            content=reply_txt
+        )
+        db.add(bot_reply)
+        db.commit()
 
         # Deterministic escalation offer even without the LLM: if the latest
         # upload in this session was flagged suspicious, offer to file — the
@@ -593,13 +594,13 @@ def handle_nayak_chat(
         proposal = None
         recent = get_recent_session_uploads(db, session_id, limit=1)
         if recent:
-            v = recent[0].get("classifier_verdict") or {}
+            v = recent[0].classifier_verdict or {}
             flagged = v.get("is_authenticated") is False or str(v.get("verdict", "")).upper() in (
                 "LIKELY_COUNTERFEIT", "SUSPECT_FEATURES", "AI_GENERATED")
             if flagged:
                 proposal = enrich_proposal({
-                    "category": "Counterfeit Currency" if recent[0].get("media_type") == "image" else "Suspicious Media / Fraud",
-                    "rationale": f"Automated scan flagged your {recent[0].get('media_type')} upload: {str(v.get('details',''))[:180]}",
+                    "category": "Counterfeit Currency" if recent[0].media_type == "image" else "Suspicious Media / Fraud",
+                    "rationale": f"Automated scan flagged your {recent[0].media_type} upload: {str(v.get('details',''))[:180]}",
                     "narrative": "Citizen-submitted media flagged as suspicious by KAWACH automated screening.",
                 }, db, session_id, req.lat, req.lng)
 
@@ -716,19 +717,19 @@ def handle_nayak_chat(
     # we'll append it explicitly at the end so it's always present.
     contents = []
     for h_msg in history[:-1]:  # all but the last (current user message)
-        if h_msg.get("tool_name"):
+        if h_msg.tool_name:
             # Represent tool calls as a model text turn (simplest safe form)
             contents.append({
                 "role": "model",
                 "parts": [
-                    {"text": f"[Tool: {h_msg['tool_name']} → {json.dumps(h_msg.get('tool_result'))[:300]}]"}
+                    {"text": f"[Tool: {h_msg.tool_name} → {json.dumps(h_msg.tool_result)[:300]}]"}
                 ]
             })
         else:
-            role = "user" if h_msg.get("role") == "user" else "model"
+            role = "user" if h_msg.role == "user" else "model"
             contents.append({
                 "role": role,
-                "parts": [{"text": h_msg.get("content")}]
+                "parts": [{"text": h_msg.content}]
             })
 
     # Always append the current user message last — this is what Gemini responds to.
@@ -770,7 +771,9 @@ def handle_nayak_chat(
             if not fn_call:
                 # Real text answer — done.
                 model_reply = actual_parts[0].get("text") or "I'm sorry, I was unable to compile an answer."
-                _add_message(db, session_id, "assistant", model_reply)
+                bot_reply = NayakMessage(session_id=session_id, role="assistant", content=model_reply)
+                db.add(bot_reply)
+                db.commit()
                 return {
                     "session_id": session_id,
                     "message": {"role": "assistant", "content": model_reply},
@@ -790,7 +793,12 @@ def handle_nayak_chat(
                     tool_result["prefilled_report"], db, session_id, req.lat, req.lng)
                 tool_result = {"prefilled_report": proposal, "requires_user_confirmation": True}
 
-            _add_message(db, session_id, "tool", f"Executed tool: {tool_name}", tool_name=tool_name, tool_result=tool_result)
+            db.add(NayakMessage(
+                session_id=session_id, role="tool",
+                content=f"Executed tool: {tool_name}",
+                tool_name=tool_name, tool_result=tool_result
+            ))
+            db.commit()
 
             # Feed the call + its result back for the next hop. Echo the
             # FULL original part (not just {"functionCall": fn_call}) — it
@@ -822,7 +830,9 @@ def handle_nayak_chat(
                     "I've gathered the relevant information but couldn't finalize a summary — "
                     "please review the proposal above if one was drafted."
                 )
-            _add_message(db, session_id, "assistant", model_reply)
+            bot_reply = NayakMessage(session_id=session_id, role="assistant", content=model_reply)
+            db.add(bot_reply)
+            db.commit()
             return {
                 "session_id": session_id,
                 "message": {"role": "assistant", "content": model_reply},
@@ -830,10 +840,16 @@ def handle_nayak_chat(
             }
     except Exception as e:
         print(f"[NAYAK] Gemini agent loop error: {type(e).__name__}: {e}", flush=True)
-
+        
     # If anything breaks, return fallback
     reply_txt = generate_fallback_chat_reply(req.message, db, session_id)
-    _add_message(db, session_id, "assistant", reply_txt)
+    bot_reply = NayakMessage(
+        session_id=session_id,
+        role="assistant",
+        content=reply_txt
+    )
+    db.add(bot_reply)
+    db.commit()
     return {
         "session_id": session_id,
         "message": {"role": "assistant", "content": reply_txt}
@@ -1109,7 +1125,7 @@ def _classify_media_for_real(media_url: str, media_type: str, capture_mode: str 
 @router.post("/upload")
 def handle_nayak_upload(
     req: MediaUploadRequest,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     user_id: str = Depends(get_nayak_user_id)
 ):
     upload_id = str(uuid.uuid4())
@@ -1121,15 +1137,16 @@ def handle_nayak_upload(
                    "details": "Stored. Text/link/audio content is analyzed in-chat, not at upload.",
                    "source": "none"}
 
-    insert_row(db, "NayakUserUpload", {
-        "id": upload_id,
-        "user_id": user_id,
-        "session_id": req.session_id,
-        "media_url": req.media_url,
-        "media_type": req.media_type,
-        "classifier_verdict": verdict,
-        "created_at": datetime.utcnow().isoformat(),
-    })
+    upload = NayakUserUpload(
+        id=upload_id,
+        user_id=user_id,
+        session_id=req.session_id,
+        media_url=req.media_url,
+        media_type=req.media_type,
+        classifier_verdict=verdict
+    )
+    db.add(upload)
+    db.commit()
 
     return {
         "id": upload_id,
@@ -1147,25 +1164,28 @@ class LinkReportRequest(BaseModel):
 def link_upload_to_report(
     upload_id: str,
     req: LinkReportRequest,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     user_id: str = Depends(get_nayak_user_id)
 ):
     """Ties a chat upload to the citizen_reports row it became evidence for —
     the chat↔report bridge that makes a filed report reconstructable."""
-    upload = next(
-        (u for u in zcql_rows(db, "NayakUserUpload") if u.get("id") == upload_id and u.get("user_id") == user_id),
-        None,
-    )
+    upload = db.query(NayakUserUpload).filter(
+        NayakUserUpload.id == upload_id,
+        NayakUserUpload.user_id == user_id
+    ).first()
     if not upload:
         raise HTTPException(status_code=404, detail="Upload not found")
 
-    row_id = upload.get("ROWID")
-    if row_id is not None:
-        db.table("NayakUserUpload").update_row({"ROWID": row_id, "linked_report_id": req.report_id})
-
-    log_audit(db, user_id, "Citizen", "NAYAK_REPORT_LINKED", {
-        "upload_id": upload_id, "report_id": req.report_id, "session_id": upload.get("session_id"),
-    })
+    upload.linked_report_id = req.report_id
+    db.add(AuditLog(
+        username=user_id,
+        role="Citizen",
+        action="NAYAK_REPORT_LINKED",
+        details={"upload_id": upload_id, "report_id": req.report_id,
+                 "session_id": upload.session_id},
+        ip_address="10.25.0.1"
+    ))
+    db.commit()
     return {"ok": True, "upload_id": upload_id, "linked_report_id": req.report_id}
 
 
@@ -1296,7 +1316,7 @@ def translate_text(req: TranslateRequest):
 @router.get("/search")
 def search_law_rulebook(
     query: str,
-    db=Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     query_clean = query.strip()
     if not query_clean:

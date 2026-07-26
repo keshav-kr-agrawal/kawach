@@ -20,10 +20,12 @@ import pickle
 
 import numpy as np
 import pandas as pd
+from sqlalchemy import func, extract
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 
-from app.ml.features import zcql_rows, get_districts, get_station_district_map, _parse_date
+from app.database import SessionLocal
+from app.models import District, FIRRecord, PoliceStation
 
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "models")
 MIN_ROWS_FOR_TRAINING = 30
@@ -34,48 +36,33 @@ def _slugify(crime_type: str) -> str:
     return crime_type.lower().replace(" / ", "_").replace(" ", "_").replace("(", "").replace(")", "")
 
 
-def get_case_category_lookup(db) -> dict:
-    """CaseCategoryID -> human-readable crime-type label. CaseMaster only
-    carries the numeric CaseCategoryID (Zoho's prescribed lookup-table
-    design), not a crime-type string, so the fingerprint columns need this
-    join to reproduce the same column names the model was trained on."""
-    return {
-        c["CaseCategoryID"]: c.get("LookupValue") or f"category_{c['CaseCategoryID']}"
-        for c in zcql_rows(db, "CaseCategory")
-        if c.get("CaseCategoryID") is not None
-    }
-
-
 def build_crime_fingerprint_matrix(db):
-    """district-month x crime-type rate matrix, built from raw ZCQL rows
-    joined/grouped in Python (see features.py's module docstring for why —
-    matches the rest of the migrated ML pipeline, not a SQLAlchemy query)."""
-    districts_by_id = get_districts(db)
-    station_to_district = get_station_district_map(db)
-    category_labels = get_case_category_lookup(db)
+    districts_by_id = {d.id: d for d in db.query(District).all()}
 
-    counts = {}
-    for c in zcql_rows(db, "CaseMaster"):
-        did = station_to_district.get(c.get("PoliceStationID"))
-        d = _parse_date(c.get("CrimeRegisteredDate"))
-        cat_id = c.get("CaseCategoryID")
-        if did is None or d is None or cat_id is None:
-            continue
-        key = (did, d.year, d.month, cat_id)
-        counts[key] = counts.get(key, 0) + 1
+    rows = (
+        db.query(
+            PoliceStation.district_id,
+            extract("year", FIRRecord.date_filed).label("year"),
+            extract("month", FIRRecord.date_filed).label("month"),
+            FIRRecord.crime_type,
+            func.count(FIRRecord.id).label("count"),
+        )
+        .join(FIRRecord, FIRRecord.police_station_id == PoliceStation.id)
+        .group_by(PoliceStation.district_id, "year", "month", FIRRecord.crime_type)
+        .all()
+    )
 
     data = {}
     crime_cols = set()
-    for (did, year, month, cat_id), count in counts.items():
+    for did, year, month, crime_type, count in rows:
         dist = districts_by_id.get(did)
         if not dist:
             continue
-        crime_type = category_labels.get(cat_id, f"category_{cat_id}")
-        key = (dist["name"], year, month)
-        pop = dist["population"]
+        key = (dist.name, int(year), int(month))
+        pop = dist.population or 500000
         col = f"{_slugify(crime_type)}_rate"
         crime_cols.add(col)
-        entry = data.setdefault(key, {"district": dist["name"], "year": year, "month": month})
+        entry = data.setdefault(key, {"district": dist.name, "year": int(year), "month": int(month)})
         entry[col] = (count / pop) * 100000
 
     df = pd.DataFrame(list(data.values()))
@@ -90,9 +77,11 @@ def build_crime_fingerprint_matrix(db):
 
 
 def train():
-    from app.database import get_db
-    db = next(get_db())
-    df, rate_cols = build_crime_fingerprint_matrix(db)
+    db = SessionLocal()
+    try:
+        df, rate_cols = build_crime_fingerprint_matrix(db)
+    finally:
+        db.close()
 
     if len(df) < MIN_ROWS_FOR_TRAINING:
         print(f"[IF] Only {len(df)} district-month rows — need >= {MIN_ROWS_FOR_TRAINING}. "

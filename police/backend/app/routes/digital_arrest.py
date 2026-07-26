@@ -26,11 +26,13 @@ import numpy as np
 import requests
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.zcql_utils import zcql_rows, log_audit
+from app.models import AuditLog
 from app.auth import get_current_user_claims
 from app.routes.fraud_shield import call_burst_anomaly, mule_network_signal
+from app.models import Phone
 
 router = APIRouter()
 
@@ -244,7 +246,7 @@ def analyze_voice_heuristic(wav_bytes: bytes) -> tuple:
 @router.post("/session/start")
 def start_session(
     req: SessionStartRequest,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     claims: dict = Depends(get_current_user_claims),
 ):
     session_id = f"DAS-{uuid.uuid4().hex[:8].upper()}"
@@ -275,12 +277,9 @@ def start_session(
                 "at": datetime.utcnow().isoformat(),
                 "event": f"Behavioral pre-check flagged suspect line: {burst[1]}",
             })
-        phone = next((p for p in zcql_rows(db, "Phone") if req.suspect_phone in (p.get("phone_number") or "")), None)
-        owner = None
-        if phone and phone.get("owner_offender_id") is not None:
-            owner = next((a for a in zcql_rows(db, "Accused") if a.get("AccusedMasterID") == phone["owner_offender_id"]), None)
-        if owner:
-            mule = mule_network_signal(db, owner)
+        phone = db.query(Phone).filter(Phone.phone_number.ilike(f"%{req.suspect_phone}%")).first()
+        if phone and phone.owner:
+            mule = mule_network_signal(phone.owner)
             if mule:
                 session["timeline"].append({
                     "at": datetime.utcnow().isoformat(),
@@ -290,8 +289,14 @@ def start_session(
     session["risk_score"] = _fuse(session)
     SESSIONS[session_id] = session
 
-    log_audit(db, claims.get("sub", "citizen"), claims.get("role", "Citizen"), "DIGITAL_ARREST_SESSION_START",
-              {"session_id": session_id, "suspect_phone": req.suspect_phone})
+    db.add(AuditLog(
+        username=claims.get("sub", "citizen"),
+        role=claims.get("role", "Citizen"),
+        action="DIGITAL_ARREST_SESSION_START",
+        details={"session_id": session_id, "suspect_phone": req.suspect_phone},
+        ip_address="10.25.0.1",
+    ))
+    db.commit()
     return session
 
 
@@ -299,7 +304,7 @@ def start_session(
 def ingest_signal(
     session_id: str,
     req: SignalRequest,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     claims: dict = Depends(get_current_user_claims),
 ):
     session = SESSIONS.get(session_id)
@@ -364,12 +369,19 @@ def _apply_signal(session, session_id, modality, strength, detail, db, claims):
                 f"Victim advisory issued; suspect line queued for telco escalation."
             ),
         })
-        log_audit(db, claims.get("sub", "citizen"), claims.get("role", "Citizen"), "DIGITAL_ARREST_ALERT", {
-            "session_id": session_id,
-            "risk_score": session["risk_score"],
-            "signal_count": len(session["signals"]),
-            "suspect_phone": session.get("suspect_phone"),
-        })
+        db.add(AuditLog(
+            username=claims.get("sub", "citizen"),
+            role=claims.get("role", "Citizen"),
+            action="DIGITAL_ARREST_ALERT",
+            details={
+                "session_id": session_id,
+                "risk_score": session["risk_score"],
+                "signal_count": len(session["signals"]),
+                "suspect_phone": session.get("suspect_phone"),
+            },
+            ip_address="10.25.0.1",
+        ))
+        db.commit()
 
     return session
 
@@ -378,7 +390,7 @@ def _apply_signal(session, session_id, modality, strength, detail, db, claims):
 async def ingest_video_frame(
     session_id: str,
     file: UploadFile = File(...),
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     claims: dict = Depends(get_current_user_claims),
 ):
     """
@@ -416,7 +428,7 @@ async def ingest_video_frame(
 async def ingest_voice_clip(
     session_id: str,
     file: UploadFile = File(...),
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     claims: dict = Depends(get_current_user_claims),
 ):
     """

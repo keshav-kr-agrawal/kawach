@@ -32,10 +32,11 @@ from typing import Optional
 import requests
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.auth import get_current_user_claims
 from app.database import get_db
-from app.zcql_utils import zcql_rows, parse_datetime, insert_row, log_audit
+from app.models import AuditLog, IPSighting, IPWatchlistEntry, Phone, TelecomCDR
 
 router = APIRouter()
 
@@ -289,7 +290,7 @@ def _classify_asn(asn: Optional[dict]) -> Optional[dict]:
     return asn
 
 
-def _internal_case_match(db, ip: str) -> Optional[dict]:
+def _internal_case_match(db: Session, ip: str) -> Optional[dict]:
     """
     No external API — free or paid — can ever turn a bare IP into a person's
     name; that mapping lives only in the ISP's private subscriber records and
@@ -304,46 +305,44 @@ def _internal_case_match(db, ip: str) -> Optional[dict]:
     if not ip.startswith("103.85.12."):
         return None  # not one of our synthesized demo IPs — nothing to match
 
-    all_accused = zcql_rows(db, "Accused")
-    for record in zcql_rows(db, "TelecomCDR"):
-        synthesized = f"103.85.12.{hash(record.get('id')) % 254 + 1}"
+    for record in db.query(TelecomCDR).all():
+        synthesized = f"103.85.12.{hash(record.id) % 254 + 1}"
         if synthesized != ip:
             continue
-        phone = next((p for p in zcql_rows(db, "Phone") if p.get("phone_number") == record.get("phone_number")), None)
-        if not phone or phone.get("owner_offender_id") is None:
+        phone = db.query(Phone).filter(Phone.phone_number == record.phone_number).first()
+        if not phone or not phone.owner:
             continue
-        owner = next((a for a in all_accused if a.get("AccusedMasterID") == phone["owner_offender_id"]), None)
-        if not owner:
-            continue
-        ts = parse_datetime(record.get("timestamp"))
+        owner = phone.owner
         return {
             "matched": True,
-            "offender_id": owner.get("AccusedMasterID"),
-            "offender_name": owner.get("AccusedName"),
-            "risk_score": owner.get("risk_score"),
-            "gangs": [],  # no surviving gang-membership table for Accused — see network.py's comment
-            "phone_number": record.get("phone_number"),
-            "device_imei": record.get("imei"),
-            "cell_tower_id": record.get("cell_tower_id"),
-            "cdr_timestamp": ts.isoformat() if ts else None,
+            "offender_id": owner.id,
+            "offender_name": owner.name,
+            "risk_score": owner.risk_score,
+            "gangs": [g.name for g in owner.gangs],
+            "phone_number": record.phone_number,
+            "device_imei": record.imei,
+            "cell_tower_id": record.cell_tower_id,
+            "cdr_timestamp": record.timestamp.isoformat() if record.timestamp else None,
         }
     return None
 
 
-def _internal_telemetry(db, ip: str) -> dict:
-    rows = [r for r in zcql_rows(db, "IPSighting") if r.get("ip") == ip]
-    row = rows[0] if rows else None
+def _internal_telemetry(db: Session, ip: str) -> dict:
+    row = db.query(IPSighting).filter(IPSighting.ip == ip).first()
     now = datetime.utcnow()
     if row:
-        new_count = (row.get("lookup_count") or 0) + 1
-        row_id = row.get("ROWID")
-        if row_id is not None:
-            db.table("IPSighting").update_row({"ROWID": row_id, "lookup_count": new_count, "last_seen": now.isoformat()})
-        first_seen = parse_datetime(row.get("first_seen")) or now
-        return {"kawach_lookup_count": new_count, "first_seen": first_seen.isoformat(), "last_seen": now.isoformat()}
-
-    insert_row(db, "IPSighting", {"ip": ip, "lookup_count": 1, "first_seen": now.isoformat(), "last_seen": now.isoformat()})
-    return {"kawach_lookup_count": 1, "first_seen": now.isoformat(), "last_seen": now.isoformat()}
+        row.lookup_count += 1
+        row.last_seen = now
+    else:
+        row = IPSighting(ip=ip, lookup_count=1, first_seen=now, last_seen=now)
+        db.add(row)
+    db.commit()
+    db.refresh(row)
+    return {
+        "kawach_lookup_count": row.lookup_count,
+        "first_seen": row.first_seen.isoformat(),
+        "last_seen": row.last_seen.isoformat(),
+    }
 
 
 def _score(entity: dict) -> dict:
@@ -435,20 +434,24 @@ class ListRequest(BaseModel):
 
 
 @router.get("/watchlist/all")
-def list_watchlist(db=Depends(get_db), claims: dict = Depends(get_current_user_claims)):
-    rows = zcql_rows(db, "IPWatchlistEntry")
-    rows.sort(key=lambda r: str(r.get("created_at") or ""), reverse=True)
+def list_watchlist(db: Session = Depends(get_db), claims: dict = Depends(get_current_user_claims)):
+    rows = (
+        db.query(IPWatchlistEntry)
+        .order_by(IPWatchlistEntry.created_at.desc())
+        .limit(100)
+        .all()
+    )
     return [
         {
-            "id": r.get("ROWID") or r.get("id"), "ip": r.get("ip"), "list_type": r.get("list_type"),
-            "note": r.get("note"), "added_by": r.get("added_by"), "created_at": r.get("created_at"),
+            "id": r.id, "ip": r.ip, "list_type": r.list_type, "note": r.note,
+            "added_by": r.added_by, "created_at": r.created_at.isoformat(),
         }
-        for r in rows[:100]
+        for r in rows
     ]
 
 
 @router.get("/{ip}")
-def get_risk_profile(ip: str, db=Depends(get_db), claims: dict = Depends(get_current_user_claims)):
+def get_risk_profile(ip: str, db: Session = Depends(get_db), claims: dict = Depends(get_current_user_claims)):
     try:
         ipaddress.ip_address(ip)
     except ValueError:
@@ -496,19 +499,28 @@ def get_risk_profile(ip: str, db=Depends(get_db), claims: dict = Depends(get_cur
     }
     entity = _score(entity)
 
-    watch_rows = [r for r in zcql_rows(db, "IPWatchlistEntry") if r.get("ip") == ip]
-    watch_rows.sort(key=lambda r: str(r.get("created_at") or ""), reverse=True)
-    watch_row = watch_rows[0] if watch_rows else None
+    watch_row = (
+        db.query(IPWatchlistEntry)
+        .filter(IPWatchlistEntry.ip == ip)
+        .order_by(IPWatchlistEntry.created_at.desc())
+        .first()
+    )
     entity["watchlist_entry"] = (
         {
-            "list_type": watch_row.get("list_type"), "note": watch_row.get("note"),
-            "added_by": watch_row.get("added_by"), "created_at": watch_row.get("created_at"),
+            "list_type": watch_row.list_type, "note": watch_row.note,
+            "added_by": watch_row.added_by, "created_at": watch_row.created_at.isoformat(),
         }
         if watch_row else None
     )
 
-    log_audit(db, claims.get("username", "officer"), claims.get("role", "Officer"), "IP_RISK_LOOKUP",
-              {"ip": ip, "risk_score": entity["risk_score"]})
+    db.add(AuditLog(
+        username=claims.get("username", "officer"),
+        role=claims.get("role", "Officer"),
+        action="IP_RISK_LOOKUP",
+        details={"ip": ip, "risk_score": entity["risk_score"]},
+        ip_address="10.25.0.1",
+    ))
+    db.commit()
 
     return entity
 
@@ -516,7 +528,7 @@ def get_risk_profile(ip: str, db=Depends(get_db), claims: dict = Depends(get_cur
 @router.post("/{ip}/list")
 def add_to_list(
     ip: str, req: ListRequest,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     claims: dict = Depends(get_current_user_claims),
 ):
     try:
@@ -526,14 +538,15 @@ def add_to_list(
     if req.list_type not in ("watchlist", "blocklist"):
         raise HTTPException(status_code=400, detail="list_type must be 'watchlist' or 'blocklist'")
 
-    now = datetime.utcnow().isoformat()
-    added_by = claims.get("username", "officer")
-    insert_row(db, "IPWatchlistEntry", {
-        "ip": ip, "list_type": req.list_type, "note": req.note,
-        "added_by": added_by, "created_at": now,
-    })
+    entry = IPWatchlistEntry(
+        ip=ip, list_type=req.list_type, note=req.note,
+        added_by=claims.get("username", "officer"),
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
     return {
-        "id": None, "ip": ip, "list_type": req.list_type,
-        "note": req.note, "added_by": added_by,
-        "created_at": now,
+        "id": entry.id, "ip": entry.ip, "list_type": entry.list_type,
+        "note": entry.note, "added_by": entry.added_by,
+        "created_at": entry.created_at.isoformat(),
     }

@@ -1,125 +1,131 @@
 from fastapi import APIRouter, Depends
-from collections import Counter, defaultdict
+from sqlalchemy.orm import Session
+from sqlalchemy import func, text
 from typing import List
 from app.database import get_db
+from app.models import FIRRecord, Offender, District, PoliceStation, fir_accused
 from app.schemas import DashboardSummary, TrendDataPoint, CategoryDistribution, DistrictCrimeDensity
 from app.auth import get_current_user_claims
-from app.zcql_utils import zcql_rows, parse_date
-from app.ml.features import get_districts, get_station_district_map
-from app.ml.train_isolation_forest import get_case_category_lookup
 
 router = APIRouter()
 
-
-def _scoped_cases(db, claims: dict, station_to_district: dict) -> list:
-    """Applies the same role scoping the old SQLAlchemy apply_role_filters()
-    did (SP -> own district, SHO/Constable -> own station), just against
-    raw ZCQL rows instead of a query builder. Constable scoping is
-    best-effort: CaseMaster carries PolicePersonID (an Employee id), not a
-    username, so Constable-level "assigned to me" filtering degrades to
-    station-level like SHO until a username->EmployeeID resolution path
-    exists — flagged here rather than silently wrong."""
+def apply_role_filters(query, claims, table_class):
     role = claims.get("role")
-    cases = zcql_rows(db, "CaseMaster")
     if role == "SP":
-        dist_id = claims.get("district_id")
-        return [c for c in cases if station_to_district.get(c.get("PoliceStationID")) == dist_id]
-    if role in ("SHO", "Constable"):
-        station_id = claims.get("station_id")
-        return [c for c in cases if c.get("PoliceStationID") == station_id]
-    return cases
-
+        if table_class == FIRRecord:
+            return query.join(PoliceStation).filter(PoliceStation.district_id == claims.get("district_id"))
+        elif table_class == Offender:
+            return query.join(FIRRecord, Offender.firs).join(PoliceStation).filter(PoliceStation.district_id == claims.get("district_id")).distinct()
+    elif role == "SHO":
+        if table_class == FIRRecord:
+            return query.filter(FIRRecord.police_station_id == claims.get("station_id"))
+        elif table_class == Offender:
+            return query.join(FIRRecord, Offender.firs).filter(FIRRecord.police_station_id == claims.get("station_id")).distinct()
+    elif role == "Constable":
+        if table_class == FIRRecord:
+            return query.filter(FIRRecord.assigned_officer_id == claims.get("username"))
+        elif table_class == Offender:
+            return query.join(FIRRecord, Offender.firs).filter(FIRRecord.assigned_officer_id == claims.get("username")).distinct()
+    return query
 
 @router.get("/summary", response_model=DashboardSummary)
-def get_dashboard_summary(db=Depends(get_db), claims: dict = Depends(get_current_user_claims)):
-    station_to_district = get_station_district_map(db)
-    cases = _scoped_cases(db, claims, station_to_district)
-    category_labels = get_case_category_lookup(db)
-
-    status_labels = {
-        s["CaseStatusID"]: (s.get("CaseStatusName") or "").lower()
-        for s in zcql_rows(db, "CaseStatusMaster")
-        if s.get("CaseStatusID") is not None
-    }
-    investigation_ids = {sid for sid, name in status_labels.items() if "invest" in name} or {1}
-
-    total_firs = len(cases)
-    active_cases = sum(1 for c in cases if (c.get("CaseStatusID") or 1) in investigation_ids)
-
-    accused = zcql_rows(db, "Accused")
-    total_offenders = len({a.get("AccusedMasterID") for a in accused if a.get("AccusedMasterID") is not None})
-
-    cat_counts = Counter(category_labels.get(c.get("CaseCategoryID"), "Unclassified") for c in cases)
-    top_crime_name = cat_counts.most_common(1)[0][0] if cat_counts else "N/A"
-
+def get_dashboard_summary(db: Session = Depends(get_db), claims: dict = Depends(get_current_user_claims)):
+    firs_q = apply_role_filters(db.query(FIRRecord), claims, FIRRecord)
+    total_firs = firs_q.count()
+    active_cases = firs_q.filter(FIRRecord.status == "Investigation").count()
+    
+    offenders_q = apply_role_filters(db.query(Offender), claims, Offender)
+    total_offenders = offenders_q.count()
+    
+    # Calculate top crime category
+    top_crime_q = apply_role_filters(
+        db.query(FIRRecord.crime_type, func.count(FIRRecord.id).label("count")),
+        claims,
+        FIRRecord
+    ).group_by(FIRRecord.crime_type).order_by(text("count DESC"))
+    
+    top_crime = top_crime_q.first()
+    top_crime_name = top_crime[0] if top_crime else "N/A"
+    
+    # Mock some realistic stats
+    conviction_rate = 64.2
+    avg_response_time = 22
+    
     return {
         "total_firs": total_firs,
         "active_cases": active_cases,
-        "conviction_rate": 64.2,  # no court-outcome table in this schema — see CLAUDE.md ML section
-        "avg_response_time_mins": 22,
+        "conviction_rate": conviction_rate,
+        "avg_response_time_mins": avg_response_time,
         "top_crime_category": top_crime_name,
         "total_offenders": total_offenders
     }
 
-
 @router.get("/trend", response_model=List[TrendDataPoint])
-def get_crime_trend(db=Depends(get_db), claims: dict = Depends(get_current_user_claims)):
-    station_to_district = get_station_district_map(db)
-    cases = _scoped_cases(db, claims, station_to_district)
-
-    monthly = Counter()
-    for c in cases:
-        d = parse_date(c.get("CrimeRegisteredDate"))
-        if d:
-            monthly[f"{d.year:04d}-{d.month:02d}"] += 1
-
-    return [{"date": month, "count": count} for month, count in sorted(monthly.items())]
-
+def get_crime_trend(db: Session = Depends(get_db), claims: dict = Depends(get_current_user_claims)):
+    q = db.query(
+        func.to_char(FIRRecord.date_filed, 'YYYY-MM').label('month'),
+        func.count(FIRRecord.id).label('count')
+    )
+    role = claims.get("role")
+    if role == "SP":
+        q = q.join(PoliceStation).filter(PoliceStation.district_id == claims.get("district_id"))
+    elif role == "SHO":
+        q = q.filter(FIRRecord.police_station_id == claims.get("station_id"))
+    elif role == "Constable":
+        q = q.filter(FIRRecord.assigned_officer_id == claims.get("username"))
+        
+    results = q.group_by('month').order_by('month').all()
+    return [{"date": r[0], "count": r[1]} for r in results]
 
 @router.get("/categories", response_model=List[CategoryDistribution])
-def get_category_distribution(db=Depends(get_db), claims: dict = Depends(get_current_user_claims)):
-    station_to_district = get_station_district_map(db)
-    cases = _scoped_cases(db, claims, station_to_district)
-    category_labels = get_case_category_lookup(db)
-
-    counts = Counter(category_labels.get(c.get("CaseCategoryID"), "Unclassified") for c in cases)
-    return [{"category": cat, "count": n} for cat, n in counts.most_common()]
-
+def get_category_distribution(db: Session = Depends(get_db), claims: dict = Depends(get_current_user_claims)):
+    q = db.query(
+        FIRRecord.crime_type.label('category'),
+        func.count(FIRRecord.id).label('count')
+    )
+    role = claims.get("role")
+    if role == "SP":
+        q = q.join(PoliceStation).filter(PoliceStation.district_id == claims.get("district_id"))
+    elif role == "SHO":
+        q = q.filter(FIRRecord.police_station_id == claims.get("station_id"))
+    elif role == "Constable":
+        q = q.filter(FIRRecord.assigned_officer_id == claims.get("username"))
+        
+    results = q.group_by(FIRRecord.crime_type).order_by(text("count DESC")).all()
+    return [{"category": r[0], "count": r[1]} for r in results]
 
 @router.get("/districts", response_model=List[DistrictCrimeDensity])
-def get_district_rankings(db=Depends(get_db), claims: dict = Depends(get_current_user_claims)):
+def get_district_rankings(db: Session = Depends(get_db), claims: dict = Depends(get_current_user_claims)):
     role = claims.get("role")
-    districts_by_id = get_districts(db)
-    units = zcql_rows(db, "Unit")
-    station_to_district = {u["UnitID"]: u.get("DistrictID") for u in units if u.get("UnitID") is not None}
-    cases = zcql_rows(db, "CaseMaster")
-
-    if role in ("SP", "SHO", "Constable"):
+    if role in ["SP", "SHO", "Constable"]:
         dist_id = claims.get("district_id")
-        unit_counts = Counter(c.get("PoliceStationID") for c in cases if station_to_district.get(c.get("PoliceStationID")) == dist_id)
-        officer_counts = {u["UnitID"]: (u.get("officer_count") or 1) for u in units}
-        results = []
-        for unit_id, count in unit_counts.most_common(5):
-            unit = next((u for u in units if u.get("UnitID") == unit_id), None)
-            if not unit:
-                continue
-            results.append({
-                "district_name": unit.get("UnitName") or f"Unit {unit_id}",
-                "count": count,
-                "density": round((count / max(1, officer_counts.get(unit_id, 1))) * 10, 2),
-            })
-        return results
+        results = db.query(
+            PoliceStation.name.label('station_name'),
+            func.count(FIRRecord.id).label('count'),
+            PoliceStation.officer_count.label('officer_count')
+        ).join(FIRRecord, PoliceStation.id == FIRRecord.police_station_id)\
+         .filter(PoliceStation.district_id == dist_id)\
+         .group_by(PoliceStation.name, PoliceStation.officer_count)\
+         .order_by(text("count DESC")).limit(5).all()
+         
+        return [{
+            "district_name": r[0],
+            "count": r[1],
+            "density": round((r[1] / max(1, r[2])) * 10, 2)
+        } for r in results]
+    else:
+        results = db.query(
+            District.name.label('district_name'),
+            func.count(FIRRecord.id).label('count'),
+            District.population.label('pop')
+        ).join(PoliceStation, District.id == PoliceStation.district_id)\
+         .join(FIRRecord, PoliceStation.id == FIRRecord.police_station_id)\
+         .group_by(District.name, District.population)\
+         .order_by(text("count DESC")).limit(5).all()
+         
+        return [{
+            "district_name": r[0],
+            "count": r[1],
+            "density": round((r[1] / r[2]) * 100000, 2)
+        } for r in results]
 
-    dist_counts = Counter(station_to_district.get(c.get("PoliceStationID")) for c in cases)
-    dist_counts.pop(None, None)
-    results = []
-    for did, count in dist_counts.most_common(5):
-        dist = districts_by_id.get(did)
-        if not dist:
-            continue
-        results.append({
-            "district_name": dist["name"],
-            "count": count,
-            "density": round((count / dist["population"]) * 100000, 2) if dist["population"] else 0,
-        })
-    return results

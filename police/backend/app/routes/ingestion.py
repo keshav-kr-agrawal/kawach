@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 from app.database import get_db
+from app.models import MissingPerson, UnidentifiedBody, TelecomCDR, RBIFraudRegistry, AuditLog
 from app.auth import get_current_user_claims
-from app.zcql_utils import zcql_rows, log_audit
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
@@ -62,48 +63,54 @@ class RBIFraudRegistryOut(BaseModel):
 @router.get("/missing-persons", response_model=List[MissingPersonOut])
 def get_missing_persons(
     status_filter: Optional[str] = None,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     claims: dict = Depends(get_current_user_claims)
 ):
-    rows = zcql_rows(db, "MissingPerson")
+    query = db.query(MissingPerson)
     if status_filter:
-        rows = [r for r in rows if r.get("status") == status_filter]
-    return rows[:100]
+        query = query.filter(MissingPerson.status == status_filter)
+    return query.limit(100).all()
 
 @router.get("/unidentified-bodies", response_model=List[UnidentifiedBodyOut])
 def get_unidentified_bodies(
     status_filter: Optional[str] = None,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     claims: dict = Depends(get_current_user_claims)
 ):
-    rows = zcql_rows(db, "UnidentifiedBody")
+    query = db.query(UnidentifiedBody)
     if status_filter:
-        rows = [r for r in rows if r.get("status") == status_filter]
-    return rows[:100]
+        query = query.filter(UnidentifiedBody.status == status_filter)
+    return query.limit(100).all()
 
 @router.get("/cdrs", response_model=List[TelecomCDROut])
 def get_cdrs(
     phone: Optional[str] = None,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     claims: dict = Depends(get_current_user_claims)
 ):
-    log_audit(db, claims.get("sub", claims.get("username", "anonymous")), claims.get("role", "Field Officer"),
-              "VIEW_CDR_REGISTRY", {"search_phone": phone})
+    # Log query activity in audit log
+    audit = AuditLog(
+        username=claims.get("sub", "anonymous"),
+        role=claims.get("role", "Field Officer"),
+        action="VIEW_CDR_REGISTRY",
+        details={"search_phone": phone},
+        ip_address="10.25.0.1"
+    )
+    db.add(audit)
+    db.commit()
 
-    rows = zcql_rows(db, "TelecomCDR")
+    query = db.query(TelecomCDR)
     if phone:
-        rows = [r for r in rows if phone in (r.get("phone_number") or "") or phone in (r.get("associated_number") or "")]
-    rows.sort(key=lambda r: str(r.get("timestamp") or ""), reverse=True)
-    return rows[:150]
+        query = query.filter(TelecomCDR.phone_number.ilike(f"%{phone}%") | TelecomCDR.associated_number.ilike(f"%{phone}%"))
+    return query.order_by(TelecomCDR.timestamp.desc()).limit(150).all()
 
 @router.get("/rbi-registry", response_model=List[RBIFraudRegistryOut])
 def get_rbi_registry(
     account: Optional[str] = None,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     claims: dict = Depends(get_current_user_claims)
 ):
-    rows = zcql_rows(db, "RBIFraudRegistry")
+    query = db.query(RBIFraudRegistry)
     if account:
-        rows = [r for r in rows if account in (r.get("account_number") or "")]
-    rows.sort(key=lambda r: str(r.get("flagged_date") or ""), reverse=True)
-    return rows[:100]
+        query = query.filter(RBIFraudRegistry.account_number.ilike(f"%{account}%"))
+    return query.order_by(RBIFraudRegistry.flagged_date.desc()).limit(100).all()

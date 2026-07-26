@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 from app.database import get_db
+from app.models import Phone, Account, Offender, AuditLog, Call
 from app.auth import get_current_user_claims
-from app.zcql_utils import zcql_rows, parse_datetime, log_audit
 from pydantic import BaseModel
 from typing import List, Optional, Tuple
 from datetime import datetime, timedelta
@@ -10,7 +11,7 @@ import re
 router = APIRouter()
 
 
-def call_burst_anomaly(db, phone_number: str) -> Optional[Tuple[float, str]]:
+def call_burst_anomaly(db: Session, phone_number: str) -> Optional[Tuple[float, str]]:
     """
     Behavioral anomaly signal for digital-arrest detection: a dormant or
     low-activity line that suddenly bursts with calls is a signature of an
@@ -24,17 +25,11 @@ def call_burst_anomaly(db, phone_number: str) -> Optional[Tuple[float, str]]:
     recent_start = now - timedelta(days=7)
     baseline_start = now - timedelta(days=97)
 
-    recent, baseline = 0, 0
-    for c in zcql_rows(db, "Call"):
-        if c.get("caller_phone") != phone_number and c.get("receiver_phone") != phone_number:
-            continue
-        ts = parse_datetime(c.get("timestamp"))
-        if not ts:
-            continue
-        if ts >= recent_start:
-            recent += 1
-        elif ts >= baseline_start:
-            baseline += 1
+    involving = (Call.caller_phone == phone_number) | (Call.receiver_phone == phone_number)
+    recent = db.query(Call).filter(involving, Call.timestamp >= recent_start).count()
+    baseline = db.query(Call).filter(
+        involving, Call.timestamp >= baseline_start, Call.timestamp < recent_start
+    ).count()
 
     baseline_daily = baseline / 90.0
     recent_daily = recent / 7.0
@@ -53,33 +48,32 @@ def call_burst_anomaly(db, phone_number: str) -> Optional[Tuple[float, str]]:
     return None
 
 
-def mule_network_signal(db, owner: dict) -> Optional[Tuple[float, str]]:
+def mule_network_signal(owner: Offender) -> Optional[Tuple[float, str]]:
     """
     Mule-shape signal: an account/phone owner with little or no criminal
     history who is directly tied to high-risk offenders. Mirrors the
-    graph-intelligence mule heuristic in routes/network.py — "associates"
-    here means other Accused rows sharing the same CaseMasterID, since the
-    old Offender.associates many-to-many table has no surviving equivalent.
+    graph-intelligence mule heuristic in routes/network.py.
     Returns (risk_bonus 0-20, rationale) or None.
     """
-    priors = owner.get("num_prior_offenses") or 0
-    own_risk = owner.get("risk_score") or 0
+    priors = owner.num_prior_offenses or 0
+    own_risk = owner.risk_score or 0
     if priors > 1 or own_risk >= 50:
         return None  # already an established offender — not mule-shaped
 
-    all_accused = zcql_rows(db, "Accused")
-    associates = [
-        a for a in all_accused
-        if a.get("CaseMasterID") == owner.get("CaseMasterID") and a.get("AccusedMasterID") != owner.get("AccusedMasterID")
-    ]
-    high_risk_ties = [a for a in associates if (a.get("risk_score") or 0) >= 70]
-    if not high_risk_ties:
+    high_risk_ties = [a for a in owner.associates if (a.risk_score or 0) >= 70]
+    in_gang = len(owner.gangs) > 0
+    if not high_risk_ties and not in_gang:
         return None
 
+    tie_desc = []
+    if high_risk_ties:
+        tie_desc.append(f"{len(high_risk_ties)} direct associate(s) with risk ≥70%")
+    if in_gang:
+        tie_desc.append(f"membership in {owner.gangs[0].name}")
     return (
         min(20.0, 10.0 + 5.0 * len(high_risk_ties)),
-        f"Owner {owner.get('AccusedName')} has a clean history ({priors} priors) but "
-        f"{len(high_risk_ties)} co-accused with risk ≥70% — the receive-and-forward mule profile.",
+        f"Owner {owner.name} has a clean history ({priors} priors) but "
+        f"{' and '.join(tie_desc)} — the receive-and-forward mule profile.",
     )
 
 class FraudCheckRequest(BaseModel):
@@ -105,14 +99,22 @@ class FraudCheckResponse(BaseModel):
 @router.post("/check", response_model=FraudCheckResponse)
 def check_fraud_threat(
     req: FraudCheckRequest,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     claims: dict = Depends(get_current_user_claims)
 ):
     val = req.value.strip()
     val_type = req.type.lower()
-
-    log_audit(db, claims.get("sub", claims.get("username", "anonymous")), claims.get("role", "Field Officer"),
-              "CITIZEN_FRAUD_SCAN", {"type": val_type, "query": val})
+    
+    # Audit log entry for monitoring activity
+    audit = AuditLog(
+        username=claims.get("sub", "anonymous"),
+        role=claims.get("role", "Field Officer"),
+        action="CITIZEN_FRAUD_SCAN",
+        details={"type": val_type, "query": val},
+        ip_address="10.25.0.1"
+    )
+    db.add(audit)
+    db.commit()
 
     risk_level = "Low"
     score = 12.0
@@ -122,20 +124,19 @@ def check_fraud_threat(
 
     if val_type == "phone":
         # 1. Query DB
-        phone = next((p for p in zcql_rows(db, "Phone") if val in (p.get("phone_number") or "")), None)
-        owner = None
-        if phone and phone.get("owner_offender_id") is not None:
-            owner = next((a for a in zcql_rows(db, "Accused") if a.get("AccusedMasterID") == phone["owner_offender_id"]), None)
-        if owner:
-            score = owner.get("risk_score") or 0
-            rationale = f"Phone match found in Crime Database. Owned by registered offender {owner.get('AccusedName')} ({owner.get('AccusedMasterID')}). Prior offenses: {owner.get('num_prior_offenses')} cases."
+        phone = db.query(Phone).filter(Phone.phone_number.ilike(f"%{val}%")).first()
+        if phone and phone.owner:
+            owner = phone.owner
+            score = owner.risk_score
+            gang_names = ", ".join([g.name for g in owner.gangs]) or "No known syndicate"
+            rationale = f"Phone match found in Crime Database. Owned by registered offender {owner.name} ({owner.id}), linked to syndicate: {gang_names}. Prior offenses: {owner.num_prior_offenses} cases."
 
             # Behavioral anomaly fusion: dormancy-burst + mule-network signals
-            burst = call_burst_anomaly(db, phone["phone_number"])
+            burst = call_burst_anomaly(db, phone.phone_number)
             if burst:
                 score = min(100.0, score + burst[0])
                 rationale += f" ANOMALY: {burst[1]}"
-            mule = mule_network_signal(db, owner)
+            mule = mule_network_signal(owner)
             if mule:
                 score = min(100.0, score + mule[0])
                 rationale += f" MULE SIGNAL: {mule[1]}"
@@ -146,16 +147,16 @@ def check_fraud_threat(
                 "Block this phone number on all communication platforms.",
                 "Report this encounter using the Auto-Draft NCRP portal below."
             ]
-
-            owner_accounts = [ac for ac in zcql_rows(db, "Account") if ac.get("owner_offender_id") == owner.get("AccusedMasterID")]
+            
+            # Generate pre-filled NCRP draft
             ncrp_draft = NCRPDraft(
-                suspect_name=owner.get("AccusedName"),
+                suspect_name=owner.name,
                 suspect_phone=val,
-                suspect_account=owner_accounts[0]["account_number"] if owner_accounts else "SB-88203-9021",
-                suspect_bank=owner_accounts[0].get("bank_name") if owner_accounts else "State Bank of India",
+                suspect_account=owner.accounts[0].account_number if owner.accounts else "SB-88203-9021",
+                suspect_bank=owner.accounts[0].bank_name if owner.accounts else "State Bank of India",
                 crime_type="Cyber Threat / Impersonation Scam",
                 rationale=rationale,
-                narrative=f"I received a phone call from {val} claiming to be law enforcement / custom officials. They threatened me with digital arrest. Suspect is linked in database as {owner.get('AccusedName')} ({owner.get('AccusedMasterID')}). Please freeze accounts connected to this entity."
+                narrative=f"I received a phone call from {val} claiming to be law enforcement / custom officials. They threatened me with digital arrest. Suspect is linked in database as {owner.name} ({owner.id}). Please freeze accounts connected to this entity."
             )
         else:
             # Unknown number — still run the behavioral anomaly check against
@@ -197,15 +198,14 @@ def check_fraud_threat(
                 )
 
     elif val_type == "upi" or val_type == "account":
-        account = next((ac for ac in zcql_rows(db, "Account") if val in (ac.get("account_number") or "")), None)
-        owner = None
-        if account and account.get("owner_offender_id") is not None:
-            owner = next((a for a in zcql_rows(db, "Accused") if a.get("AccusedMasterID") == account["owner_offender_id"]), None)
-        if owner:
-            score = owner.get("risk_score") or 0
-            rationale = f"Bank Account / UPI ID registered to offender {owner.get('AccusedName')} ({owner.get('AccusedMasterID')}). Linked bank: {account.get('bank_name')}. Risk flagged under money laundering & mule accounts registry."
+        account = db.query(Account).filter(Account.account_number.ilike(f"%{val}%")).first()
+        if account and account.owner:
+            owner = account.owner
+            score = owner.risk_score
+            rationale = f"Bank Account / UPI ID registered to offender {owner.name} ({owner.id}). Linked bank: {account.bank_name}. Risk flagged under money laundering & mule accounts registry."
 
-            mule = mule_network_signal(db, owner)
+            # Mule-network fusion signal: clean-history owner tied to high-risk network
+            mule = mule_network_signal(owner)
             if mule:
                 score = min(100.0, score + mule[0])
                 rationale += f" MULE SIGNAL: {mule[1]}"
@@ -216,15 +216,14 @@ def check_fraud_threat(
                 "Flag this account in banking system to prevent automated transactions.",
                 "Draft NCRP freeze request immediately."
             ]
-            owner_phones = [p for p in zcql_rows(db, "Phone") if p.get("owner_offender_id") == owner.get("AccusedMasterID")]
             ncrp_draft = NCRPDraft(
-                suspect_name=owner.get("AccusedName"),
-                suspect_phone=owner_phones[0]["phone_number"] if owner_phones else "+91-9844000121",
+                suspect_name=owner.name,
+                suspect_phone=owner.phones[0].phone_number if owner.phones else "+91-9844000121",
                 suspect_account=val,
-                suspect_bank=account.get("bank_name"),
+                suspect_bank=account.bank_name,
                 crime_type="Financial Mule Account Scam",
                 rationale=rationale,
-                narrative=f"Transferred money to account/UPI {val} under fraudulent pretense. Mule account owner: {owner.get('AccusedName')} ({owner.get('AccusedMasterID')}). Requesting instant freeze."
+                narrative=f"Transferred money to account/UPI {val} under fraudulent pretense. Mule account owner: {owner.name} ({owner.id}). Requesting instant freeze."
             )
         else:
             # Check for simulated high risk bank/UPI patterns

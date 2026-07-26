@@ -14,7 +14,7 @@ behalf.
 import re
 
 from fastapi import APIRouter, Depends, Request, Response
-
+from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.routes.digital_arrest import score_scam_script
@@ -51,7 +51,7 @@ def make_twiml_voice(say_text: str, gather: bool = True) -> Response:
     return Response(content=xml_content, media_type="application/xml")
 
 
-def _assess(text: str, sender_number: str, db) -> tuple:
+def _assess(text: str, sender_number: str, db: Session) -> tuple:
     """Shared scoring: real scam-script weights + real call-burst anomaly. Returns (is_scam, warning_text)."""
     script_score, matched = score_scam_script(text)
     is_scam = script_score >= 0.4
@@ -87,7 +87,7 @@ def _assess(text: str, sender_number: str, db) -> tuple:
 
 
 @router.post("/whatsapp")
-async def receive_whatsapp_webhook(request: Request, db=Depends(get_db)):
+async def receive_whatsapp_webhook(request: Request, db: Session = Depends(get_db)):
     """
     Twilio WhatsApp Sandbox (form-encoded) or Meta WhatsApp Cloud API (JSON)
     inbound webhook — both are free-tier per CLAUDE.md principle #4.
@@ -138,7 +138,7 @@ async def receive_voice_call(request: Request):
 
 
 @router.post("/voice/analyze")
-async def analyze_voice_call(request: Request, db=Depends(get_db)):
+async def analyze_voice_call(request: Request, db: Session = Depends(get_db)):
     form_data = await request.form()
     speech_text = form_data.get("SpeechResult", "").strip()
     caller_number = form_data.get("From", "").strip()

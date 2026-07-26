@@ -2,10 +2,10 @@ import hashlib
 import os
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
 from app.database import get_db
+from app.models import AuditLog, FIRRecord, Offender
 from app.auth import get_current_user_claims
-from app.zcql_utils import zcql_rows, parse_datetime, log_audit
-from app.ml.train_isolation_forest import get_case_category_lookup
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -31,10 +31,10 @@ class ReportRequest(BaseModel):
 GENERATED_REPORTS = {}
 
 
-def _sla_state(sla_deadline, status_id):
-    if not sla_deadline or status_id in ("Closed", "Charge Sheeted"):
+def _sla_state(record):
+    if not record.sla_deadline or record.status in ("Closed", "Charge Sheeted"):
         return "OK"
-    days_left = (sla_deadline - datetime.utcnow()).days
+    days_left = (record.sla_deadline - datetime.utcnow()).days
     if days_left < 0:
         return "Breached"
     if days_left < 7:
@@ -42,46 +42,47 @@ def _sla_state(sla_deadline, status_id):
     return "OK"
 
 
-def _gather_report_rows(report_type: str, db):
-    """Pull real rows from the Catalyst datastore for each supported report type."""
+def _gather_report_rows(report_type: str, db: Session):
+    """Pull real rows from the database for each supported report type."""
     if report_type == "repeat_offenders":
-        offenders = [a for a in zcql_rows(db, "Accused") if (a.get("num_prior_offenses") or 0) >= 2]
-        offenders.sort(key=lambda a: a.get("risk_score", 0) or 0, reverse=True)
-        offenders = offenders[:40]
-        header = ["Offender ID", "Name", "Priors", "Risk Score"]
+        offenders = (
+            db.query(Offender)
+            .filter(Offender.num_prior_offenses >= 2)
+            .order_by(Offender.risk_score.desc())
+            .limit(40)
+            .all()
+        )
+        header = ["Offender ID", "Name", "Priors", "Risk Score", "Status"]
         rows = [
-            [str(o.get("AccusedMasterID")), o.get("AccusedName"), str(o.get("num_prior_offenses")), f"{o.get('risk_score')}%"]
+            [o.id, o.name, str(o.num_prior_offenses), f"{o.risk_score}%", getattr(o, "status", "Active")]
             for o in offenders
         ]
         return header, rows
 
     if report_type == "case_sla_breach":
-        category_labels = get_case_category_lookup(db)
-        records = [c for c in zcql_rows(db, "CaseMaster") if c.get("CaseStatusID") not in ("Closed", "Charge Sheeted")]
-        records.sort(key=lambda r: parse_datetime(r.get("sla_deadline")) or datetime.max)
-        records = records[:60]
-        header = ["Case ID", "Crime Type", "Filed", "Priority", "Status", "SLA State"]
-        rows = []
-        for r in records:
-            sla_deadline = parse_datetime(r.get("sla_deadline"))
-            state = _sla_state(sla_deadline, r.get("CaseStatusID"))
-            if state not in ("Breached", "Warning"):
-                continue
-            filed = parse_datetime(r.get("CrimeRegisteredDate"))
-            rows.append([
-                str(r.get("CaseMasterID")),
-                category_labels.get(r.get("CaseCategoryID"), "Unclassified"),
-                filed.strftime("%Y-%m-%d") if filed else "?",
-                str(r.get("priority")), str(r.get("CaseStatusID")), state,
-            ])
+        records = (
+            db.query(FIRRecord)
+            .filter(FIRRecord.status.notin_(["Closed", "Charge Sheeted"]))
+            .order_by(FIRRecord.sla_deadline.asc())
+            .limit(60)
+            .all()
+        )
+        header = ["FIR ID", "Crime Type", "Filed", "Priority", "Status", "SLA State"]
+        rows = [
+            [
+                r.id, r.crime_type, r.date_filed.strftime("%Y-%m-%d"),
+                r.priority, r.status, _sla_state(r),
+            ]
+            for r in records
+            if _sla_state(r) in ("Breached", "Warning")
+        ]
         return header, rows
 
     # default: district_performance — case volume & closure by status
-    records = zcql_rows(db, "CaseMaster")[:500]
+    records = db.query(FIRRecord).limit(500).all()
     by_status = {}
     for r in records:
-        key = str(r.get("CaseStatusID"))
-        by_status[key] = by_status.get(key, 0) + 1
+        by_status[r.status] = by_status.get(r.status, 0) + 1
     header = ["Case Status", "Count"]
     rows = [[status, str(count)] for status, count in sorted(by_status.items())]
     return header, rows
@@ -146,7 +147,7 @@ def list_reports(claims: dict = Depends(get_current_user_claims)):
 @router.post("/generate")
 def generate_report(
     req: ReportRequest,
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     claims: dict = Depends(get_current_user_claims)
 ):
     user = claims.get("username", "officer")
@@ -163,12 +164,20 @@ def generate_report(
     with open(filepath, "rb") as f:
         sha256_hash = hashlib.sha256(f.read()).hexdigest()
 
-    log_audit(db, user, role, "EXPORT_REPORT", {
-        "message": f"Generated hash-sealed {req.report_type} evidence package",
-        "report_id": report_id,
-        "sha256": sha256_hash,
-        "rows": len(rows),
-    })
+    audit = AuditLog(
+        username=user,
+        role=role,
+        action="EXPORT_REPORT",
+        details={
+            "message": f"Generated hash-sealed {req.report_type} evidence package",
+            "report_id": report_id,
+            "sha256": sha256_hash,
+            "rows": len(rows),
+        },
+        ip_address="10.25.0.1"
+    )
+    db.add(audit)
+    db.commit()
 
     size_kb = os.path.getsize(filepath) / 1024
     new_report = {

@@ -4,14 +4,12 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
-from app.database import get_db
+from app.database import Base, SessionLocal, engine
 from app.models import (
-    District, Unit, Accused, CaseMaster, SocioEconomicIndicator,
-    Employee, AuditLog, Gang, Vehicle, Phone, Account, Call, Location, Visit,
+    District, PoliceStation, Offender, FIRRecord, SocioEconomicIndicator,
+    User, AuditLog, EntityMatchReview, Gang, Vehicle, Phone, Account, Call, Location, Visit,
     MissingPerson, UnidentifiedBody, TelecomCDR, RBIFraudRegistry
 )
-# We will skip password hash for Employee for now if it requires complex mapping, 
-# or keep it as Employee.hashed_password
 from app.auth import get_password_hash
 
 # Districts of Karnataka with approximate center coords & metrics
@@ -64,50 +62,61 @@ CRIME_TYPES_IPC = [
 ]
 
 def seed_database():
-    datastore = next(get_db())
-    if not datastore:
-        print("Catalyst Datastore not initialized! Mocking seed logic.")
-        return
-
+    db = SessionLocal()
     try:
+        # SEED_MODE=additive: for a database that already holds live data
+        # (e.g. production, where nayak_sessions/messages/uploads are real
+        # and must survive) — only create missing tables, never drop.
+        # Default ("reset") keeps the original destructive local-dev
+        # behavior: wipe and recreate everything.
+        if os.getenv("SEED_MODE", "reset") == "additive":
+            Base.metadata.create_all(bind=engine)
+            print("Schema ensured (additive mode — existing tables/data untouched).")
+        else:
+            Base.metadata.drop_all(bind=engine)
+            Base.metadata.create_all(bind=engine)
+            print("Schema initialized.")
+        
         # 1. Seed Districts
-        existing_districts = datastore.execute_query("SELECT * FROM District")
-        existing_districts_map = {d['District']['DistrictName']: d['District'] for d in existing_districts} if existing_districts else {}
+        existing_districts = {d.name: d for d in db.query(District).all()}
         districts_objects = []
         for d in KARNATAKA_DISTRICTS:
             if d["name"] in existing_districts:
                 districts_objects.append((d, existing_districts[d["name"]]))
             else:
-                district_data = {
-                    "DistrictName": d["name"],
-                    "population": d["pop"],
-                    "area_sqkm": d["area"],
-                    "literacy_rate": d["lit"],
-                    "unemployment_rate": d["unemp"],
-                    "avg_income": d["income"],
-                    "urbanization_pct": d["urban"]
-                }
-                datastore.table("District").insert_rows([district_data])
-                print(f"Inserted District: {d['name']}")
+                district = District(
+                    name=d["name"],
+                    population=d["pop"],
+                    area_sqkm=d["area"],
+                    literacy_rate=d["lit"],
+                    unemployment_rate=d["unemp"],
+                    avg_income=d["income"],
+                    urbanization_pct=d["urban"]
+                )
+                db.add(district)
+                districts_objects.append((d, district))
         
-        # 2. Seed Units (Police Stations)
-        existing_stations = {s.UnitID: s for s in db.query(Unit).all()}
+        db.commit()
+        print("Districts ensured.")
+        
+        # 2. Seed Police Stations
+        existing_stations = {s.id: s for s in db.query(PoliceStation).all()}
         stations_objects = []
         for d_info, d_model in districts_objects:
-            num_stations = 15 if d_model.DistrictName == "Bengaluru Urban" else random.randint(3, 5)
+            num_stations = 15 if d_model.name == "Bengaluru Urban" else random.randint(3, 5)
             
             for i in range(num_stations):
-                station_id = int(f"{d_model.DistrictID}{i+1:02d}")
+                station_id = f"PS-{d_model.id:02d}-{i+1:02d}"
                 if station_id in existing_stations:
                     stations_objects.append(existing_stations[station_id])
                 else:
                     jitter_lat = random.uniform(-0.15, 0.15)
                     jitter_lng = random.uniform(-0.15, 0.15)
                     
-                    station = Unit(
-                        UnitID=station_id,
-                        UnitName=f"{d_model.DistrictName} Station {i+1}",
-                        DistrictID=d_model.DistrictID,
+                    station = PoliceStation(
+                        id=station_id,
+                        name=f"{d_model.name} Station {i+1}",
+                        district_id=d_model.id,
                         lat=d_info["lat"] + jitter_lat,
                         lng=d_info["lng"] + jitter_lng,
                         jurisdiction_area_sqkm=round(d_info["area"] / num_stations, 2),
@@ -117,45 +126,46 @@ def seed_database():
                     stations_objects.append(station)
                 
         db.commit()
-        print(f"{len(stations_objects)} Police Stations (Units) ensured.")
+        print(f"{len(stations_objects)} Police Stations ensured.")
 
-        # 3. Seed Employees (Users)
-        blr_dist = db.query(District).filter(District.DistrictName == "Bengaluru Urban").first()
-        blr_station = db.query(Unit).filter(Unit.DistrictID == blr_dist.DistrictID).first()
+        # 3. Seed Users with credentials, roles, and boundaries
+        blr_dist = db.query(District).filter(District.name == "Bengaluru Urban").first()
+        blr_station = db.query(PoliceStation).filter(PoliceStation.district_id == blr_dist.id).first()
 
         users_to_seed = [
             {"username": "dgp", "password": "dgp123", "role": "DGP", "dist": None, "stat": None},
-            {"username": "sp", "password": "sp123", "role": "SP", "dist": blr_dist.DistrictID, "stat": None},
-            {"username": "sho", "password": "sho123", "role": "SHO", "dist": blr_dist.DistrictID, "stat": blr_station.UnitID},
-            {"username": "constable", "password": "constable123", "role": "Constable", "dist": blr_dist.DistrictID, "stat": blr_station.UnitID},
+            {"username": "sp", "password": "sp123", "role": "SP", "dist": blr_dist.id, "stat": None},
+            {"username": "sho", "password": "sho123", "role": "SHO", "dist": blr_dist.id, "stat": blr_station.id},
+            {"username": "constable", "password": "constable123", "role": "Constable", "dist": blr_dist.id, "stat": blr_station.id},
+            # Dummy test users to show ease of use
             {"username": "admin", "password": "admin123", "role": "DGP", "dist": None, "stat": None},
-            {"username": "district", "password": "district123", "role": "SP", "dist": blr_dist.DistrictID, "stat": None},
-            {"username": "officer", "password": "officer123", "role": "SHO", "dist": blr_dist.DistrictID, "stat": blr_station.UnitID}
+            {"username": "district", "password": "district123", "role": "SP", "dist": blr_dist.id, "stat": None},
+            {"username": "officer", "password": "officer123", "role": "SHO", "dist": blr_dist.id, "stat": blr_station.id}
         ]
 
-        existing_usernames = {row.username for row in db.query(Employee.username).all() if row.username}
+        existing_usernames = {row.username for row in db.query(User.username).all()}
 
         users_objects = {}
-        for idx, u in enumerate(users_to_seed):
+        for u in users_to_seed:
             if u["username"] in existing_usernames:
-                users_objects[u["username"]] = db.query(Employee).filter(Employee.username == u["username"]).first()
+                # Already present (e.g. inserted ahead of a production
+                # additive seed) — don't touch it, just keep the reference.
+                users_objects[u["username"]] = db.query(User).filter(User.username == u["username"]).first()
                 continue
-            user = Employee(
-                EmployeeID=100 + idx,
+            user = User(
                 username=u["username"],
                 hashed_password=get_password_hash(u["password"]),
                 role=u["role"],
-                DistrictID=u["dist"],
-                UnitID=u["stat"],
+                district_id=u["dist"],
+                station_id=u["stat"],
                 mfa_secret="GA_SECRET_KEY_KAWACH_DEMO_2026",
-                mfa_enabled=True,
-                FirstName=u["username"]
+                mfa_enabled=True
             )
             db.add(user)
             users_objects[u["username"]] = user
 
         db.commit()
-        print("Employees seeded successfully.")
+        print("Users seeded successfully.")
         
         # 4. Seed Gangs
         existing_gangs = {g.id: g for g in db.query(Gang).all()}
@@ -180,27 +190,38 @@ def seed_database():
         db.commit()
         print("Criminal Gangs ensured.")
 
-        # 5. Seed Accused (Offenders)
-        existing_offenders = {o.AccusedMasterID: o for o in db.query(Accused).all()}
+        # 5. Seed Offenders
+        existing_offenders = {o.id: o for o in db.query(Offender).all()}
         offenders_objects = []
-        genders = [1, 2, 3] # M, F, O
-        for i in range(50): # Reduced size for fast testing
-            offender_id = i + 1000
+        genders = ["Male", "Female", "Other"]
+        # Generate 2000 offenders
+        for i in range(2000):
+            offender_id = f"OFF-{i+1:04d}"
             if offender_id in existing_offenders:
                 offenders_objects.append(existing_offenders[offender_id])
                 continue
-            name = f"Offender {i+1}"
+            # Let's seed specific names for entity resolution demo
+            if i == 10:
+                name = "Ramesh Kumar"
+            elif i == 110:
+                name = "Ramesh K. (Alias R. Kumar)"
+            elif i == 20:
+                name = "Zia Ahmed"
+            elif i == 120:
+                name = "Syed Zia Ahmed"
+            else:
+                name = f"Offender {i+1}"
                 
             age = random.randint(18, 65)
             gender = random.choices(genders, weights=[88, 11, 1], k=1)[0]
             num_priors = random.choices([0, 1, 2, 3, 4, 5, 8, 12], weights=[60, 20, 10, 5, 2, 1.5, 1, 0.5], k=1)[0]
             risk_score = min(100.0, float(num_priors * 12 + random.randint(0, 15)))
             
-            offender = Accused(
-                AccusedMasterID=offender_id,
-                AccusedName=name,
-                AgeYear=age,
-                GenderID=gender,
+            offender = Offender(
+                id=offender_id,
+                name=name,
+                age=age,
+                gender=gender,
                 address=f"H.No {random.randint(1, 400)}, Ward {random.randint(1, 20)}, Karnataka",
                 num_prior_offenses=num_priors,
                 risk_score=risk_score
@@ -251,7 +272,7 @@ def seed_database():
                 account = Account(
                     account_number=acc_num,
                     bank_name=random.choice(["State Bank of India", "HDFC Bank", "ICICI Bank", "Canara Bank"]),
-                    owner_offender_id=o.AccusedMasterID
+                    owner_offender_id=o.id
                 )
                 db.add(account)
                 accounts_objects.append(account)
@@ -297,7 +318,7 @@ def seed_database():
             for _ in range(random.randint(1, 3)):
                 loc = random.choice(locations_objects)
                 visit = Visit(
-                    offender_id=o.AccusedMasterID,
+                    offender_id=o.id,
                     location_id=loc.id,
                     timestamp=datetime.utcnow() - timedelta(days=random.randint(1, 45), hours=random.randint(0, 23))
                 )
@@ -319,10 +340,19 @@ def seed_database():
         db.commit()
         print("Criminal network associates linked.")
         
-        # 6. Entity Review queue skipped due to models changing heavily
-        
-        # 7. Seed CaseMasters
-        existing_firs = {f.CaseMasterID: f for f in db.query(CaseMaster).all()}
+        # 6. Seed Entity Match Review queue
+        reviews = [
+            EntityMatchReview(offender1_id=offenders_objects[10].id, offender2_id=offenders_objects[110].id, confidence_score=0.88, status="Pending"),
+            EntityMatchReview(offender1_id=offenders_objects[20].id, offender2_id=offenders_objects[120].id, confidence_score=0.91, status="Pending"),
+            EntityMatchReview(offender1_id=offenders_objects[35].id, offender2_id=offenders_objects[235].id, confidence_score=0.74, status="Pending")
+        ]
+        for r in reviews:
+            db.add(r)
+        db.commit()
+        print("Entity merge candidate reviews seeded.")
+
+        # 7. Seed FIR Records
+        existing_firs = {f.id: f for f in db.query(FIRRecord).all()}
         fir_objects = list(existing_firs.values())
         statuses = ["Investigation", "Charge Sheeted", "Closed"]
         victim_genders = ["Male", "Female"]
@@ -333,8 +363,8 @@ def seed_database():
         
         officer_usernames = ["sho", "constable", "officer"]
 
-        for i in range(150): # reduced for speed
-            fir_id = i + 1000
+        for i in range(10500):
+            fir_id = f"FIR-{2024 + random.randint(0,2)}-{i+1:05d}"
             if fir_id in existing_firs:
                 continue
             station = random.choice(stations_objects)
@@ -397,16 +427,18 @@ def seed_database():
                 "Cross reference accused associates list for vehicle ownership checks."
             ]
 
-            fir = CaseMaster(
-                CaseMasterID=fir_id,
-                CrimeNo=f"CR-{fir_id}",
-                CaseNo=f"CASE-{fir_id}",
-                PoliceStationID=station.UnitID,
-                CrimeRegisteredDate=date_filed.date(),
-                IncidentFromDate=date_filed,
-                latitude=station.lat + jitter_lat,
-                longitude=station.lng + jitter_lng,
-                CaseStatusID=1 if status == "Investigation" else 2,
+            fir = FIRRecord(
+                id=fir_id,
+                police_station_id=station.id,
+                crime_type=crime_type,
+                ipc_section=ipc,
+                date_filed=date_filed,
+                lat=station.lat + jitter_lat,
+                lng=station.lng + jitter_lng,
+                status=status,
+                victim_age=random.randint(18, 70),
+                victim_gender=random.choice(victim_genders),
+                assigned_officer_id=random.choice(officer_usernames) if status == "Investigation" else None,
                 priority=priority,
                 sla_deadline=sla_deadline,
                 summary=summary,
@@ -415,6 +447,9 @@ def seed_database():
                 timeline=timeline_logs
             )
             
+            for acc in accused_list:
+                fir.accused.append(acc)
+                
             db.add(fir)
             
         db.commit()
@@ -431,7 +466,7 @@ def seed_database():
             for year in range(2022, 2027):
                 trend = (year - 2022)
                 indicator = SocioEconomicIndicator(
-                    district_id=d_model.DistrictID,
+                    district_id=d_model.id,
                     year=year,
                     gdp_per_capita=base_gdp * (1 + 0.05 * trend),
                     poverty_rate=max(2.0, base_poverty - 0.8 * trend),

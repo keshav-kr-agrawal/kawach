@@ -5,8 +5,9 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 from app.database import get_db
-from app.zcql_utils import log_audit
+from app.models import AuditLog
 
 router = APIRouter()
 
@@ -33,17 +34,26 @@ def get_active_patrols():
     return {"units": PATROL_UNITS, "count": len(PATROL_UNITS), "timestamp": datetime.utcnow().isoformat()}
 
 @router.post("/dispatch")
-def dispatch_multichannel_alert(req: DispatchAlertRequest, db=Depends(get_db)):
+def dispatch_multichannel_alert(req: DispatchAlertRequest, db: Session = Depends(get_db)):
     """Simulates real-time multi-channel notification dispatch across SMS, Email, PWA Push, and Command Console."""
     dispatch_id = f"DSP-{random.randint(10000, 99999)}"
-
-    log_audit(db, "SYSTEM_DISPATCH", "AUTOMATED_ENG", "REALTIME_ALERT_DISPATCH", {
-        "dispatch_id": dispatch_id,
-        "title": req.title,
-        "severity": req.severity,
-        "channels": req.channels,
-        "district": req.district,
-    }, ip_address="127.0.0.1")
+    
+    # Immutable audit record
+    audit = AuditLog(
+        username="SYSTEM_DISPATCH",
+        role="AUTOMATED_ENG",
+        action="REALTIME_ALERT_DISPATCH",
+        details={
+            "dispatch_id": dispatch_id,
+            "title": req.title,
+            "severity": req.severity,
+            "channels": req.channels,
+            "district": req.district
+        },
+        ip_address="127.0.0.1"
+    )
+    db.add(audit)
+    db.commit()
     
     return {
         "status": "DISPATCHED",
