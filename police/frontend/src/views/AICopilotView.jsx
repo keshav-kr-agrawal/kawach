@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, ShieldAlert, Sparkles, MessageSquare, Terminal, HelpCircle, Mic, Download, Check } from 'lucide-react';
+import { Send, ShieldAlert, Sparkles, MessageSquare, Terminal, HelpCircle, Mic, Download, Check, ScrollText, UserRound, Bot } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { API_BASE } from '../api/client.js';
@@ -118,6 +118,7 @@ function AICopilotView({ user }) {
       const aiMsg = {
         sender: 'ai',
         text: data.response + (containsGeoKeywords ? "\n\n*Source Reference: AI Copilot successfully synchronized with active GIS layers (Pillar 27).*" : containsGraphKeywords ? "\n\n*Source Reference: AI Copilot successfully synchronized with active Graph databases (Pillar 27).*" : ""),
+        citations: data.citations || [],
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, aiMsg]);
@@ -294,10 +295,10 @@ function AICopilotView({ user }) {
       
       // Custom citation / disclaimer styling
       if (line.startsWith('*Disclaimer:') || line.startsWith('*System Compliance:')) {
-        return <p key={idx} className="text-[10px] italic text-rose-500 mt-3 leading-relaxed">{line.replaceAll('*', '')}</p>;
+        return <p key={idx} className="text-[10px] italic text-rose-600 mt-3 leading-relaxed">{line.replaceAll('*', '')}</p>;
       }
       if (line.startsWith('*Source Reference:')) {
-        return <p key={idx} className="text-[9px] font-mono text-slate-400 mt-2">{line.replaceAll('*', '')}</p>;
+        return <p key={idx} className="text-[9px] font-mono text-slate-500 mt-2">{line.replaceAll('*', '')}</p>;
       }
 
       return (
@@ -400,8 +401,13 @@ function AICopilotView({ user }) {
           {messages.map((m, idx) => (
             <div
               key={idx}
-              className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex items-end gap-2.5 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
             >
+              {m.sender !== 'user' && (
+                <div className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
+                  <Bot className="h-3.5 w-3.5" />
+                </div>
+              )}
               <div
                 className={`max-w-2xl px-5 py-4 rounded-2xl shadow-sm border ${
                   m.sender === 'user'
@@ -414,20 +420,44 @@ function AICopilotView({ user }) {
                 ) : (
                   <div className="space-y-1">{formatMessage(m.text)}</div>
                 )}
-                <span className={`block text-[8px] text-right mt-2 ${m.sender === 'user' ? 'text-blue-200' : 'text-slate-400'}`}>
+
+                {m.citations && m.citations.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5 border-t border-slate-100 pt-2.5">
+                    {m.citations.map((c, ci) => (
+                      <span
+                        key={ci}
+                        className="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-100 px-2 py-1 text-[9px] font-semibold text-blue-700"
+                        title={c}
+                      >
+                        <ScrollText className="h-2.5 w-2.5 flex-none" />
+                        <span className="truncate max-w-[220px]">{c}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <span className={`block text-[8px] text-right mt-2 ${m.sender === 'user' ? 'text-blue-100' : 'text-slate-500'}`}>
                   {m.timestamp}
                 </span>
               </div>
+              {m.sender === 'user' && (
+                <div className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-slate-700 text-white shadow-sm">
+                  <UserRound className="h-3.5 w-3.5" />
+                </div>
+              )}
             </div>
           ))}
 
           {loading && (
-            <div className="flex justify-start">
+            <div className="flex items-end gap-2.5 justify-start">
+              <div className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
+                <Bot className="h-3.5 w-3.5" />
+              </div>
               <div className="bg-white border border-slate-200 px-5 py-4 rounded-2xl rounded-bl-none flex items-center space-x-2 shadow-sm">
                 <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                 <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                 <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                <span className="text-[10px] text-slate-400 pl-1">Analyzing Data Lake...</span>
+                <span className="text-[10px] text-slate-500 pl-1">Analyzing Data Lake...</span>
               </div>
             </div>
           )}
