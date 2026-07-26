@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from app.database import get_db
 from app.auth import get_current_user_claims
 from datetime import datetime
@@ -7,7 +6,7 @@ from datetime import datetime
 router = APIRouter()
 
 @router.get("/news-pins")
-def get_osint_news_pins(db: Session = Depends(get_db), claims: dict = Depends(get_current_user_claims)):
+def get_osint_news_pins(db=Depends(get_db), claims: dict = Depends(get_current_user_claims)):
     # Mock OSINT geocoded feeds scraped from local Twitter/X and emergency logs
     return [
         {

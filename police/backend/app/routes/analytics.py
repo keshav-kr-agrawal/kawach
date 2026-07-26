@@ -1,6 +1,4 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from sqlalchemy import func
 import pandas as pd
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -73,7 +71,7 @@ def get_socio_economic_correlation(db: Any = Depends(get_db)):
     return corr_matrix
 
 @router.get("/predict")
-def predict_district_risk(db: Session = Depends(get_db)):
+def predict_district_risk(db=Depends(get_db)):
     """
     District risk scoring: ML XGBoost prediction if model is loaded,
     else deterministic formula over socio-economic indicators + recent crime volume.
@@ -150,7 +148,7 @@ def predict_district_risk(db: Session = Depends(get_db)):
     return predictions
 
 @router.get("/patterns")
-def detect_crime_patterns(db: Session = Depends(get_db)):
+def detect_crime_patterns(db=Depends(get_db)):
     """
     Pattern intelligence computed from the FIR data actually in the database
     (temporal weekend clustering, crime-type trend shift, socio-economic
@@ -292,7 +290,7 @@ def detect_crime_patterns(db: Session = Depends(get_db)):
     return patterns
 
 @router.get("/district")
-def get_district_performance(db: Session = Depends(get_db)):
+def get_district_performance(db=Depends(get_db)):
     """
     District performance metrics computed from real CaseMaster rows —
     clearance rate and investigation cycle time are both derived from each
