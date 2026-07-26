@@ -30,16 +30,32 @@ function forceReLogin() {
   }
 }
 
+// Auth endpoints never fall back to the simulation layer — a "successful"
+// fake login is worse than an honest failure, since it silently produces a
+// session token (sim_session_token) that then 401s on every real API call
+// with no indication to the user why. They also get a longer timeout: a
+// cold Render free-tier instance can take 20-60s to wake up, well past the
+// 8s budget every other call uses, and login is usually the very first
+// request of a session (most likely to land during that cold start).
+const AUTH_PATHS = ['/auth/login', '/auth/login-json'];
+
 async function request(path, { method = 'GET', body } = {}) {
+  const isAuthPath = AUTH_PATHS.includes(path);
   let res;
   try {
     res = await fetch(`${API_BASE}/api${path}`, {
       method,
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: body !== undefined ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(isAuthPath ? 45000 : 8000),
     });
-  } catch {
+  } catch (err) {
+    if (isAuthPath) {
+      const timedOut = err?.name === 'TimeoutError' || err?.name === 'AbortError';
+      throw new Error(timedOut
+        ? 'The backend is waking up (Render free tier can take up to a minute after being idle) — please wait and try again.'
+        : 'Could not reach the login service — check your connection and try again.');
+    }
     // Backend down / no network — switch to the simulation layer.
     setBackendStatus('offline');
     return mockRequest(path, method, body);
@@ -49,19 +65,33 @@ async function request(path, { method = 'GET', body } = {}) {
   // answer with a real HTTP gateway error (502/503/504) while it wakes up —
   // that's not "the app rejected this request", it's "infra isn't ready
   // yet", so treat it the same as unreachable rather than surfacing a raw
-  // error the user can't act on.
+  // error the user can't act on. Auth is the one exception: better an
+  // honest "try again in a moment" than a fake session.
   if ([502, 503, 504].includes(res.status)) {
+    if (isAuthPath) {
+      throw new Error('The backend is still waking up — please wait a moment and try again.');
+    }
     setBackendStatus('offline');
     return mockRequest(path, method, body);
   }
 
   if (res.status === 401) {
+    if (isAuthPath) {
+      const err = new Error('Incorrect username or password.');
+      err.status = 401;
+      throw err;
+    }
     forceReLogin();
     throw new Error('Session expired — signing you out.');
   }
 
   setBackendStatus('live');
   if (!res.ok) {
+    if (isAuthPath) {
+      const err = new Error(`Login failed (HTTP ${res.status}).`);
+      err.status = res.status;
+      throw err;
+    }
     return mockRequest(path, method, body);
   }
 
@@ -69,6 +99,9 @@ async function request(path, { method = 'GET', body } = {}) {
   try {
     data = await res.json();
   } catch {
+    if (isAuthPath) {
+      throw new Error('Login service returned an invalid response — please try again.');
+    }
     return mockRequest(path, method, body);
   }
 
