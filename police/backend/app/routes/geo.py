@@ -3,26 +3,32 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from typing import List, Optional
 import numpy as np
 import random
 from app.database import get_db
-from app.models import FIRRecord, PoliceStation, Location, CurrencySeizure
 from app.auth import get_current_user_claims
+from app.zcql_utils import zcql_rows, parse_date, parse_datetime, insert_row
+from app.ml.features import get_districts, get_station_district_map
+from app.ml.train_isolation_forest import get_case_category_lookup
 from sklearn.cluster import DBSCAN
 
 router = APIRouter()
 
-def apply_geo_role_filters(query, claims):
+
+def _scoped_cases(db, claims: dict, station_to_district: dict) -> list:
+    """Same role-scoping semantics as dashboard.py's _scoped_cases — see that
+    docstring for the Constable-scoping caveat (falls back to station-level)."""
     role = claims.get("role")
+    cases = zcql_rows(db, "CaseMaster")
     if role == "SP":
-        return query.join(PoliceStation).filter(PoliceStation.district_id == claims.get("district_id"))
-    elif role == "SHO":
-        return query.filter(FIRRecord.police_station_id == claims.get("station_id"))
-    elif role == "Constable":
-        return query.filter(FIRRecord.assigned_officer_id == claims.get("username"))
-    return query
+        dist_id = claims.get("district_id")
+        return [c for c in cases if station_to_district.get(c.get("PoliceStationID")) == dist_id]
+    if role in ("SHO", "Constable"):
+        station_id = claims.get("station_id")
+        return [c for c in cases if c.get("PoliceStationID") == station_id]
+    return cases
+
 
 @router.get("/points")
 def get_geo_points(
@@ -30,71 +36,70 @@ def get_geo_points(
     status: Optional[str] = None,
     precision: str = "exact",  # exact, blurred, masked
     mask_sensitive: bool = False,
-    db: Session = Depends(get_db),
+    db=Depends(get_db),
     claims: dict = Depends(get_current_user_claims)
 ):
-    query = db.query(FIRRecord)
-    query = apply_geo_role_filters(query, claims)
-    
-    if crime_type:
-        query = query.filter(FIRRecord.crime_type == crime_type)
-    if status:
-        query = query.filter(FIRRecord.status == status)
-        
-    records = query.all()
-    sensitive_locs = db.query(Location).all() if mask_sensitive else []
-    
+    station_to_district = get_station_district_map(db)
+    cases = _scoped_cases(db, claims, station_to_district)
+    category_labels = get_case_category_lookup(db)
+    status_labels = {
+        s["CaseStatusID"]: s.get("CaseStatusName")
+        for s in zcql_rows(db, "CaseStatusMaster")
+        if s.get("CaseStatusID") is not None
+    }
+    stations_by_id = {u["UnitID"]: u for u in zcql_rows(db, "Unit") if u.get("UnitID") is not None}
+    sensitive_locs = zcql_rows(db, "Location") if mask_sensitive else []
+
     res = []
-    for r in records:
-        lat, lng = r.lat, r.lng
-        
-        # Sensitive site masking (exclude/blur if within ~500m of a sensitive location)
+    for r in cases:
+        r_crime_type = category_labels.get(r.get("CaseCategoryID"), "Unclassified")
+        r_status = status_labels.get(r.get("CaseStatusID"), "Investigation")
+        if crime_type and r_crime_type != crime_type:
+            continue
+        if status and r_status != status:
+            continue
+
+        lat, lng = r.get("latitude"), r.get("longitude")
+        if lat is None or lng is None:
+            continue
+
         if mask_sensitive:
-            near_sensitive = False
             for loc in sensitive_locs:
-                # 1 degree is ~111km, 500m is ~0.0045 degrees
-                dist = np.sqrt((lat - loc.lat)**2 + (lng - loc.lng)**2)
+                dist = np.sqrt((lat - loc.get("lat", 0)) ** 2 + (lng - loc.get("lng", 0)) ** 2)
                 if dist < 0.0045:
-                    near_sensitive = True
+                    lat += random.uniform(-0.02, 0.02)
+                    lng += random.uniform(-0.02, 0.02)
                     break
-            if near_sensitive:
-                # Mask by introducing a large coordinate offset or skipping
-                lat += random.uniform(-0.02, 0.02)
-                lng += random.uniform(-0.02, 0.02)
-        
-        # Location precision controls
+
         if precision == "blurred":
-            # Add 300m - 1km jitter (0.003 to 0.009 degrees)
             lat += random.uniform(-0.006, 0.006)
             lng += random.uniform(-0.006, 0.006)
         elif precision == "masked":
-            # Complete obscuring: snap to police station lat/lng
-            lat, lng = r.station.lat, r.station.lng
-            
+            station = stations_by_id.get(r.get("PoliceStationID"))
+            if station:
+                lat, lng = station.get("lat", lat), station.get("lng", lng)
+
+        d = parse_date(r.get("CrimeRegisteredDate"))
         res.append({
-            "id": r.id,
+            "id": r.get("CaseMasterID"),
             "lat": lat,
             "lng": lng,
-            "crime_type": r.crime_type,
-            "ipc_section": r.ipc_section,
-            "date": r.date_filed.isoformat(),
-            "status": r.status
+            "crime_type": r_crime_type,
+            "ipc_section": None,  # act/section now lives in ActSectionAssociation, not on CaseMaster directly
+            "date": d.isoformat() if d else None,
+            "status": r_status,
         })
     return res
 
+
 @router.get("/hexbins")
-def get_hexbins(db: Session = Depends(get_db), claims: dict = Depends(get_current_user_claims)):
-    query = db.query(FIRRecord.lat, FIRRecord.lng)
-    role = claims.get("role")
-    if role == "SP":
-        query = query.join(PoliceStation).filter(PoliceStation.district_id == claims.get("district_id"))
-    elif role == "SHO":
-        query = query.filter(FIRRecord.police_station_id == claims.get("station_id"))
-    elif role == "Constable":
-        query = query.filter(FIRRecord.assigned_officer_id == claims.get("username"))
-        
-    records = query.all()
-    return [{"lat": r[0], "lng": r[1], "weight": 1.0} for r in records]
+def get_hexbins(db=Depends(get_db), claims: dict = Depends(get_current_user_claims)):
+    station_to_district = get_station_district_map(db)
+    cases = _scoped_cases(db, claims, station_to_district)
+    return [
+        {"lat": c["latitude"], "lng": c["longitude"], "weight": 1.0}
+        for c in cases if c.get("latitude") is not None and c.get("longitude") is not None
+    ]
 
 from app.neo4j_db import get_neo4j_db
 
@@ -112,7 +117,7 @@ class SeizureCreateRequest(BaseModel):
 @router.post("/seizures")
 def log_seizure(
     req: SeizureCreateRequest,
-    db: Session = Depends(get_db),
+    db=Depends(get_db),
     claims: dict = Depends(get_current_user_claims),
 ):
     """
@@ -121,27 +126,27 @@ def log_seizure(
     layer). Typically called after a field officer runs a note through the
     Classifier's real /classify-currency and confirms a counterfeit physically.
     """
-    seizure = CurrencySeizure(
-        id=f"CS-{uuid.uuid4().hex[:8].upper()}",
-        lat=req.lat,
-        lng=req.lng,
-        denomination=req.denomination,
-        verdict=req.verdict,
-        authenticity_score=req.authenticity_score,
-        notes_count=req.notes_count,
-        logged_by=claims.get("sub", "field_officer"),
-        location_name=req.location_name,
-    )
-    db.add(seizure)
-    db.commit()
-    db.refresh(seizure)
+    seizure_id = f"CS-{uuid.uuid4().hex[:8].upper()}"
+    logged_at = datetime.utcnow()
+    insert_row(db, "CurrencySeizure", {
+        "id": seizure_id,
+        "lat": req.lat,
+        "lng": req.lng,
+        "denomination": req.denomination,
+        "verdict": req.verdict,
+        "authenticity_score": req.authenticity_score,
+        "notes_count": req.notes_count,
+        "logged_by": claims.get("username", "field_officer"),
+        "location_name": req.location_name,
+        "logged_at": logged_at.isoformat(),
+    })
     return {
-        "id": seizure.id,
-        "lat": seizure.lat,
-        "lng": seizure.lng,
-        "denomination": seizure.denomination,
-        "verdict": seizure.verdict,
-        "logged_at": seizure.logged_at.isoformat(),
+        "id": seizure_id,
+        "lat": req.lat,
+        "lng": req.lng,
+        "denomination": req.denomination,
+        "verdict": req.verdict,
+        "logged_at": logged_at.isoformat(),
     }
 
 
@@ -149,8 +154,8 @@ def log_seizure(
 def detect_hotspots(
     eps_km: float = Query(1.5, ge=0.1, le=25.0, description="DBSCAN neighborhood radius in km"),
     min_samples: int = Query(2, ge=1, le=20, description="Min incidents to form a hotspot cluster"),
-    db_sql: Session = Depends(get_db),
-    db = Depends(get_neo4j_db),
+    db_sql=Depends(get_db),
+    db=Depends(get_neo4j_db),
     claims: dict = Depends(get_current_user_claims)
 ):
     """
@@ -161,9 +166,9 @@ def detect_hotspots(
     dominant type, and max threat level. Unclustered incidents (DBSCAN noise)
     are returned as single-point features flagged is_hotspot=false.
 
-    Counterfeit currency seizure points (Postgres `currency_seizures`, logged
-    via POST /seizures) are merged in as their own incident type so they
-    cluster and render alongside crime hotspots on the same map.
+    Counterfeit currency seizure points (logged via POST /seizures) are
+    merged in as their own incident type so they cluster and render
+    alongside crime hotspots on the same map.
     """
     result = db.run("MATCH (inc:Incident)-[:OCCURRED_AT]->(loc:Location) RETURN inc, loc")
 
@@ -192,22 +197,23 @@ def detect_hotspots(
         "LIKELY_COUNTERFEIT": "HIGH",
         "SUSPECT_FEATURES": "MEDIUM",
     }
-    for s in db_sql.query(CurrencySeizure).all():
+    for s in zcql_rows(db_sql, "CurrencySeizure"):
+        logged_at = parse_datetime(s.get("logged_at"))
         incidents.append({
-            "id": s.id,
+            "id": s.get("id"),
             "type": "COUNTERFEIT_SEIZURE",
-            "description": f"{s.notes_count} note(s) seized"
-                            + (f" (₹{s.denomination})" if s.denomination else "")
-                            + f" — {s.verdict}",
-            "threat_level": seizure_verdict_threat.get(s.verdict, "MEDIUM"),
-            "timestamp": s.logged_at.isoformat(),
-            "location_name": s.location_name,
-            "lat": s.lat,
-            "lng": s.lng,
+            "description": f"{s.get('notes_count', 1)} note(s) seized"
+                            + (f" (₹{s['denomination']})" if s.get("denomination") else "")
+                            + f" — {s.get('verdict')}",
+            "threat_level": seizure_verdict_threat.get(s.get("verdict"), "MEDIUM"),
+            "timestamp": logged_at.isoformat() if logged_at else None,
+            "location_name": s.get("location_name"),
+            "lat": s.get("lat"),
+            "lng": s.get("lng"),
             "is_seizure": True,
-            "denomination": s.denomination,
-            "verdict": s.verdict,
-            "authenticity_score": s.authenticity_score,
+            "denomination": s.get("denomination"),
+            "verdict": s.get("verdict"),
+            "authenticity_score": s.get("authenticity_score"),
         })
 
     features = []
@@ -272,4 +278,3 @@ def detect_hotspots(
             "hotspot_clusters": hotspot_count,
         },
     }
-

@@ -1,8 +1,7 @@
 import os
 import requests
 import numpy as np
-from sqlalchemy.orm import Session
-from app.models import NayakLawChunk
+from app.zcql_utils import zcql_rows
 
 # "text-embedding-004" 404s ("is not found ... or is not supported") on keys
 # tied to newer accounts — confirmed 2026-07-19, same restriction pattern as
@@ -43,68 +42,66 @@ def cosine_similarity(a, b):
         return 0.0
     return float(dot / (norm_a * norm_b))
 
+def _chunk_dict(c: dict, score: float) -> dict:
+    return {
+        "id": c.get("id"),
+        "act": c.get("act"),
+        "section": c.get("section"),
+        "title": c.get("title"),
+        "official_text": c.get("official_text"),
+        "citizen_scenario": c.get("citizen_scenario"),
+        "citizen_explanation": c.get("citizen_explanation"),
+        "recommended_action": c.get("recommended_action"),
+        "penalty_summary": c.get("penalty_summary"),
+        "source_url": c.get("source_url"),
+        "last_verified": c.get("last_verified"),
+        "tags": c.get("tags") or [],
+        "score": score,
+    }
+
+
 # Main RAG Retrieve Function
-def retrieve_law_chunks(query: str, db: Session, api_key: str = None, top_k: int = 3) -> list:
+def retrieve_law_chunks(query: str, db, api_key: str = None, top_k: int = 3) -> list:
     query = query.strip()
     if not query:
         return []
-        
+
     if not api_key:
         api_key = os.environ.get("GEMINI_API_KEY")
-        
+
     # 1. Try Vector Similarity
     query_emb = get_embedding(query, api_key)
-    chunks = db.query(NayakLawChunk).all()
-    
-    if query_emb and chunks and any(c.embedding is not None for c in chunks):
+    chunks = zcql_rows(db, "NayakLawChunk")
+
+    if query_emb and chunks and any(c.get("embedding") is not None for c in chunks):
         print(f"[RAG] Performing vector-similarity search for: '{query}'")
         scored_chunks = []
         for c in chunks:
-            if c.embedding is not None:
-                score = cosine_similarity(query_emb, c.embedding)
+            if c.get("embedding") is not None:
+                score = cosine_similarity(query_emb, c["embedding"])
                 scored_chunks.append((score, c))
             else:
                 scored_chunks.append((0.0, c))
-                
-        # Sort by score descending
+
         scored_chunks.sort(key=lambda x: x[0], reverse=True)
-        results = []
-        for score, c in scored_chunks[:top_k]:
-            results.append({
-                "id": c.id,
-                "act": c.act,
-                "section": c.section,
-                "title": c.title,
-                "official_text": c.official_text,
-                "citizen_scenario": c.citizen_scenario,
-                "citizen_explanation": c.citizen_explanation,
-                "recommended_action": c.recommended_action,
-                "penalty_summary": c.penalty_summary,
-                "source_url": c.source_url,
-                "last_verified": c.last_verified,
-                "tags": c.tags,
-                "score": score
-            })
-        return results
-        
+        return [_chunk_dict(c, score) for score, c in scored_chunks[:top_k]]
+
     # 2. Keyword Search Fallback (if embeddings fail or key is missing)
     print(f"[RAG] Fallback to keyword-based search for: '{query}'")
     keywords = [kw.lower() for kw in query.split() if len(kw) > 2]
-    
+
     if not keywords:
-        # Default to checking simple query containment
         keywords = [query.lower()]
-        
+
     scored_chunks = []
     for c in chunks:
         score = 0.0
-        c_title_lower = c.title.lower()
-        c_act_lower = c.act.lower()
-        c_tags_lower = [t.lower() for t in c.tags]
-        c_desc_lower = c.official_text.lower() + " " + c.citizen_scenario.lower() + " " + c.citizen_explanation.lower()
-        
+        c_title_lower = (c.get("title") or "").lower()
+        c_act_lower = (c.get("act") or "").lower()
+        c_tags_lower = [t.lower() for t in (c.get("tags") or [])]
+        c_desc_lower = ((c.get("official_text") or "") + " " + (c.get("citizen_scenario") or "") + " " + (c.get("citizen_explanation") or "")).lower()
+
         for kw in keywords:
-            # Exact matches on tags, titles give higher weight
             if any(kw == t for t in c_tags_lower):
                 score += 3.0
             if kw in c_title_lower:
@@ -113,32 +110,13 @@ def retrieve_law_chunks(query: str, db: Session, api_key: str = None, top_k: int
                 score += 1.0
             if kw in c_desc_lower:
                 score += 0.5
-                
+
         if score > 0:
             scored_chunks.append((score, c))
-            
-    # Sort by score descending
+
     scored_chunks.sort(key=lambda x: x[0], reverse=True)
-    
-    # If no keyword matches, return the first top_k chunks as default fallback
+
     if not scored_chunks:
         scored_chunks = [(0.0, c) for c in chunks[:top_k]]
-        
-    results = []
-    for score, c in scored_chunks[:top_k]:
-        results.append({
-            "id": c.id,
-            "act": c.act,
-            "section": c.section,
-            "title": c.title,
-            "official_text": c.official_text,
-            "citizen_scenario": c.citizen_scenario,
-            "citizen_explanation": c.citizen_explanation,
-            "recommended_action": c.recommended_action,
-            "penalty_summary": c.penalty_summary,
-            "source_url": c.source_url,
-            "last_verified": c.last_verified,
-            "tags": c.tags,
-            "score": score
-        })
-    return results
+
+    return [_chunk_dict(c, score) for score, c in scored_chunks[:top_k]]

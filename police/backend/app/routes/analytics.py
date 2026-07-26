@@ -2,12 +2,17 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 import pandas as pd
+from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from app.database import get_db
 # Models are imported but not used directly in queries anymore since we use ZCQL strings
 from app.models import District, SocioEconomicIndicator, CaseMaster, Unit
-from app.ml.features import build_latest_month_frame
+from app.ml.features import (
+    build_latest_month_frame, zcql_rows, get_districts,
+    get_station_district_map, get_indicator_lookup, _parse_date,
+)
+from app.ml.train_isolation_forest import get_case_category_lookup
 from app.ml.predict import ml_predict_district_risk
 from app.ml.patterns import ml_forecast_patterns, ml_anomaly_patterns
 
@@ -82,31 +87,33 @@ def predict_district_risk(db: Session = Depends(get_db)):
         return ml_predictions
     # ── END ML INTEGRATION WINDOW ────────────────────────────────────────────
 
-    districts = db.query(District).all()
+    districts_by_id = get_districts(db)
+    station_to_district = get_station_district_map(db)
+    indicators = get_indicator_lookup(db)
 
-    # Recent 180-day FIR count per district (single grouped query)
+    # Recent 180-day case count per district — raw ZCQL rows, joined/filtered
+    # in Python (see features.py's module docstring for why).
     cutoff = datetime.utcnow().date() - timedelta(days=180)
-    crime_counts = dict(
-        db.query(Unit.DistrictID, func.count(CaseMaster.CaseMasterID))
-        .join(CaseMaster, CaseMaster.PoliceStationID == Unit.UnitID)
-        .filter(CaseMaster.CrimeRegisteredDate >= cutoff)
-        .group_by(Unit.DistrictID)
-        .all()
-    )
+    crime_counts = defaultdict(int)
+    for c in zcql_rows(db, "CaseMaster"):
+        did = station_to_district.get(c.get("PoliceStationID"))
+        d = _parse_date(c.get("CrimeRegisteredDate"))
+        if did is None or d is None or d < cutoff:
+            continue
+        crime_counts[did] += 1
 
     predictions = []
-    for dist in districts:
-        recent_indicator = db.query(SocioEconomicIndicator)\
-            .filter(SocioEconomicIndicator.district_id == dist.id)\
-            .order_by(SocioEconomicIndicator.year.desc()).first()
+    for did, dist in districts_by_id.items():
+        ind_years = [y for (d2, y) in indicators.keys() if d2 == did]
+        recent_indicator = indicators.get((did, max(ind_years))) if ind_years else None
 
-        poverty = recent_indicator.poverty_rate if recent_indicator else 15.0
-        police_capita = recent_indicator.police_per_capita if recent_indicator else 100.0
+        poverty = recent_indicator.get("poverty_rate") if recent_indicator else 15.0
+        police_capita = recent_indicator.get("police_per_capita") if recent_indicator else 100.0
 
-        recent_crimes = crime_counts.get(dist.id, 0)
-        crime_per_100k = (recent_crimes / dist.population) * 100000 if dist.population else 0.0
+        recent_crimes = crime_counts.get(did, 0)
+        crime_per_100k = (recent_crimes / dist["population"]) * 100000 if dist["population"] else 0.0
 
-        unemp_score = min(dist.unemployment_rate * 6, 30)        # up to 30
+        unemp_score = min(dist["unemployment_rate"] * 6, 30)     # up to 30
         poverty_score = min(poverty * 1.25, 25)                  # up to 25
         police_factor = max(0.0, 20 - (police_capita / 7.5))     # lower density -> higher risk, up to 20
         crime_volume_score = min(crime_per_100k / 4, 25)         # observed recent crime, up to 25
@@ -121,15 +128,15 @@ def predict_district_risk(db: Session = Depends(get_db)):
             tier = "Low"
 
         predictions.append({
-            "district_id": dist.id,
-            "district_name": dist.name,
+            "district_id": did,
+            "district_name": dist["name"],
             "risk_score": round(risk_score, 1),
             "risk_tier": tier,
             "contributing_factors": {
-                "unemployment": f"Unemployment rate at {dist.unemployment_rate}%",
+                "unemployment": f"Unemployment rate at {dist['unemployment_rate']}%",
                 "poverty": f"Poverty rate at {round(poverty, 1)}%",
                 "police_density": f"Police per capita index at {round(police_capita, 1)}",
-                "recent_crime_volume": f"{recent_crimes} FIRs in last 180 days ({round(crime_per_100k, 1)} per 100k)"
+                "recent_crime_volume": f"{recent_crimes} cases in last 180 days ({round(crime_per_100k, 1)} per 100k)"
             },
             "score_breakdown": {
                 "unemployment": round(unemp_score, 1),
@@ -151,10 +158,17 @@ def detect_crime_patterns(db: Session = Depends(get_db)):
     omitted when there isn't enough data to support the claim.
     """
     patterns = []
-    # Note: CaseMaster doesn't have a direct 'crime_type' string in strict Zoho schema,
-    # it references CaseCategoryID or CrimeMajorHeadID. We'll use CrimeNo prefix or a join in a full setup.
-    # For now, we simulate fetching the case category ID or similar.
-    firs = db.query(CaseMaster.CaseCategoryID, CaseMaster.CrimeRegisteredDate).all()
+    # CaseMaster only carries CaseCategoryID (Zoho's prescribed lookup-table
+    # design), not a crime-type string — join against CaseCategory to get the
+    # same human-readable labels the old FIRRecord.crime_type column had.
+    category_labels = get_case_category_lookup(db)
+    firs = []
+    for c in zcql_rows(db, "CaseMaster"):
+        d = _parse_date(c.get("CrimeRegisteredDate"))
+        if d is None:
+            continue
+        crime_type = category_labels.get(c.get("CaseCategoryID"), "Unclassified")
+        firs.append((crime_type, datetime.combine(d, datetime.min.time())))
     n_total = len(firs)
 
     # ── PAT-001: Weekend vs weekday daily crime rate ─────────────────────────
@@ -212,29 +226,28 @@ def detect_crime_patterns(db: Session = Depends(get_db)):
         })
 
     # ── PAT-003: Strongest socio-economic correlate of crime volume ──────────
-    # Precompute once instead of per SocioEconomicIndicator row — with 5
-    # years x 31 districts that was 155 rows x 2 queries each (District
-    # lookup + a full FIRRecord join/count repeated identically per year),
-    # ~310 avoidable round-trips to a remote DB.
-    indicators = db.query(SocioEconomicIndicator).all()
-    districts_by_id = {d.id: d for d in db.query(District).all()}
-    crime_counts_by_district = dict(
-        db.query(Unit.DistrictID, func.count(CaseMaster.CaseMasterID))
-        .join(CaseMaster, CaseMaster.PoliceStationID == Unit.UnitID)
-        .group_by(Unit.DistrictID)
-        .all()
-    )
+    # Fetched once via ZCQL and joined/grouped in Python — see features.py's
+    # module docstring for why (no verified ZCQL join/date-function support).
+    indicators = zcql_rows(db, "SocioEconomicIndicator")
+    districts_by_id = get_districts(db)
+    station_to_district = get_station_district_map(db)
+    crime_counts_by_district = defaultdict(int)
+    for c in zcql_rows(db, "CaseMaster"):
+        did = station_to_district.get(c.get("PoliceStationID"))
+        if did is not None:
+            crime_counts_by_district[did] += 1
+
     rows = []
     for ind in indicators:
-        dist = districts_by_id.get(ind.district_id)
-        if not dist or not dist.population:
+        dist = districts_by_id.get(ind.get("district_id"))
+        if not dist or not dist["population"]:
             continue
-        crime_count = crime_counts_by_district.get(ind.district_id, 0)
+        crime_count = crime_counts_by_district.get(ind.get("district_id"), 0)
         rows.append({
-            "poverty_rate": ind.poverty_rate,
-            "unemployment_rate": dist.unemployment_rate,
-            "police_per_capita": ind.police_per_capita,
-            "crime_rate": (crime_count / dist.population) * 100000,
+            "poverty_rate": ind.get("poverty_rate"),
+            "unemployment_rate": dist["unemployment_rate"],
+            "police_per_capita": ind.get("police_per_capita"),
+            "crime_rate": (crime_count / dist["population"]) * 100000,
         })
     if len(rows) >= 4:
         df = pd.DataFrame(rows)
@@ -281,14 +294,27 @@ def detect_crime_patterns(db: Session = Depends(get_db)):
 @router.get("/district")
 def get_district_performance(db: Session = Depends(get_db)):
     """
-    District performance metrics computed from real FIRRecord rows —
+    District performance metrics computed from real CaseMaster rows —
     clearance rate and investigation cycle time are both derived from each
-    FIR's actual status/timeline fields (replaces the previously hardcoded
-    Bangalore-area mock numbers). FIR volume itself still comes from the
+    case's actual status/timeline fields (replaces the previously hardcoded
+    Bangalore-area mock numbers). Case volume itself still comes from the
     seed DB — see generate_data.py's documented signal-injection gap.
     """
-    firs = db.query(CaseMaster).join(Unit, CaseMaster.PoliceStationID == Unit.UnitID).join(District, Unit.DistrictID == District.DistrictID).all()
-    if not firs:
+    districts_by_id = get_districts(db)
+    station_to_district = get_station_district_map(db)
+
+    status_labels = {
+        s["CaseStatusID"]: (s.get("CaseStatusName") or "").lower()
+        for s in zcql_rows(db, "CaseStatusMaster")
+        if s.get("CaseStatusID") is not None
+    }
+    cleared_status_ids = {
+        sid for sid, name in status_labels.items()
+        if "closed" in name or "charge" in name
+    }
+
+    cases = zcql_rows(db, "CaseMaster")
+    if not cases:
         return {"clearance_data": [], "cycle_time_data": [], "kpis": {}, "sample_size": 0}
 
     by_district: Dict[str, Dict[str, Any]] = {}
@@ -297,33 +323,43 @@ def get_district_performance(db: Session = Depends(get_db)):
     total_sla_resolved = 0
     all_cycle_days = []
 
-    for fir in firs:
-        dist_name = "Unknown" # simplified for now
+    for fir in cases:
+        did = station_to_district.get(fir.get("PoliceStationID"))
+        dist_name = districts_by_id.get(did, {}).get("name", "Unknown")
         entry = by_district.setdefault(dist_name, {"total": 0, "cleared": 0, "cycle_days": []})
         entry["total"] += 1
-        is_cleared = getattr(fir, 'CaseStatusID', 0) > 1 # Assuming >1 is cleared
+        status_id = fir.get("CaseStatusID")
+        is_cleared = status_id in cleared_status_ids if cleared_status_ids else (status_id or 0) > 1
 
         last_event = None
-        if getattr(fir, 'timeline', None):
+        timeline = fir.get("timeline")
+        if timeline:
             try:
-                last_event = max(datetime.fromisoformat(t["date"]) for t in fir.timeline)
+                last_event = max(datetime.fromisoformat(t["date"]) for t in timeline)
             except (KeyError, ValueError, TypeError):
                 last_event = None
+
+        filed_date = _parse_date(fir.get("CrimeRegisteredDate"))
+        sla_deadline = fir.get("sla_deadline")
+        if isinstance(sla_deadline, str):
+            try:
+                sla_deadline = datetime.fromisoformat(sla_deadline)
+            except ValueError:
+                sla_deadline = None
 
         if is_cleared:
             entry["cleared"] += 1
             total_cleared += 1
-            if last_event and fir.CrimeRegisteredDate:
-                # Convert Date to datetime for comparison
-                dt = datetime.combine(fir.CrimeRegisteredDate, datetime.min.time())
+            if last_event and filed_date:
+                dt = datetime.combine(filed_date, datetime.min.time())
                 days = (last_event - dt).total_seconds() / 86400
                 if days >= 0:
                     entry["cycle_days"].append(days)
                     all_cycle_days.append(days)
 
-        if not is_cleared and getattr(fir, 'sla_deadline', None):
+        if not is_cleared and sla_deadline:
             total_sla_resolved += 1
-            if last_event and last_event <= fir.sla_deadline:
+            if last_event and last_event <= sla_deadline:
                 total_sla_met += 1
 
     clearance_data = []
@@ -335,7 +371,7 @@ def get_district_performance(db: Session = Depends(get_db)):
             avg_days = round(sum(e["cycle_days"]) / len(e["cycle_days"]), 1)
             cycle_time_data.append({"name": name, "avg_days": avg_days, "sample_size": len(e["cycle_days"])})
 
-    total = len(firs)
+    total = len(cases)
     overall_clearance = round((total_cleared / total) * 100, 1) if total else 0
     overall_cycle = round(sum(all_cycle_days) / len(all_cycle_days), 1) if all_cycle_days else None
     sla_met_rate = round((total_sla_met / total_sla_resolved) * 100, 1) if total_sla_resolved else None
