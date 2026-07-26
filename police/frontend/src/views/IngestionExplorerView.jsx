@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Database, Search, Users, ShieldAlert, PhoneCall, Landmark, FileText, UserMinus, Eye } from 'lucide-react';
 import { API_BASE } from '../api/client.js';
 
-function IngestionExplorerView({ token, user }) {
+function IngestionExplorerView({ user }) {
   const [activeTab, setActiveTab] = useState('missing'); // 'missing', 'bodies', 'cdr', 'rbi'
   const [missingPersons, setMissingPersons] = useState([]);
   const [unidentifiedBodies, setUnidentifiedBodies] = useState([]);
@@ -11,6 +11,11 @@ function IngestionExplorerView({ token, user }) {
   const [searchVal, setSearchVal] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // The /data-lake route never receives a `token` prop (App.jsx only passes
+  // `user`) — read the JWT directly from localStorage instead, same fix as
+  // AICopilotView. This was previously masked here (not visibly broken)
+  // because every fetch below has its own mock-data fallback on failure.
+  const token = localStorage.getItem('kawach_token');
   const headers = { 'Authorization': `Bearer ${token}` };
 
   const MOCK_MISSING = [

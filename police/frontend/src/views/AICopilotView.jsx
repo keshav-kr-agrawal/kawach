@@ -4,7 +4,13 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { API_BASE } from '../api/client.js';
 
-function AICopilotView({ token, user }) {
+function AICopilotView({ user }) {
+  // The /copilot route never receives a `token` prop (App.jsx only passes
+  // `user`, which itself doesn't carry the JWT — that's stored separately),
+  // so read it directly from localStorage like api/client.js's authHeaders()
+  // does. Previously this silently sent "Authorization: Bearer undefined"
+  // on every request, which the backend correctly rejected as unauthenticated.
+  const token = localStorage.getItem('kawach_token');
   const [messages, setMessages] = useState([
     {
       sender: 'ai',
