@@ -70,7 +70,7 @@ export async function getMessages(sessionId) {
   return res.json();
 }
 
-export async function uploadMedia({ mediaUrl, mediaType, sessionId, captureMode }) {
+export async function uploadMedia({ mediaUrl, mediaType, sessionId, captureMode, mode }) {
   const res = await fetch(`${API_BASE}/api/nayak/upload`, {
     method: 'POST',
     headers: headers(),
@@ -78,7 +78,8 @@ export async function uploadMedia({ mediaUrl, mediaType, sessionId, captureMode 
       media_url: mediaUrl,
       media_type: mediaType,
       session_id: sessionId,
-      capture_mode: captureMode || 'visible'
+      capture_mode: captureMode || 'visible',
+      mode
     }),
   });
   if (!res.ok) throw new Error(`upload HTTP ${res.status}`);
